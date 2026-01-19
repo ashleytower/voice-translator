@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #0d0d0f;
+  --color-surface: #1a1b1e;
+  --color-surface-elevated: #25262b;
+  --color-border: #35373c;
+  --color-text: #f6f6f7;
+  --color-text-muted: #a0a2aa;
+  --color-accent: #e84a67;
+  --color-accent-soft: rgba(232, 74, 103, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Noto Sans JP', system-ui, sans-serif;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Noise texture overlay */
+.noise-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Japanese wave pattern background */
+.wave-pattern {
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, rgba(232, 74, 103, 0.08) 0%, transparent 50%);
+}
+
+/* Glassmorphism card */
+.glass-card {
+  background: rgba(26, 27, 30, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Audio wave visualization */
+.audio-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 32px;
+}
+
+.audio-wave span {
+  width: 4px;
+  background: var(--color-accent);
+  border-radius: 2px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+
+.audio-wave span:nth-child(1) { animation-delay: 0s; height: 40%; }
+.audio-wave span:nth-child(2) { animation-delay: 0.1s; height: 70%; }
+.audio-wave span:nth-child(3) { animation-delay: 0.2s; height: 100%; }
+.audio-wave span:nth-child(4) { animation-delay: 0.3s; height: 70%; }
+.audio-wave span:nth-child(5) { animation-delay: 0.4s; height: 40%; }
+
+/* Mode toggle pill */
+.mode-toggle {
+  position: relative;
+  display: flex;
+  background: var(--color-surface);
+  border-radius: 9999px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+}
+
+.mode-toggle-slider {
+  position: absolute;
+  top: 4px;
+  height: calc(100% - 8px);
+  width: calc(50% - 4px);
+  background: var(--color-accent);
+  border-radius: 9999px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mode-toggle-slider.currency {
+  transform: translateX(100%);
+}
+
+/* Transcript bubble */
+.transcript-bubble {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 20px;
+  animation: fade-up 0.3s ease-out;
+}
+
+.transcript-bubble.user {
+  background: var(--color-accent);
+  color: white;
+  margin-left: auto;
+  border-bottom-right-radius: 6px;
+}
+
+.transcript-bubble.ai {
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+  border-bottom-left-radius: 6px;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Floating action button */
+.fab {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.fab::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--color-accent);
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.fab:active {
+  transform: scale(0.95);
+}
+
+.fab.listening::before {
+  opacity: 1;
+  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Safe area for mobile */
+.safe-area-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 24px);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+/* PWA install prompt */
+.install-prompt {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  animation: fade-up 0.3s ease-out;
+  z-index: 100;
+}
