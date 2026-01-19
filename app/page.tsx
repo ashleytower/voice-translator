@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useGeminiLive, canScreenRecord, isIOS, isMobile } from 'gemini-live-react';
+import { useGeminiLive } from '@/hooks/useGeminiLive';
 import {
   Camera,
   Languages,
@@ -9,157 +9,126 @@ import {
   VolumeX
 } from 'lucide-react';
 import Onboarding from './components/Onboarding';
-import {
-  validateProxyUrl,
-  setupCameraWithErrorHandling,
-  stopMediaStream,
-  handleConnectionError,
-} from '@/lib/connection-utils';
 import { VoiceOrb, VoiceOrbState } from '@/components/translator/VoiceOrb';
 import { ChatPanel } from '@/components/translator/ChatPanel';
 import { ChatMessage } from '@/components/translator/ChatMessage';
 import { HistoryDrawer } from '@/components/translator/HistoryDrawer';
 
-const EXCHANGE_API = 'https://api.exchangerate-api.com/v4/latest/JPY';
+const SYSTEM_INSTRUCTION = `You are a real-time voice translator assistant. Your job is to:
+1. Listen to speech in any language
+2. Identify the language being spoken
+3. Translate it naturally to the user's preferred language (default: English)
+4. Respond conversationally
+
+When you see images (like menus, signs, or products), describe and translate any visible text.
+
+For currency: If you see Japanese Yen prices, also provide the approximate CAD equivalent.
+
+Keep responses concise and natural - this is a real-time conversation.`;
 
 export default function TranslatorPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
-  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
-  const [userError, setUserError] = useState<string | null>(null);
+  const [muted, setMuted] = useState(false);
 
-  // Fetch exchange rate on mount
-  useEffect(() => {
-    fetch(EXCHANGE_API)
-      .then(res => res.json())
-      .then(data => setExchangeRate(data.rates?.CAD))
-      .catch(console.error);
-  }, []);
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
 
   const {
-    connect,
-    disconnect,
-    transcripts,
+    status,
     isConnected,
     isConnecting,
     isSpeaking,
-    isMuted,
-    setMuted,
-    isUserSpeaking,
+    isListening,
     error,
+    transcripts,
     streamingText,
+    connect,
+    disconnect,
+    sendImage,
   } = useGeminiLive({
-    proxyUrl: process.env.NEXT_PUBLIC_PROXY_URL || 'wss://YOUR_SUPABASE_PROJECT.supabase.co/functions/v1/gemini-live-proxy',
-    welcomeMessage: 'Speak or point at something to translate.',
-    debug: process.env.NODE_ENV === 'development',
-    vad: true,
-    vadOptions: {
-      threshold: 0.5,
-      minSpeechDuration: 250,
-      silenceDuration: 500,
-    },
-    tools: [
-      {
-        name: 'convert_currency',
-        description: 'Convert a price from Japanese Yen (JPY) to Canadian Dollars (CAD)',
-        parameters: {
-          type: 'object',
-          properties: {
-            amount: { 
-              type: 'number', 
-              description: 'The amount in Japanese Yen to convert' 
-            },
-          },
-          required: ['amount'],
-        },
-      },
-    ],
-    onToolCall: async (toolName, args) => {
-      if (toolName === 'convert_currency' && exchangeRate) {
-        const jpy = args.amount as number;
-        const cad = jpy * exchangeRate;
-        return { 
-          jpy, 
-          cad: Math.round(cad * 100) / 100,
-          rate: exchangeRate,
-          formatted: `¥${jpy.toLocaleString()} = $${cad.toFixed(2)} CAD`
-        };
-      }
-      return { error: 'Exchange rate not available' };
-    },
+    apiKey,
+    model: 'models/gemini-2.0-flash-exp',
+    systemInstruction: SYSTEM_INSTRUCTION,
+    voiceName: 'Aoede',
   });
 
-  const handleConnect = async () => {
-    console.log('[handleConnect] Called, isConnected:', isConnected);
+  // Send camera frames periodically when connected
+  useEffect(() => {
+    if (!isConnected || !cameraActive || !videoRef.current || !canvasRef.current) return;
 
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const sendFrame = () => {
+      if (!videoRef.current || !isConnected) return;
+
+      // Scale down for efficiency
+      const maxWidth = 512;
+      const scale = Math.min(1, maxWidth / videoRef.current.videoWidth);
+      canvas.width = videoRef.current.videoWidth * scale;
+      canvas.height = videoRef.current.videoHeight * scale;
+
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+      sendImage(base64, 'image/jpeg');
+    };
+
+    // Send frame every 2 seconds
+    const interval = setInterval(sendFrame, 2000);
+
+    return () => clearInterval(interval);
+  }, [isConnected, cameraActive, sendImage]);
+
+  const handleConnect = async () => {
     if (isConnected) {
-      console.log('[handleConnect] Disconnecting...');
       stopCamera();
       disconnect();
-      setUserError(null);
       return;
     }
 
-    // Clear previous errors
-    setUserError(null);
-
-    // Validate proxy URL before connecting
-    const proxyUrl = process.env.NEXT_PUBLIC_PROXY_URL || '';
-    console.log('[handleConnect] Proxy URL:', proxyUrl);
-    const validation = validateProxyUrl(proxyUrl);
-    console.log('[handleConnect] Validation result:', validation);
-
-    if (!validation.isValid) {
-      console.error('[handleConnect] Validation failed:', validation.error);
-      setUserError(validation.error?.userMessage || 'Configuration error');
+    if (!apiKey) {
+      console.error('NEXT_PUBLIC_GOOGLE_API_KEY is not set');
       return;
     }
 
     try {
-      // Always start camera for visual recognition
-      console.log('[handleConnect] Starting camera...');
+      // Start camera first
       await startCamera();
-      console.log('[handleConnect] Camera started, connecting to Gemini Live...');
-
-      // Connect to Gemini Live
-      await connect(videoRef.current!);
-      console.log('[handleConnect] Connected successfully');
+      // Then connect to Gemini
+      await connect();
     } catch (err) {
-      const connectionError = handleConnectionError(err);
-      setUserError(connectionError.userMessage);
-      console.error('[handleConnect] Connection error:', connectionError);
-
-      // Clean up camera if connection fails
+      console.error('Connection failed:', err);
       stopCamera();
     }
   };
 
   const startCamera = async () => {
-    const result = await setupCameraWithErrorHandling({
-      video: {
-        facingMode: 'environment',
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      },
-    });
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
 
-    if (!result.success) {
-      setUserError(result.error?.userMessage || 'Failed to access camera');
-      console.error('Camera error:', result.error);
-      throw new Error(result.error?.userMessage);
-    }
-
-    if (videoRef.current && result.stream) {
-      videoRef.current.srcObject = result.stream;
-      await videoRef.current.play();
-      setCameraActive(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setCameraActive(true);
+      }
+    } catch (err) {
+      console.error('Camera error:', err);
+      throw err;
     }
   };
 
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
-      stopMediaStream(stream);
+      stream.getTracks().forEach((track) => track.stop());
       videoRef.current.srcObject = null;
       setCameraActive(false);
     }
@@ -168,7 +137,7 @@ export default function TranslatorPage() {
   // Compute VoiceOrb state based on connection status
   const getOrbState = (): VoiceOrbState => {
     if (isConnecting) return 'connecting';
-    if (isConnected && isUserSpeaking) return 'listening';
+    if (isConnected && isListening) return 'listening';
     if (isConnected && isSpeaking) return 'speaking';
     if (isConnected) return 'listening';
     return 'idle';
@@ -177,6 +146,9 @@ export default function TranslatorPage() {
   return (
     <main className="relative min-h-dvh flex flex-col">
       <Onboarding />
+
+      {/* Hidden canvas for frame capture */}
+      <canvas ref={canvasRef} className="hidden" />
 
       {/* Header */}
       <header className="fixed top-0 inset-x-0 z-50 glass-card border-b border-white/5">
@@ -260,16 +232,23 @@ export default function TranslatorPage() {
       <div className="fixed bottom-0 inset-x-0 glass-card border-t border-white/5 safe-area-bottom">
         <div className="px-4 py-6">
           {/* Error display */}
-          {(error || userError) && (
+          {error && (
             <div className="mb-4 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
-              <p className="text-red-400 text-sm">{userError || error}</p>
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* API key warning */}
+          {!apiKey && (
+            <div className="mb-4 px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-center">
+              <p className="text-yellow-400 text-sm">Set NEXT_PUBLIC_GOOGLE_API_KEY in your environment</p>
             </div>
           )}
 
           <div className="flex items-center justify-center gap-6">
             {/* Mute button */}
             <button
-              onClick={() => setMuted(!isMuted)}
+              onClick={() => setMuted(!muted)}
               disabled={!isConnected}
               className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                 isConnected
@@ -277,7 +256,7 @@ export default function TranslatorPage() {
                   : 'bg-ink-900 text-ink-600'
               }`}
             >
-              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
             </button>
 
             {/* Main action button - VoiceOrb */}
@@ -296,9 +275,9 @@ export default function TranslatorPage() {
           {/* Status text */}
           <p className="text-center text-sm text-ink-400 mt-4">
             {isConnecting && 'Connecting...'}
-            {isConnected && isUserSpeaking && 'Listening...'}
-            {isConnected && isSpeaking && 'Processing...'}
-            {isConnected && !isUserSpeaking && !isSpeaking && 'Speak or point at something'}
+            {isConnected && isListening && 'Listening...'}
+            {isConnected && isSpeaking && 'Speaking...'}
+            {isConnected && !isListening && !isSpeaking && 'Ready - speak or point camera'}
             {!isConnected && !isConnecting && 'Tap to start'}
           </p>
         </div>
