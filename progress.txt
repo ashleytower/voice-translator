@@ -18,4 +18,15 @@ Changes:
 
 === Iteration 2 ===
 Story 3: Rebrand to generic translator
+Status: COMPLETE ✅
+Commit: ef0e70961ec2c2a0b3dce94ccf561011610fc348
+Changes:
+- Updated layout.tsx metadata title to 'Voice Translator'
+- Updated manifest.json name and short_name
+- Removed Japan flag emoji, added Languages icon
+- Updated header title to 'Voice Translator'
+- Updated description to universal translation
+
+=== Iteration 3 ===
+Story 5: Unified interface (always listening/watching)
 Status: Starting

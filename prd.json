@@ -27,7 +27,7 @@
         "Description mentions universal translation, not Japan-specific"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "5",
