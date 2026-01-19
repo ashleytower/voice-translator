@@ -12,6 +12,12 @@ import {
   VolumeX
 } from 'lucide-react';
 import Onboarding from './components/Onboarding';
+import {
+  validateProxyUrl,
+  setupCameraWithErrorHandling,
+  stopMediaStream,
+  handleConnectionError,
+} from '@/lib/connection-utils';
 
 const EXCHANGE_API = 'https://api.exchangerate-api.com/v4/latest/JPY';
 
@@ -19,6 +25,7 @@ export default function TranslatorPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [userError, setUserError] = useState<string | null>(null);
 
   // Fetch exchange rate on mount
   useEffect(() => {
@@ -85,38 +92,64 @@ export default function TranslatorPage() {
     if (isConnected) {
       stopCamera();
       disconnect();
+      setUserError(null);
       return;
     }
 
-    // Always start camera for visual recognition
-    await startCamera();
-    await connect(videoRef.current!);
+    // Clear previous errors
+    setUserError(null);
+
+    // Validate proxy URL before connecting
+    const proxyUrl = process.env.NEXT_PUBLIC_PROXY_URL || '';
+    const validation = validateProxyUrl(proxyUrl);
+
+    if (!validation.isValid) {
+      setUserError(validation.error?.userMessage || 'Configuration error');
+      return;
+    }
+
+    try {
+      // Always start camera for visual recognition
+      await startCamera();
+
+      // Connect to Gemini Live
+      await connect(videoRef.current!);
+    } catch (err) {
+      const connectionError = handleConnectionError(err);
+      setUserError(connectionError.userMessage);
+      console.error('Connection error:', connectionError);
+
+      // Clean up camera if connection fails
+      stopCamera();
+    }
   };
 
   const startCamera = async () => {
-    try {
-      const constraints = {
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        }
-      };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setCameraActive(true);
-      }
-    } catch (err) {
-      console.error('Camera error:', err);
+    const result = await setupCameraWithErrorHandling({
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+    });
+
+    if (!result.success) {
+      setUserError(result.error?.userMessage || 'Failed to access camera');
+      console.error('Camera error:', result.error);
+      throw new Error(result.error?.userMessage);
+    }
+
+    if (videoRef.current && result.stream) {
+      videoRef.current.srcObject = result.stream;
+      await videoRef.current.play();
+      setCameraActive(true);
     }
   };
 
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+      stopMediaStream(stream);
       videoRef.current.srcObject = null;
       setCameraActive(false);
     }
@@ -193,9 +226,9 @@ export default function TranslatorPage() {
       <div className="fixed bottom-0 inset-x-0 glass-card border-t border-white/5 safe-area-bottom">
         <div className="px-4 py-6">
           {/* Error display */}
-          {error && (
+          {(error || userError) && (
             <div className="mb-4 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
-              <p className="text-red-400 text-sm">{error}</p>
+              <p className="text-red-400 text-sm">{userError || error}</p>
             </div>
           )}
 

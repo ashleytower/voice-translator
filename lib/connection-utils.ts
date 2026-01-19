@@ -28,6 +28,7 @@ export interface CameraSetupResult {
  * Returns validation result with user-friendly error messages
  */
 export function validateProxyUrl(url: string): ValidationResult {
+  // Check if URL is empty
   if (!url || url.trim() === '') {
     return {
       isValid: false,
@@ -39,6 +40,7 @@ export function validateProxyUrl(url: string): ValidationResult {
     };
   }
 
+  // Check if URL is still the placeholder
   if (url.includes('YOUR_PROJECT') || url.includes('YOUR_SUPABASE_PROJECT')) {
     return {
       isValid: false,
@@ -50,6 +52,7 @@ export function validateProxyUrl(url: string): ValidationResult {
     };
   }
 
+  // Check if URL uses wss protocol
   if (!url.startsWith('wss://')) {
     return {
       isValid: false,
@@ -66,13 +69,17 @@ export function validateProxyUrl(url: string): ValidationResult {
 
 /**
  * Handles connection errors and returns standardized error object
+ * with user-friendly messages
  */
 export function handleConnectionError(error: unknown): ConnectionError {
+  // Handle our custom ConnectionError objects
   if (isConnectionError(error)) {
     return error;
   }
 
+  // Handle standard Error objects
   if (error instanceof Error) {
+    // WebSocket connection errors
     if (error.message.includes('WebSocket') || error.message.includes('socket')) {
       return {
         type: 'NETWORK_ERROR',
@@ -82,6 +89,7 @@ export function handleConnectionError(error: unknown): ConnectionError {
       };
     }
 
+    // Generic error fallback
     return {
       type: 'UNKNOWN_ERROR',
       message: error.message,
@@ -90,6 +98,7 @@ export function handleConnectionError(error: unknown): ConnectionError {
     };
   }
 
+  // Handle non-Error objects
   return {
     type: 'UNKNOWN_ERROR',
     message: String(error),
@@ -97,6 +106,9 @@ export function handleConnectionError(error: unknown): ConnectionError {
   };
 }
 
+/**
+ * Type guard for ConnectionError
+ */
 function isConnectionError(error: unknown): error is ConnectionError {
   return (
     typeof error === 'object' &&
@@ -109,6 +121,7 @@ function isConnectionError(error: unknown): error is ConnectionError {
 
 /**
  * Sets up camera with comprehensive error handling
+ * Returns result with stream or user-friendly error
  */
 export async function setupCameraWithErrorHandling(
   constraints: MediaStreamConstraints = {
@@ -120,6 +133,7 @@ export async function setupCameraWithErrorHandling(
   }
 ): Promise<CameraSetupResult> {
   try {
+    // Check if mediaDevices API is available
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       return {
         success: false,
@@ -131,6 +145,7 @@ export async function setupCameraWithErrorHandling(
       };
     }
 
+    // Request camera access
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
     return {
@@ -140,6 +155,7 @@ export async function setupCameraWithErrorHandling(
   } catch (err) {
     const error = err as Error;
 
+    // Handle specific camera errors
     switch (error.name) {
       case 'NotAllowedError':
       case 'PermissionDeniedError':
@@ -203,8 +219,12 @@ export async function setupCameraWithErrorHandling(
   }
 }
 
+/**
+ * Stops a media stream and cleans up all tracks
+ */
 export function stopMediaStream(stream: MediaStream | null): void {
   if (!stream) return;
+
   stream.getTracks().forEach((track) => {
     track.stop();
   });
