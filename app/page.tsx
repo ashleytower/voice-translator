@@ -3,11 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useGeminiLive, canScreenRecord, isIOS, isMobile } from 'gemini-live-react';
 import {
-  Mic,
-  MicOff,
   Camera,
   Languages,
-  RefreshCw,
   Volume2,
   VolumeX
 } from 'lucide-react';
@@ -18,6 +15,10 @@ import {
   stopMediaStream,
   handleConnectionError,
 } from '@/lib/connection-utils';
+import { VoiceOrb, VoiceOrbState } from '@/components/translator/VoiceOrb';
+import { ChatPanel } from '@/components/translator/ChatPanel';
+import { ChatMessage } from '@/components/translator/ChatMessage';
+import { HistoryDrawer } from '@/components/translator/HistoryDrawer';
 
 const EXCHANGE_API = 'https://api.exchangerate-api.com/v4/latest/JPY';
 
@@ -155,17 +156,28 @@ export default function TranslatorPage() {
     }
   };
 
+  // Compute VoiceOrb state based on connection status
+  const getOrbState = (): VoiceOrbState => {
+    if (isConnecting) return 'connecting';
+    if (isConnected && isUserSpeaking) return 'listening';
+    if (isConnected && isSpeaking) return 'speaking';
+    if (isConnected) return 'listening';
+    return 'idle';
+  };
+
   return (
     <main className="relative min-h-dvh flex flex-col">
       <Onboarding />
 
       {/* Header */}
       <header className="fixed top-0 inset-x-0 z-50 glass-card border-b border-white/5">
-        <div className="px-4 py-3 flex items-center justify-center safe-area-top">
+        <div className="px-4 py-3 flex items-center justify-between safe-area-top">
+          <div className="w-10" /> {/* Spacer for centering */}
           <div className="flex items-center gap-2">
             <Languages className="w-6 h-6" />
             <h1 className="font-medium text-lg">Voice Translator</h1>
           </div>
+          <HistoryDrawer />
         </div>
       </header>
 
@@ -194,32 +206,45 @@ export default function TranslatorPage() {
 
       {/* Transcript Area */}
       <div className="flex-1 overflow-y-auto px-4 pb-40 pt-[80px] relative z-10">
-        <div className="max-w-lg mx-auto space-y-3">
-          {transcripts.map((t) => (
-            <div
-              key={t.id}
-              className={`transcript-bubble ${t.role === 'user' ? 'user' : 'ai'}`}
-            >
-              <p>{t.text}</p>
-            </div>
-          ))}
+        <ChatPanel className="max-w-lg mx-auto min-h-[200px] max-h-[60vh]">
+          <div className="space-y-2">
+            {transcripts.map((t) => (
+              <ChatMessage
+                key={t.id}
+                role={t.role === 'user' ? 'user' : 'assistant'}
+                content={t.text}
+              />
+            ))}
 
-          {/* Streaming text */}
-          {streamingText && (
-            <div className="transcript-bubble ai opacity-70">
-              <p>{streamingText}</p>
-            </div>
-          )}
+            {/* Streaming text */}
+            {streamingText && (
+              <ChatMessage
+                role="assistant"
+                content={streamingText}
+                className="opacity-70"
+              />
+            )}
 
-          {/* Speaking indicator */}
-          {isSpeaking && !streamingText && (
-            <div className="transcript-bubble ai">
-              <div className="audio-wave">
-                <span /><span /><span /><span /><span />
+            {/* Speaking indicator */}
+            {isSpeaking && !streamingText && (
+              <div className="flex justify-start">
+                <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-4 backdrop-blur-sm">
+                  <div className="audio-wave">
+                    <span /><span /><span /><span /><span />
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+            {/* Empty state */}
+            {transcripts.length === 0 && !streamingText && !isSpeaking && (
+              <div className="text-center text-ink-400 py-8">
+                <p>Start speaking or point your camera</p>
+                <p className="text-sm mt-1">Translations will appear here</p>
+              </div>
+            )}
+          </div>
+        </ChatPanel>
       </div>
 
       {/* Bottom Controls */}
@@ -238,31 +263,21 @@ export default function TranslatorPage() {
               onClick={() => setMuted(!isMuted)}
               disabled={!isConnected}
               className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                isConnected 
-                  ? 'bg-ink-800 text-white hover:bg-ink-700' 
+                isConnected
+                  ? 'bg-ink-800 text-white hover:bg-ink-700'
                   : 'bg-ink-900 text-ink-600'
               }`}
             >
               {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
             </button>
 
-            {/* Main action button */}
+            {/* Main action button - VoiceOrb */}
             <button
               onClick={handleConnect}
               disabled={isConnecting}
-              className={`fab ${isConnected && isUserSpeaking ? 'listening' : ''} ${
-                isConnected 
-                  ? 'bg-sakura-500 text-white' 
-                  : 'bg-sakura-500 text-white'
-              } ${isConnecting ? 'opacity-50' : ''}`}
+              className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-transparent rounded-full"
             >
-              {isConnecting ? (
-                <RefreshCw className="w-8 h-8 animate-spin" />
-              ) : isConnected ? (
-                <MicOff className="w-8 h-8" />
-              ) : (
-                <Mic className="w-8 h-8" />
-              )}
+              <VoiceOrb state={getOrbState()} className="w-20 h-20 cursor-pointer hover:scale-105 transition-transform" />
             </button>
 
             {/* Placeholder for symmetry */}
