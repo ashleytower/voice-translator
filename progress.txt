@@ -1,63 +1,25 @@
-Ralph Loop Progress - Universal Voice Translator T2: UI Cleanup
-Started: $(date)
-Target: Stories 1, 3, 5, 10
-Pass@k: 3 (max 3 attempts per story)
+Ralph Loop Progress - Saved Items Functionality
+================================================
 
-=== Iteration 1 ===
-Story 1: Fix existing code issues
-Status: COMPLETE ✅
-Commit: 1bc070841d3902cfd4171894f10555d02e79c34f
-Changes:
-- Fixed TypeScript error: 'model' -> 'assistant' role check
-- Excluded supabase folder from tsconfig
-- Created apple-touch-icon.png (180x180)
-- Added safe-area-top CSS class
-- Fixed Tailwind font config (removed var(--font-geist))
-- Installed missing @ricky0123/vad-web dependency
-- Build completes without errors
+Task: Create saved items functionality using TDD
+Max Iterations: 50
+Current Iteration: 1
 
-=== Iteration 2 ===
-Story 3: Rebrand to generic translator
-Status: COMPLETE ✅
-Commit: ef0e70961ec2c2a0b3dce94ccf561011610fc348
-Changes:
-- Updated layout.tsx metadata title to 'Voice Translator'
-- Updated manifest.json name and short_name
-- Removed Japan flag emoji, added Languages icon
-- Updated header title to 'Voice Translator'
-- Updated description to universal translation
+Files to Create:
+- hooks/useSavedItems.ts (with tests)
+- components/translator/HistoryDrawer.tsx (with tests)
+- components/translator/SavedConversion.tsx
+- components/translator/SavedCapture.tsx
 
-=== Iteration 3 ===
-Story 5: Unified interface (always listening/watching)
-Status: COMPLETE ✅
-Commit: 1cbfad29c087c25bae9dea69af7274d73a896d97
-Changes:
-- Removed mode/direction state and toggle UI
-- Removed direction picker
-- Camera always visible (moved from currency-only)
-- Simplified connect flow (always starts camera)
-- Universal system prompt for all capabilities
-- Generic status text 'Speak or point at something'
-- Simplified header (centered title only)
+TDD Workflow:
+1. Write FAILING test
+2. Run test - confirm FAILS
+3. Implement minimum code to pass
+4. Run test - confirm PASSES
+5. Refactor if needed
+6. Commit + push
 
-=== Iteration 4 ===
-Story 10: Camera feed as background
-Status: COMPLETE ✅
-Commit: 2f92fa764b3bdbb453c35ffd620d24302e6d5fc3
-Changes:
-- Video fills entire screen (fixed inset-0)
-- Added dark overlay (bg-black/40) for readability
-- Transcript bubbles float over with z-10
-- Environment facing mode (rear camera)
-- Camera permissions via getUserMedia
+---
 
-=== RALPH LOOP COMPLETE ===
-All 4 stories completed successfully!
-Total iterations: 4
-Final commit: 2f92fa764b3bdbb453c35ffd620d24302e6d5fc3
-
-Summary:
-✅ Story 1: Fixed build issues, added missing assets
-✅ Story 3: Rebranded from Japan-specific to universal translator
-✅ Story 5: Unified interface (removed mode switching)
-✅ Story 10: Full-screen camera background with overlay
+Iteration 1: Starting TDD - useSavedItems hook tests
+Status: In Progress
