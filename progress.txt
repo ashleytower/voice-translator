@@ -158,3 +158,24 @@ Verified: All 8 tests passing
 Features: localStorage CRUD, max 50 items, newest first, error handling
 
 Next: Write FAILING tests for HistoryDrawer component
+
+=== Iteration 2 ===
+Story: HistoryDrawer component - Display and manage saved items
+Status: COMPLETE ✓
+Files Created:
+- components/translator/HistoryDrawer.test.tsx
+- components/translator/HistoryDrawer.tsx
+
+Tests: 9/9 passing ✓
+Features Implemented:
+- Sheet/drawer component with trigger button
+- Display empty state when no items
+- Display saved conversion items (text)
+- Display saved capture items (images)
+- Delete individual items
+- Clear all items
+- Show item count in header
+- Display timestamps for each item
+- Item badge indicator on trigger button
+
+Next: Implement SavedConversion and SavedCapture components
