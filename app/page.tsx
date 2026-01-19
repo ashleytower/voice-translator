@@ -31,6 +31,7 @@ export default function TranslatorPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [isStarting, setIsStarting] = useState(false); // Local loading state for immediate feedback
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
 
@@ -86,6 +87,7 @@ export default function TranslatorPage() {
 
     if (isConnected) {
       console.log('[DEBUG] Already connected, disconnecting...');
+      setIsStarting(false);
       stopCamera();
       disconnect();
       return;
@@ -97,14 +99,19 @@ export default function TranslatorPage() {
       return;
     }
 
+    // Set loading state immediately for visual feedback
+    setIsStarting(true);
+
     try {
       console.log('[DEBUG] Starting camera...');
       await startCamera();
       console.log('[DEBUG] Camera started, connecting to Gemini...');
       await connect();
       console.log('[DEBUG] Gemini connection complete');
+      setIsStarting(false);
     } catch (err) {
       console.error('[DEBUG] Connection failed:', err);
+      setIsStarting(false);
       stopCamera();
     }
   };
@@ -141,7 +148,7 @@ export default function TranslatorPage() {
 
   // Compute VoiceOrb state based on connection status
   const getOrbState = (): VoiceOrbState => {
-    if (isConnecting) return 'connecting';
+    if (isStarting || isConnecting) return 'connecting';
     if (isConnected && isListening) return 'listening';
     if (isConnected && isSpeaking) return 'speaking';
     if (isConnected) return 'listening';
@@ -267,7 +274,7 @@ export default function TranslatorPage() {
             {/* Main action button - VoiceOrb */}
             <button
               onClick={handleConnect}
-              disabled={isConnecting}
+              disabled={isStarting || isConnecting}
               className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-transparent rounded-full"
             >
               <VoiceOrb state={getOrbState()} className="w-20 h-20 cursor-pointer hover:scale-105 transition-transform" />
@@ -279,11 +286,12 @@ export default function TranslatorPage() {
 
           {/* Status text */}
           <p className="text-center text-sm text-ink-400 mt-4">
+            {isStarting && !isConnecting && 'Starting...'}
             {isConnecting && 'Connecting...'}
             {isConnected && isListening && 'Listening...'}
             {isConnected && isSpeaking && 'Speaking...'}
             {isConnected && !isListening && !isSpeaking && 'Ready - speak or point camera'}
-            {!isConnected && !isConnecting && 'Tap to start'}
+            {!isConnected && !isConnecting && !isStarting && 'Tap to start'}
           </p>
         </div>
       </div>
