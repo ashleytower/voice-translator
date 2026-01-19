@@ -55,7 +55,7 @@
         "Camera permissions requested on first connect"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     }
   ]
 }
