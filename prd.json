@@ -1,22 +1,7 @@
 {
-  "project": "Universal Voice Translator",
+  "project": "Universal Voice Translator - T2: UI Cleanup",
+  "notes": "Wait for T1 Story 0 (test framework) before starting. Stories are mostly independent.",
   "stories": [
-    {
-      "id": "0",
-      "story": "As a developer, I want a test framework configured so I can write tests for all features",
-      "acceptance_criteria": [
-        "Install Jest and React Testing Library (npm install --save-dev jest @testing-library/react @testing-library/jest-dom @testing-library/user-event jest-environment-jsdom)",
-        "Install TypeScript Jest types (@types/jest)",
-        "Create jest.config.js with Next.js compatible settings",
-        "Create jest.setup.js for test environment setup",
-        "Add test script to package.json: 'test': 'jest'",
-        "Add test:watch script: 'test:watch': 'jest --watch'",
-        "Create __tests__ directory structure",
-        "Verify jest runs with npm test (even if no tests exist yet)"
-      ],
-      "priority": 0,
-      "passes": false
-    },
     {
       "id": "1",
       "story": "As a developer, I want to fix existing code issues so the app builds correctly",
@@ -28,24 +13,7 @@
         "No console errors about missing assets"
       ],
       "priority": 1,
-      "passes": false
-    },
-    {
-      "id": "2",
-      "story": "As a developer, I want to add language and currency data files so the app can support all languages",
-      "acceptance_criteria": [
-        "TDD: Write failing test in lib/__tests__/languages.test.ts for language data structure",
-        "TDD: Write failing test in lib/__tests__/currencies.test.ts for currency data structure",
-        "TDD: Verify tests fail (npm test)",
-        "Create lib/languages.ts with 50+ languages (code, name, native)",
-        "Create lib/currencies.ts with major world currencies",
-        "Each language has ISO code, English name, and native name",
-        "Export as const arrays for TypeScript autocomplete",
-        "Include at minimum: Japanese, Spanish, French, German, Italian, Portuguese, Mandarin, Cantonese, Korean, Thai, Vietnamese, Arabic, Russian, Hindi, Turkish, Greek, Polish, Dutch, Swedish, Norwegian, Danish, Finnish, Czech, Hungarian, Romanian, Ukrainian",
-        "TDD: All tests pass (npm test)"
-      ],
-      "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "3",
@@ -54,31 +22,12 @@
         "Update app/layout.tsx metadata title from '日本語 Translator' to 'Voice Translator'",
         "Update manifest.json name to 'Voice Translator'",
         "Update manifest.json short_name to 'Translate'",
-        "Remove 🇯🇵 emoji from header in page.tsx",
+        "Remove Japan flag emoji from header in page.tsx",
         "Update page title to show target language dynamically or be generic",
         "Description mentions universal translation, not Japan-specific"
       ],
       "priority": 1,
-      "passes": false
-    },
-    {
-      "id": "4",
-      "story": "As a user, I want to set my target language and home currency in settings so translations work for my needs",
-      "acceptance_criteria": [
-        "TDD: Write failing tests in components/__tests__/SettingsPanel.test.tsx for localStorage persistence",
-        "TDD: Write failing tests for settings panel open/close behavior",
-        "TDD: Verify tests fail (npm test)",
-        "Create components/SettingsPanel.tsx with Aceternity UI",
-        "Include searchable language picker dropdown (uses lib/languages.ts)",
-        "Include searchable currency picker dropdown (uses lib/currencies.ts)",
-        "Include voice picker (Kore, Puck, Charon, Aoede)",
-        "Settings persist to localStorage (targetLanguage, homeCurrency, voiceName)",
-        "Settings panel slides in from right with animation",
-        "Close button works correctly",
-        "TDD: All tests pass (npm test)"
-      ],
-      "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "5",
@@ -92,67 +41,7 @@
         "Status text shows generic 'Speak or point at something' instead of mode-specific text"
       ],
       "priority": 2,
-      "passes": false
-    },
-    {
-      "id": "6",
-      "story": "As a user, I want to see a beautiful animated voice orb using 21.dev components so the UI feels premium",
-      "acceptance_criteria": [
-        "Create components/VoiceOrb.tsx using mcp__21st-dev-magic__21st_magic_component_builder",
-        "Orb shows idle state (subtle pulse) when connected but not active",
-        "Orb shows listening state (expands, reacts to amplitude) when user speaks",
-        "Orb shows processing state (morphing animation) when waiting for response",
-        "Orb shows speaking state (audio waveform) when AI is speaking",
-        "Replace audio-wave visualization in page.tsx with VoiceOrb component",
-        "Orb centered on screen above transcript bubbles"
-      ],
-      "priority": 2,
-      "passes": false
-    },
-    {
-      "id": "7",
-      "story": "As a user, I want modern premium UI components from Aceternity so the app looks professional",
-      "acceptance_criteria": [
-        "Use Aceternity glassmorphism for transcript bubbles",
-        "Use Aceternity command menu pattern for language/currency pickers",
-        "Use Aceternity modal with spring animations for settings panel",
-        "Add subtle spotlight effect following user interaction",
-        "Update globals.css with new color palette (bg: #09090b, surface: #18181b, accent: #6366f1)",
-        "Remove sakura colors, replace with indigo accent theme"
-      ],
-      "priority": 3,
-      "passes": false
-    },
-    {
-      "id": "8",
-      "story": "As a user, I want the system prompt to dynamically use my settings so Gemini knows my target language and currency",
-      "acceptance_criteria": [
-        "TDD: Write failing tests in app/__tests__/page.test.tsx for getSystemPrompt() with different settings",
-        "TDD: Verify tests fail (npm test)",
-        "getSystemPrompt() reads targetLanguage from localStorage",
-        "getSystemPrompt() reads homeCurrency from localStorage",
-        "System prompt includes: 'Target language: {targetLanguage}'",
-        "System prompt includes: 'User's home currency: {homeCurrency}'",
-        "System prompt instructs Gemini to translate to target language",
-        "System prompt instructs Gemini to convert prices to home currency",
-        "System prompt tells Gemini to respond briefly and naturally",
-        "TDD: All tests pass (npm test)"
-      ],
-      "priority": 2,
-      "passes": false
-    },
-    {
-      "id": "9",
-      "story": "As a developer, I want the Gemini model to be config-based so I can update it easily when new versions release",
-      "acceptance_criteria": [
-        "supabase/functions/gemini-live-proxy/index.ts reads GEMINI_MODEL from env",
-        "Default model is gemini-2.5-flash-preview-native-audio-dialog (latest available)",
-        "Update README.md with instructions: supabase secrets set GEMINI_MODEL=...",
-        "Proxy uses env model value instead of hardcoded string",
-        "Voice config uses voiceName from settings (passed via query param or setup message)"
-      ],
-      "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "10",
@@ -166,36 +55,6 @@
         "Camera permissions requested on first connect"
       ],
       "priority": 2,
-      "passes": false
-    },
-    {
-      "id": "11",
-      "story": "As a user, I want default settings on first launch so the app works immediately",
-      "acceptance_criteria": [
-        "TDD: Write failing tests in lib/__tests__/settings.test.ts for default value logic",
-        "TDD: Verify tests fail (npm test)",
-        "If no targetLanguage in localStorage, default to 'es' (Spanish)",
-        "If no homeCurrency in localStorage, default to 'USD'",
-        "If no voiceName in localStorage, default to 'Kore'",
-        "Show hint on first launch: 'Open settings to change language'",
-        "Settings icon in header is prominent and discoverable",
-        "TDD: All tests pass (npm test)"
-      ],
-      "priority": 3,
-      "passes": false
-    }
-    {
-      "id": "12",
-      "story": "As a developer, I want updated documentation so deployment is clear",
-      "acceptance_criteria": [
-        "Update README.md with new app purpose (universal translator)",
-        "Update README.md deployment steps for Supabase + Vercel",
-        "Document environment variables needed",
-        "Document how to update GEMINI_MODEL when new versions release",
-        "Include screenshots section (placeholder for now)",
-        "Add troubleshooting section for common issues"
-      ],
-      "priority": 3,
       "passes": false
     }
   ]

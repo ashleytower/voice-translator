@@ -1,7 +1,7 @@
 {
-  "name": "日本語 Translator",
-  "short_name": "JP Translate",
-  "description": "Real-time English-Japanese voice translator with currency converter",
+  "name": "Voice Translator",
+  "short_name": "Translate",
+  "description": "Real-time universal voice translator with visual recognition",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d0d0f",

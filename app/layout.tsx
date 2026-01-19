@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: '日本語 Translator',
-  description: 'Real-time English-Japanese voice translator with currency converter',
+  title: 'Voice Translator',
+  description: 'Real-time universal voice translator with visual recognition',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: '日本語 Translator',
+    title: 'Voice Translator',
   },
   icons: {
     icon: [
