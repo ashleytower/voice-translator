@@ -271,7 +271,7 @@ export default function TranslatorPage() {
               key={t.id}
               className={`transcript-bubble ${t.role === 'user' ? 'user' : 'ai'}`}
             >
-              <p className={t.role === 'model' && mode === 'translate' ? 'font-japanese' : ''}>
+              <p className={t.role === 'assistant' && mode === 'translate' ? 'font-japanese' : ''}>
                 {t.text}
               </p>
             </div>

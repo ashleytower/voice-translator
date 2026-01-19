@@ -7,7 +7,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-geist)', 'system-ui', 'sans-serif'],
+        sans: ['Noto Sans JP', 'system-ui', 'sans-serif'],
         japanese: ['Noto Sans JP', 'Hiragino Kaku Gothic Pro', 'sans-serif'],
       },
       colors: {
