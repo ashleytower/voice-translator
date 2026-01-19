@@ -90,7 +90,10 @@ export default function TranslatorPage() {
   });
 
   const handleConnect = async () => {
+    console.log('[handleConnect] Called, isConnected:', isConnected);
+
     if (isConnected) {
+      console.log('[handleConnect] Disconnecting...');
       stopCamera();
       disconnect();
       setUserError(null);
@@ -102,23 +105,29 @@ export default function TranslatorPage() {
 
     // Validate proxy URL before connecting
     const proxyUrl = process.env.NEXT_PUBLIC_PROXY_URL || '';
+    console.log('[handleConnect] Proxy URL:', proxyUrl);
     const validation = validateProxyUrl(proxyUrl);
+    console.log('[handleConnect] Validation result:', validation);
 
     if (!validation.isValid) {
+      console.error('[handleConnect] Validation failed:', validation.error);
       setUserError(validation.error?.userMessage || 'Configuration error');
       return;
     }
 
     try {
       // Always start camera for visual recognition
+      console.log('[handleConnect] Starting camera...');
       await startCamera();
+      console.log('[handleConnect] Camera started, connecting to Gemini Live...');
 
       // Connect to Gemini Live
       await connect(videoRef.current!);
+      console.log('[handleConnect] Connected successfully');
     } catch (err) {
       const connectionError = handleConnectionError(err);
       setUserError(connectionError.userMessage);
-      console.error('Connection error:', connectionError);
+      console.error('[handleConnect] Connection error:', connectionError);
 
       // Clean up camera if connection fails
       stopCamera();
