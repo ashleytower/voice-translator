@@ -49,12 +49,16 @@ export class GeminiLiveClient {
   }
 
   async connect(model: string, config: LiveClientConfig): Promise<boolean> {
+    console.log('[DEBUG GeminiLiveClient] connect() called with model:', model);
+
     if (this._status === 'connected') {
+      console.log('[DEBUG GeminiLiveClient] Already connected, disconnecting first');
       await this.disconnect();
     }
 
     this._status = 'connecting';
     this.emit('statuschange', this._status);
+    console.log('[DEBUG GeminiLiveClient] Status set to connecting, calling client.live.connect...');
 
     try {
       this.session = await this.client.live.connect({
@@ -66,6 +70,7 @@ export class GeminiLiveClient {
         },
         callbacks: {
           onopen: () => {
+            console.log('[DEBUG GeminiLiveClient] onopen callback fired');
             this._status = 'connected';
             this.emit('statuschange', this._status);
             this.emit('open');
@@ -74,11 +79,13 @@ export class GeminiLiveClient {
             this.handleMessage(message);
           },
           onerror: (event: ErrorEvent) => {
+            console.error('[DEBUG GeminiLiveClient] onerror callback fired:', event);
             this._status = 'error';
             this.emit('statuschange', this._status);
             this.emit('error', new Error(event.message || 'Connection error'));
           },
           onclose: () => {
+            console.log('[DEBUG GeminiLiveClient] onclose callback fired');
             this._status = 'disconnected';
             this.emit('statuschange', this._status);
             this.emit('close');
@@ -86,8 +93,10 @@ export class GeminiLiveClient {
         },
       });
 
+      console.log('[DEBUG GeminiLiveClient] client.live.connect returned successfully');
       return true;
     } catch (error) {
+      console.error('[DEBUG GeminiLiveClient] client.live.connect threw error:', error);
       this._status = 'error';
       this.emit('statuschange', this._status);
       this.emit('error', error);

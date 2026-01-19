@@ -145,7 +145,11 @@ export function useGeminiLive(options: UseGeminiLiveOptions): UseGeminiLiveRetur
 
   // Connect
   const connect = useCallback(async () => {
-    if (!clientRef.current) return;
+    console.log('[DEBUG useGeminiLive] connect() called');
+    if (!clientRef.current) {
+      console.log('[DEBUG useGeminiLive] No client ref, returning');
+      return;
+    }
 
     setError(null);
 
@@ -162,14 +166,20 @@ export function useGeminiLive(options: UseGeminiLiveOptions): UseGeminiLiveRetur
     };
 
     try {
+      console.log('[DEBUG useGeminiLive] Calling client.connect with model:', model);
       const success = await clientRef.current.connect(model, config);
+      console.log('[DEBUG useGeminiLive] client.connect returned:', success);
 
       if (success) {
         // Start recording
+        console.log('[DEBUG useGeminiLive] Starting recorder...');
         await recorderRef.current?.start();
+        console.log('[DEBUG useGeminiLive] Recorder started, initializing player...');
         await playerRef.current?.init();
+        console.log('[DEBUG useGeminiLive] Player initialized');
       }
     } catch (err) {
+      console.error('[DEBUG useGeminiLive] Error:', err);
       setError(err instanceof Error ? err.message : 'Connection failed');
     }
   }, [model, systemInstruction, voiceName]);

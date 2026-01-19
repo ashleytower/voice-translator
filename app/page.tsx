@@ -82,24 +82,29 @@ export default function TranslatorPage() {
   }, [isConnected, cameraActive, sendImage]);
 
   const handleConnect = async () => {
+    console.log('[DEBUG] handleConnect called, isConnected:', isConnected);
+
     if (isConnected) {
+      console.log('[DEBUG] Already connected, disconnecting...');
       stopCamera();
       disconnect();
       return;
     }
 
+    console.log('[DEBUG] apiKey present:', !!apiKey, 'length:', apiKey?.length);
     if (!apiKey) {
       console.error('NEXT_PUBLIC_GOOGLE_API_KEY is not set');
       return;
     }
 
     try {
-      // Start camera first
+      console.log('[DEBUG] Starting camera...');
       await startCamera();
-      // Then connect to Gemini
+      console.log('[DEBUG] Camera started, connecting to Gemini...');
       await connect();
+      console.log('[DEBUG] Gemini connection complete');
     } catch (err) {
-      console.error('Connection failed:', err);
+      console.error('[DEBUG] Connection failed:', err);
       stopCamera();
     }
   };
