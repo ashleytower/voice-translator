@@ -41,7 +41,7 @@
         "Status text shows generic 'Speak or point at something' instead of mode-specific text"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "10",

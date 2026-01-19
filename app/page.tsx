@@ -144,14 +144,18 @@ export default function TranslatorPage() {
         </div>
       </header>
 
-      {/* Camera View - Always visible */}
-      <div className="fixed inset-0 pt-[60px] pb-[200px] z-0">
+      {/* Camera View - Full screen background */}
+      <div className="fixed inset-0 z-0">
         <video
           ref={videoRef}
           playsInline
           muted
           className={`w-full h-full object-cover ${cameraActive ? 'opacity-100' : 'opacity-0'}`}
         />
+        {/* Dark overlay for text readability */}
+        {cameraActive && (
+          <div className="absolute inset-0 bg-black/40" />
+        )}
         {!cameraActive && (
           <div className="absolute inset-0 flex items-center justify-center bg-ink-950">
             <div className="text-center text-ink-400">

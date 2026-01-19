@@ -29,4 +29,17 @@ Changes:
 
 === Iteration 3 ===
 Story 5: Unified interface (always listening/watching)
+Status: COMPLETE ✅
+Commit: 1cbfad29c087c25bae9dea69af7274d73a896d97
+Changes:
+- Removed mode/direction state and toggle UI
+- Removed direction picker
+- Camera always visible (moved from currency-only)
+- Simplified connect flow (always starts camera)
+- Universal system prompt for all capabilities
+- Generic status text 'Speak or point at something'
+- Simplified header (centered title only)
+
+=== Iteration 4 ===
+Story 10: Camera feed as background
 Status: Starting
