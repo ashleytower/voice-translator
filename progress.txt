@@ -5,4 +5,17 @@ Pass@k: 3 (max 3 attempts per story)
 
 === Iteration 1 ===
 Story 1: Fix existing code issues
+Status: COMPLETE ✅
+Commit: 1bc070841d3902cfd4171894f10555d02e79c34f
+Changes:
+- Fixed TypeScript error: 'model' -> 'assistant' role check
+- Excluded supabase folder from tsconfig
+- Created apple-touch-icon.png (180x180)
+- Added safe-area-top CSS class
+- Fixed Tailwind font config (removed var(--font-geist))
+- Installed missing @ricky0123/vad-web dependency
+- Build completes without errors
+
+=== Iteration 2 ===
+Story 3: Rebrand to generic translator
 Status: Starting

@@ -13,7 +13,7 @@
         "No console errors about missing assets"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "3",

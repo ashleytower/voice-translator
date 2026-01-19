@@ -177,8 +177,8 @@ export default function TranslatorPage() {
       <header className="fixed top-0 inset-x-0 z-50 glass-card border-b border-white/5">
         <div className="px-4 py-3 flex items-center justify-between safe-area-top">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🇯🇵</span>
-            <h1 className="font-medium text-lg">日本語</h1>
+            <Languages className="w-6 h-6" />
+            <h1 className="font-medium text-lg">Voice Translator</h1>
           </div>
 
           {/* Mode Toggle */}
