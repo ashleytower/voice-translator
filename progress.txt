@@ -21,5 +21,10 @@ TDD Workflow:
 
 ---
 
-Iteration 1: Starting TDD - useSavedItems hook tests
-Status: In Progress
+Iteration 1: TDD - useSavedItems hook tests
+Status: COMPLETE ✓
+- Created hooks/useSavedItems.test.ts with 8 comprehensive tests
+- Implemented hooks/useSavedItems.ts with full CRUD functionality
+- All tests passing (8/8)
+- Features: localStorage persistence, max 50 items, newest first ordering
+- Error handling for corrupted data

@@ -88,7 +88,11 @@ module.exports = {
   		},
   		animation: {
   			'pulse-ring': 'pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-  			wave: 'wave 1.2s ease-in-out infinite'
+  			wave: 'wave 1.2s ease-in-out infinite',
+  			'orb-breathe': 'orb-breathe 3s ease-in-out infinite',
+  			'orb-pulse': 'orb-pulse 2s ease-in-out infinite',
+  			'orb-wave': 'orb-wave 4s ease-in-out infinite',
+  			'slide-up': 'slide-up 0.5s ease-out forwards'
   		},
   		keyframes: {
   			'pulse-ring': {
@@ -107,6 +111,53 @@ module.exports = {
   				},
   				'50%': {
   					transform: 'scaleY(1)'
+  				}
+  			},
+  			'orb-breathe': {
+  				'0%, 100%': {
+  					transform: 'scale(1)',
+  					opacity: '0.9'
+  				},
+  				'50%': {
+  					transform: 'scale(1.05)',
+  					opacity: '1'
+  				}
+  			},
+  			'orb-pulse': {
+  				'0%, 100%': {
+  					boxShadow: '0 0 20px rgba(232, 74, 103, 0.5)',
+  					transform: 'scale(1)'
+  				},
+  				'50%': {
+  					boxShadow: '0 0 40px rgba(232, 74, 103, 0.8)',
+  					transform: 'scale(1.02)'
+  				}
+  			},
+  			'orb-wave': {
+  				'0%': {
+  					transform: 'scale(1) rotate(0deg)'
+  				},
+  				'25%': {
+  					transform: 'scale(1.02) rotate(1deg)'
+  				},
+  				'50%': {
+  					transform: 'scale(1) rotate(0deg)'
+  				},
+  				'75%': {
+  					transform: 'scale(1.02) rotate(-1deg)'
+  				},
+  				'100%': {
+  					transform: 'scale(1) rotate(0deg)'
+  				}
+  			},
+  			'slide-up': {
+  				from: {
+  					transform: 'translateY(20px)',
+  					opacity: '0'
+  				},
+  				to: {
+  					transform: 'translateY(0)',
+  					opacity: '1'
   				}
   			}
   		},
