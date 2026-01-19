@@ -1,0 +1,35 @@
+{
+  "project": "Universal Voice Translator - T3: Premium UI Components",
+  "notes": "Wait for T1 Story 0 (test framework) before starting. Can run in parallel with T2.",
+  "stories": [
+    {
+      "id": "6",
+      "story": "As a user, I want to see a beautiful animated voice orb using 21.dev components so the UI feels premium",
+      "acceptance_criteria": [
+        "Create components/VoiceOrb.tsx using mcp__21st-dev-magic__21st_magic_component_builder",
+        "Orb shows idle state (subtle pulse) when connected but not active",
+        "Orb shows listening state (expands, reacts to amplitude) when user speaks",
+        "Orb shows processing state (morphing animation) when waiting for response",
+        "Orb shows speaking state (audio waveform) when AI is speaking",
+        "Replace audio-wave visualization in page.tsx with VoiceOrb component",
+        "Orb centered on screen above transcript bubbles"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "7",
+      "story": "As a user, I want modern premium UI components from Aceternity so the app looks professional",
+      "acceptance_criteria": [
+        "Use Aceternity glassmorphism for transcript bubbles",
+        "Use Aceternity command menu pattern for language/currency pickers",
+        "Use Aceternity modal with spring animations for settings panel",
+        "Add subtle spotlight effect following user interaction",
+        "Update globals.css with new color palette (bg: #09090b, surface: #18181b, accent: #6366f1)",
+        "Remove sakura colors, replace with indigo accent theme"
+      ],
+      "priority": 3,
+      "passes": false
+    }
+  ]
+}

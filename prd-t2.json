@@ -1,0 +1,61 @@
+{
+  "project": "Universal Voice Translator - T2: UI Cleanup",
+  "notes": "Wait for T1 Story 0 (test framework) before starting. Stories are mostly independent.",
+  "stories": [
+    {
+      "id": "1",
+      "story": "As a developer, I want to fix existing code issues so the app builds correctly",
+      "acceptance_criteria": [
+        "Create missing apple-touch-icon.png (180x180) in /public/",
+        "Add missing safe-area-top CSS class to globals.css",
+        "Fix Tailwind config font-family to use correct fonts (remove var(--font-geist))",
+        "npm run build completes without errors",
+        "No console errors about missing assets"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "3",
+      "story": "As a user, I want the app to have generic branding instead of Japan-specific so it works for any country",
+      "acceptance_criteria": [
+        "Update app/layout.tsx metadata title from '日本語 Translator' to 'Voice Translator'",
+        "Update manifest.json name to 'Voice Translator'",
+        "Update manifest.json short_name to 'Translate'",
+        "Remove Japan flag emoji from header in page.tsx",
+        "Update page title to show target language dynamically or be generic",
+        "Description mentions universal translation, not Japan-specific"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "5",
+      "story": "As a user, I want a unified interface that's always listening and watching so I don't need to switch modes",
+      "acceptance_criteria": [
+        "Remove mode toggle UI from page.tsx (mode state, handleModeChange, mode-toggle div)",
+        "Remove direction picker UI (was only for translate mode)",
+        "Camera feed is always visible as background",
+        "Microphone is always active when connected",
+        "Single connect/disconnect flow (no separate translate vs currency logic)",
+        "Status text shows generic 'Speak or point at something' instead of mode-specific text"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "10",
+      "story": "As a user, I want camera feed as a background so I can see what I'm pointing at while getting translations",
+      "acceptance_criteria": [
+        "Video element fills entire screen behind UI",
+        "Dark overlay (rgba) keeps text readable",
+        "Camera always active when connected (not just in currency mode)",
+        "Transcript bubbles float over camera with proper z-index",
+        "Camera uses environment facing mode (rear camera)",
+        "Camera permissions requested on first connect"
+      ],
+      "priority": 2,
+      "passes": false
+    }
+  ]
+}

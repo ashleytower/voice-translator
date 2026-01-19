@@ -1,0 +1,74 @@
+{
+  "project": "Universal Voice Translator - T1: Core Foundation",
+  "notes": "MUST RUN FIRST. Story 0 sets up test framework needed by all other terminals.",
+  "stories": [
+    {
+      "id": "0",
+      "story": "As a developer, I want a test framework configured so I can write tests for all features",
+      "acceptance_criteria": [
+        "Install Jest and React Testing Library (npm install --save-dev jest @testing-library/react @testing-library/jest-dom @testing-library/user-event jest-environment-jsdom)",
+        "Install TypeScript Jest types (@types/jest)",
+        "Create jest.config.js with Next.js compatible settings",
+        "Create jest.setup.js for test environment setup",
+        "Add test script to package.json: 'test': 'jest'",
+        "Add test:watch script: 'test:watch': 'jest --watch'",
+        "Create __tests__ directory structure",
+        "Verify jest runs with npm test (even if no tests exist yet)"
+      ],
+      "priority": 0,
+      "passes": false
+    },
+    {
+      "id": "2",
+      "story": "As a developer, I want to add language and currency data files so the app can support all languages",
+      "acceptance_criteria": [
+        "TDD: Write failing test in lib/__tests__/languages.test.ts for language data structure",
+        "TDD: Write failing test in lib/__tests__/currencies.test.ts for currency data structure",
+        "TDD: Verify tests fail (npm test)",
+        "Create lib/languages.ts with 50+ languages (code, name, native)",
+        "Create lib/currencies.ts with major world currencies",
+        "Each language has ISO code, English name, and native name",
+        "Export as const arrays for TypeScript autocomplete",
+        "Include at minimum: Japanese, Spanish, French, German, Italian, Portuguese, Mandarin, Cantonese, Korean, Thai, Vietnamese, Arabic, Russian, Hindi, Turkish, Greek, Polish, Dutch, Swedish, Norwegian, Danish, Finnish, Czech, Hungarian, Romanian, Ukrainian",
+        "TDD: All tests pass (npm test)"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "4",
+      "story": "As a user, I want to set my target language and home currency in settings so translations work for my needs",
+      "acceptance_criteria": [
+        "TDD: Write failing tests in components/__tests__/SettingsPanel.test.tsx for localStorage persistence",
+        "TDD: Write failing tests for settings panel open/close behavior",
+        "TDD: Verify tests fail (npm test)",
+        "Create components/SettingsPanel.tsx with Aceternity UI",
+        "Include searchable language picker dropdown (uses lib/languages.ts)",
+        "Include searchable currency picker dropdown (uses lib/currencies.ts)",
+        "Include voice picker (Kore, Puck, Charon, Aoede)",
+        "Settings persist to localStorage (targetLanguage, homeCurrency, voiceName)",
+        "Settings panel slides in from right with animation",
+        "Close button works correctly",
+        "TDD: All tests pass (npm test)"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "11",
+      "story": "As a user, I want default settings on first launch so the app works immediately",
+      "acceptance_criteria": [
+        "TDD: Write failing tests in lib/__tests__/settings.test.ts for default value logic",
+        "TDD: Verify tests fail (npm test)",
+        "If no targetLanguage in localStorage, default to 'es' (Spanish)",
+        "If no homeCurrency in localStorage, default to 'USD'",
+        "If no voiceName in localStorage, default to 'Kore'",
+        "Show hint on first launch: 'Open settings to change language'",
+        "Settings icon in header is prominent and discoverable",
+        "TDD: All tests pass (npm test)"
+      ],
+      "priority": 3,
+      "passes": false
+    }
+  ]
+}

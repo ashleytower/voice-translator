@@ -1,0 +1,51 @@
+{
+  "project": "Universal Voice Translator - T4: Backend & Docs",
+  "notes": "Story 8 depends on T1 Story 4 (settings). Story 12 (docs) should run last after all features are complete.",
+  "stories": [
+    {
+      "id": "8",
+      "story": "As a user, I want the system prompt to dynamically use my settings so Gemini knows my target language and currency",
+      "acceptance_criteria": [
+        "TDD: Write failing tests in app/__tests__/page.test.tsx for getSystemPrompt() with different settings",
+        "TDD: Verify tests fail (npm test)",
+        "getSystemPrompt() reads targetLanguage from localStorage",
+        "getSystemPrompt() reads homeCurrency from localStorage",
+        "System prompt includes: 'Target language: {targetLanguage}'",
+        "System prompt includes: 'User's home currency: {homeCurrency}'",
+        "System prompt instructs Gemini to translate to target language",
+        "System prompt instructs Gemini to convert prices to home currency",
+        "System prompt tells Gemini to respond briefly and naturally",
+        "TDD: All tests pass (npm test)"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "9",
+      "story": "As a developer, I want the Gemini model to be config-based so I can update it easily when new versions release",
+      "acceptance_criteria": [
+        "supabase/functions/gemini-live-proxy/index.ts reads GEMINI_MODEL from env",
+        "Default model is gemini-2.5-flash-preview-native-audio-dialog (latest available)",
+        "Update README.md with instructions: supabase secrets set GEMINI_MODEL=...",
+        "Proxy uses env model value instead of hardcoded string",
+        "Voice config uses voiceName from settings (passed via query param or setup message)"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "12",
+      "story": "As a developer, I want updated documentation so deployment is clear",
+      "acceptance_criteria": [
+        "Update README.md with new app purpose (universal translator)",
+        "Update README.md deployment steps for Supabase + Vercel",
+        "Document environment variables needed",
+        "Document how to update GEMINI_MODEL when new versions release",
+        "Include screenshots section (placeholder for now)",
+        "Add troubleshooting section for common issues"
+      ],
+      "priority": 3,
+      "passes": false
+    }
+  ]
+}
