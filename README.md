@@ -79,3 +79,4 @@ Browser → Supabase Edge Function → Gemini 2.5 Flash Native Audio
 ```
 
 All audio processing happens in Gemini. The proxy handles auth and WebSocket bridging.
+# Deployment trigger
