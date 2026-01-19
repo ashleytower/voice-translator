@@ -70,6 +70,16 @@ serve(async (req) => {
               },
             },
           },
+          systemInstruction: {
+            parts: [{
+              text: `You are a universal voice and visual assistant. You can:
+1. Translate between any languages - listen to speech and respond with natural translation
+2. Recognize text in images and translate or explain it
+3. Convert currencies when you see price tags
+
+Be helpful and concise. Speak naturally.`
+            }]
+          },
         },
       };
       

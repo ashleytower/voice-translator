@@ -11,6 +11,7 @@ import {
   Volume2,
   VolumeX
 } from 'lucide-react';
+import Onboarding from './components/Onboarding';
 
 const EXCHANGE_API = 'https://api.exchangerate-api.com/v4/latest/JPY';
 
@@ -26,17 +27,6 @@ export default function TranslatorPage() {
       .then(data => setExchangeRate(data.rates?.CAD))
       .catch(console.error);
   }, []);
-
-  const getSystemPrompt = () => {
-    return `You are a universal voice and visual assistant. You can:
-            1. Translate between any languages - listen to speech and respond with natural translation
-            2. Recognize text in images and translate or explain it
-            3. Convert currencies when you see price tags (use convert_currency tool)
-
-            Current exchange rate: 1 JPY = ${exchangeRate?.toFixed(6) || '0.009'} CAD
-
-            Be helpful and concise. Speak naturally.`;
-  };
 
   const {
     connect,
@@ -134,6 +124,8 @@ export default function TranslatorPage() {
 
   return (
     <main className="relative min-h-dvh flex flex-col">
+      <Onboarding />
+
       {/* Header */}
       <header className="fixed top-0 inset-x-0 z-50 glass-card border-b border-white/5">
         <div className="px-4 py-3 flex items-center justify-center safe-area-top">
