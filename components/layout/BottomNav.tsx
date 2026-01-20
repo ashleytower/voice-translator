@@ -62,7 +62,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
       />
       <NavButton
         icon="currency_exchange"
-        label="Currency"
+        label="Converter"
         isActive={activeTab === 'currency'}
         onClick={() => onTabChange('currency')}
       />
