@@ -33,9 +33,6 @@ export const Header: React.FC<HeaderProps> = ({ onClearHistory, onSettingsClick 
             <span className="material-symbols-outlined text-[20px]">delete</span>
           </button>
         )}
-        <button className="w-10 h-10 rounded-full glass-morphic flex items-center justify-center hover:bg-white/10 transition-all active:scale-95">
-          <span className="material-symbols-outlined text-[20px]">search</span>
-        </button>
         {onSettingsClick && (
           <button
             onClick={onSettingsClick}

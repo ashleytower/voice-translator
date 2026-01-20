@@ -65,4 +65,4 @@ export interface AppSettings {
   defaultToLang: string;
 }
 
-export type ViewMode = 'chat' | 'tools' | 'ar' | 'settings' | 'favs';
+export type ViewMode = 'chat' | 'currency' | 'ar' | 'settings' | 'favs';

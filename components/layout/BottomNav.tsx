@@ -60,12 +60,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
         isActive={activeTab === 'favs'}
         onClick={() => onTabChange('favs')}
       />
-      {/* Tools Tab (replaces direct AR access) */}
       <NavButton
-        icon="travel_explore"
-        label="Tools"
-        isActive={activeTab === 'tools' || activeTab === 'ar'}
-        onClick={() => onTabChange('tools')}
+        icon="currency_exchange"
+        label="Currency"
+        isActive={activeTab === 'currency'}
+        onClick={() => onTabChange('currency')}
       />
       <NavButton
         icon="settings"

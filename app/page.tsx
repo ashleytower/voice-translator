@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Message, Language, ViewMode, ARScan } from '@/types';
+import { Message, Language, ViewMode } from '@/types';
 import { LANGUAGES, INITIAL_MESSAGES } from '@/lib/constants';
 import { translateAndChat } from '@/lib/gemini-service';
 import { useGeminiLive } from '@/hooks/useGeminiLive';
@@ -12,15 +12,13 @@ import { ChatBubble } from '@/components/chat/ChatBubble';
 import { InputArea } from '@/components/chat/InputArea';
 import { LanguageSelector } from '@/components/chat/LanguageSelector';
 import { Visualizer } from '@/components/voice/Visualizer';
-import { ARView } from '@/components/ar/ARView';
-import { TravelToolsView } from '@/components/tools/TravelToolsView';
+import { CurrencyConverterView } from '@/components/currency/CurrencyConverterView';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { FavoritesView } from '@/components/favorites/FavoritesView';
 import { useAppSettings } from '@/hooks/useAppSettings';
 
 const STORAGE_KEY = 'fluent-messages';
 const LANG_STORAGE_KEY = 'fluent-languages';
-const AR_HISTORY_KEY = 'fluent-ar-history';
 
 // Dynamic system instruction that includes the selected languages
 const getSystemInstruction = (fromLang: string, toLang: string) => `You are Fluent, a helpful, friendly, and concise travel companion translator.
@@ -42,7 +40,6 @@ export default function FluentPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
   const [isLoading, setIsLoading] = useState(false);
   const [isLive, setIsLive] = useState(false);
-  const [arHistory, setArHistory] = useState<ARScan[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +53,6 @@ export default function FluentPage() {
 
   // Gemini Live hook
   const {
-    status,
     isConnected,
     isConnecting,
     micVolume,
@@ -100,10 +96,6 @@ export default function FluentPage() {
         if (foundTo) setToLang(foundTo);
       }
 
-      const storedArHistory = localStorage.getItem(AR_HISTORY_KEY);
-      if (storedArHistory) {
-        setArHistory(JSON.parse(storedArHistory));
-      }
     } catch (error) {
       console.error('Failed to load from localStorage:', error);
     }
@@ -138,12 +130,6 @@ export default function FluentPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromLang.code, toLang.code]);
 
-  // Save AR history to localStorage
-  useEffect(() => {
-    if (arHistory.length > 0) {
-      localStorage.setItem(AR_HISTORY_KEY, JSON.stringify(arHistory));
-    }
-  }, [arHistory]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -307,35 +293,6 @@ export default function FluentPage() {
     }
   };
 
-  // AR History handlers
-  const handleAddArScan = (scan: ARScan) => {
-    setArHistory((prev) => [scan, ...prev]);
-  };
-
-  const handleClearArHistory = () => {
-    setArHistory([]);
-    localStorage.removeItem(AR_HISTORY_KEY);
-  };
-
-  const handleDeleteArItem = (id: string) => {
-    setArHistory((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const handleToggleArFavorite = (id: string) => {
-    setArHistory((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, isFavorite: !item.isFavorite } : item))
-    );
-  };
-
-  // Launch AR view
-  const handleLaunchAR = () => {
-    setViewMode('ar');
-  };
-
-  // Exit AR view
-  const handleExitAR = () => {
-    setViewMode('tools');
-  };
 
   // Render chat view
   const renderChatView = () => (
@@ -402,34 +359,18 @@ export default function FluentPage() {
   const renderFavoritesView = () => (
     <FavoritesView
       messages={messages}
-      arScans={arHistory}
       onToggleMessageFavorite={handleToggleFavorite}
-      onToggleScanFavorite={handleToggleArFavorite}
       onPlayAudio={handlePlayAudio}
       onBack={() => setViewMode('chat')}
       targetLangCode={toLang.code}
     />
   );
 
-  // Render tools view
-  const renderToolsView = () => (
-    <TravelToolsView
+  // Render currency converter view
+  const renderCurrencyView = () => (
+    <CurrencyConverterView
       currentLanguage={toLang}
-      onLaunchAR={handleLaunchAR}
       onBack={() => setViewMode('chat')}
-    />
-  );
-
-  // Render AR view
-  const renderARView = () => (
-    <ARView
-      currentLanguage={toLang}
-      onBack={handleExitAR}
-      onSaveScan={handleAddArScan}
-      history={arHistory}
-      onClearHistory={handleClearArHistory}
-      onDeleteHistoryItem={handleDeleteArItem}
-      onToggleFavoriteScan={handleToggleArFavorite}
     />
   );
 
@@ -450,10 +391,8 @@ export default function FluentPage() {
         return renderChatView();
       case 'favs':
         return renderFavoritesView();
-      case 'tools':
-        return renderToolsView();
-      case 'ar':
-        return renderARView();
+      case 'currency':
+        return renderCurrencyView();
       case 'settings':
         return renderSettingsView();
       default:
@@ -464,7 +403,7 @@ export default function FluentPage() {
   return (
     <main className="min-h-dvh flex flex-col bg-background-dark text-white font-display fluent-theme">
       {renderCurrentView()}
-      {viewMode !== 'ar' && <BottomNav activeTab={viewMode} onTabChange={setViewMode} />}
+      <BottomNav activeTab={viewMode} onTabChange={setViewMode} />
     </main>
   );
 }
