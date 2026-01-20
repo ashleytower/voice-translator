@@ -17,9 +17,19 @@ module.exports = {
   				'Noto Sans JP',
   				'Hiragino Kaku Gothic Pro',
   				'sans-serif'
+  			],
+  			display: [
+  				'Space Grotesk',
+  				'sans-serif'
   			]
   		},
   		colors: {
+  			// Fluent theme colors
+  			'fluent-primary': '#00F2FF',
+  			'fluent-secondary': '#7000FF',
+  			'background-dark': '#05070A',
+  			'surface-dark': '#12181F',
+  			'ar-panel': 'rgba(16, 29, 34, 0.65)',
   			sakura: {
   				'50': '#fef7f8',
   				'100': '#fdeef0',
@@ -92,7 +102,13 @@ module.exports = {
   			'orb-breathe': 'orb-breathe 3s ease-in-out infinite',
   			'orb-pulse': 'orb-pulse 2s ease-in-out infinite',
   			'orb-wave': 'orb-wave 4s ease-in-out infinite',
-  			'slide-up': 'slide-up 0.5s ease-out forwards'
+  			'slide-up': 'slide-up 0.5s ease-out forwards',
+  			'ping-slow': 'ping 3s linear infinite',
+  			'ping-slower': 'ping 2s linear infinite',
+  			'bounce-slow': 'bounce 1.2s infinite',
+  			'bounce-fast': 'bounce 0.8s infinite',
+  			'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+  			'bounce-slight': 'bounce-slight 3s ease-in-out infinite'
   		},
   		keyframes: {
   			'pulse-ring': {
@@ -158,6 +174,14 @@ module.exports = {
   				to: {
   					transform: 'translateY(0)',
   					opacity: '1'
+  				}
+  			},
+  			'bounce-slight': {
+  				'0%, 100%': {
+  					transform: 'translate(-50%, 0)'
+  				},
+  				'50%': {
+  					transform: 'translate(-50%, -6px)'
   				}
   			}
   		},

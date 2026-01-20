@@ -15,6 +15,8 @@ export interface LiveClientConfig {
       };
     };
   };
+  inputAudioTranscription?: Record<string, never>;
+  outputAudioTranscription?: Record<string, never>;
 }
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -67,6 +69,8 @@ export class GeminiLiveClient {
           systemInstruction: config.systemInstruction,
           responseModalities: config.responseModalities || [Modality.AUDIO],
           speechConfig: config.speechConfig,
+          inputAudioTranscription: config.inputAudioTranscription || {},
+          outputAudioTranscription: config.outputAudioTranscription || {},
         },
         callbacks: {
           onopen: () => {
@@ -127,6 +131,21 @@ export class GeminiLiveClient {
           this.emit('text', part.text);
         }
       }
+    }
+
+    // Handle input transcription
+    const serverContent = message.serverContent as {
+      inputTranscription?: { text: string };
+      outputTranscription?: { text: string };
+    } & typeof message.serverContent;
+
+    if (serverContent?.inputTranscription?.text) {
+      this.emit('inputTranscription', serverContent.inputTranscription.text);
+    }
+
+    // Handle output transcription
+    if (serverContent?.outputTranscription?.text) {
+      this.emit('outputTranscription', serverContent.outputTranscription.text);
     }
 
     // Handle turn complete

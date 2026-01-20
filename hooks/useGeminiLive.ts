@@ -40,6 +40,8 @@ export interface UseGeminiLiveReturn {
   // Transcripts
   transcripts: Transcript[];
   streamingText: string;
+  inputTranscript: string;
+  outputTranscript: string;
 
   // Actions
   connect: () => Promise<void>;
@@ -65,6 +67,8 @@ export function useGeminiLive(options: UseGeminiLiveOptions): UseGeminiLiveRetur
   const [micVolume, setMicVolume] = useState(0);
   const [transcripts, setTranscripts] = useState<Transcript[]>([]);
   const [streamingText, setStreamingText] = useState('');
+  const [inputTranscript, setInputTranscript] = useState('');
+  const [outputTranscript, setOutputTranscript] = useState('');
 
   // Refs
   const clientRef = useRef<GeminiLiveClient | null>(null);
@@ -136,6 +140,14 @@ export function useGeminiLive(options: UseGeminiLiveOptions): UseGeminiLiveRetur
       playerRef.current?.clear();
     });
 
+    client.on('inputTranscription', (text) => {
+      setInputTranscript(text as string);
+    });
+
+    client.on('outputTranscription', (text) => {
+      setOutputTranscript(text as string);
+    });
+
     return () => {
       recorderRef.current?.stop();
       playerRef.current?.close();
@@ -163,6 +175,8 @@ export function useGeminiLive(options: UseGeminiLiveOptions): UseGeminiLiveRetur
           },
         },
       },
+      inputAudioTranscription: {},
+      outputAudioTranscription: {},
     };
 
     try {
@@ -232,6 +246,8 @@ export function useGeminiLive(options: UseGeminiLiveOptions): UseGeminiLiveRetur
     micVolume,
     transcripts,
     streamingText,
+    inputTranscript,
+    outputTranscript,
     connect,
     disconnect,
     sendText,

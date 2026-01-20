@@ -1,300 +1,401 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Message, Language, ViewMode, ARScan } from '@/types';
+import { LANGUAGES, INITIAL_MESSAGES } from '@/lib/constants';
+import { translateAndChat } from '@/lib/gemini-service';
 import { useGeminiLive } from '@/hooks/useGeminiLive';
-import {
-  Camera,
-  Languages,
-  Volume2,
-  VolumeX
-} from 'lucide-react';
-import Onboarding from './components/Onboarding';
-import { VoiceOrb, VoiceOrbState } from '@/components/translator/VoiceOrb';
-import { ChatPanel } from '@/components/translator/ChatPanel';
-import { ChatMessage } from '@/components/translator/ChatMessage';
-import { HistoryDrawer } from '@/components/translator/HistoryDrawer';
 
-const SYSTEM_INSTRUCTION = `You are a real-time voice translator assistant. Your job is to:
-1. Listen to speech in any language
-2. Identify the language being spoken
-3. Translate it naturally to the user's preferred language (default: English)
-4. Respond conversationally
+import { Header } from '@/components/layout/Header';
+import { BottomNav } from '@/components/layout/BottomNav';
+import { ChatBubble } from '@/components/chat/ChatBubble';
+import { InputArea } from '@/components/chat/InputArea';
+import { LanguageSelector } from '@/components/chat/LanguageSelector';
+import { Visualizer } from '@/components/voice/Visualizer';
+import { ARView } from '@/components/ar/ARView';
+import { TravelToolsView } from '@/components/tools/TravelToolsView';
+import { SettingsView } from '@/components/settings/SettingsView';
+import { FavoritesView } from '@/components/favorites/FavoritesView';
+import { useAppSettings } from '@/hooks/useAppSettings';
 
-When you see images (like menus, signs, or products), describe and translate any visible text.
+const STORAGE_KEY = 'fluent-messages';
+const LANG_STORAGE_KEY = 'fluent-languages';
+const AR_HISTORY_KEY = 'fluent-ar-history';
 
-For currency: If you see Japanese Yen prices, also provide the approximate CAD equivalent.
+const SYSTEM_INSTRUCTION = `You are Fluent, a helpful, friendly, and concise travel companion translator.
+When translating:
+1. Translate naturally between languages
+2. Provide pronunciation (romanization) when the target language uses non-Latin script
+3. Give short, conversational responses
+Keep responses brief and helpful.`;
 
-Keep responses concise and natural - this is a real-time conversation.`;
+export default function FluentPage() {
+  // State
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [fromLang, setFromLang] = useState<Language>(LANGUAGES[0]); // English
+  const [toLang, setToLang] = useState<Language>(LANGUAGES[1]); // Japanese
+  const [viewMode, setViewMode] = useState<ViewMode>('chat');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLive, setIsLive] = useState(false);
+  const [arHistory, setArHistory] = useState<ARScan[]>([]);
 
-export default function TranslatorPage() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [cameraActive, setCameraActive] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [isStarting, setIsStarting] = useState(false); // Local loading state for immediate feedback
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
 
+  // Gemini Live hook
   const {
     status,
     isConnected,
     isConnecting,
-    isSpeaking,
-    isListening,
-    error,
-    transcripts,
-    streamingText,
+    micVolume,
+    inputTranscript,
+    outputTranscript,
     connect,
     disconnect,
-    sendImage,
   } = useGeminiLive({
     apiKey,
-    model: 'models/gemini-2.0-flash-exp',
+    model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
     systemInstruction: SYSTEM_INSTRUCTION,
-    voiceName: 'Aoede',
+    voiceName: 'Kore',
   });
 
-  // Send camera frames periodically when connected
+  // App settings hook
+  const { settings, toggleSetting, resetSettings } = useAppSettings();
+
+  // Load messages and languages from localStorage
   useEffect(() => {
-    if (!isConnected || !cameraActive || !videoRef.current || !canvasRef.current) return;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setMessages(JSON.parse(stored));
+      } else {
+        // Use initial demo messages
+        setMessages(INITIAL_MESSAGES as Message[]);
+      }
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+      const storedLangs = localStorage.getItem(LANG_STORAGE_KEY);
+      if (storedLangs) {
+        const { from, to } = JSON.parse(storedLangs);
+        const foundFrom = LANGUAGES.find((l) => l.code === from);
+        const foundTo = LANGUAGES.find((l) => l.code === to);
+        if (foundFrom) setFromLang(foundFrom);
+        if (foundTo) setToLang(foundTo);
+      }
 
-    const sendFrame = () => {
-      if (!videoRef.current || !isConnected) return;
+      const storedArHistory = localStorage.getItem(AR_HISTORY_KEY);
+      if (storedArHistory) {
+        setArHistory(JSON.parse(storedArHistory));
+      }
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error);
+    }
+  }, []);
 
-      // Scale down for efficiency
-      const maxWidth = 512;
-      const scale = Math.min(1, maxWidth / videoRef.current.videoWidth);
-      canvas.width = videoRef.current.videoWidth * scale;
-      canvas.height = videoRef.current.videoHeight * scale;
+  // Save messages to localStorage
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    }
+  }, [messages]);
 
-      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-      sendImage(base64, 'image/jpeg');
+  // Save languages to localStorage
+  useEffect(() => {
+    localStorage.setItem(
+      LANG_STORAGE_KEY,
+      JSON.stringify({ from: fromLang.code, to: toLang.code })
+    );
+  }, [fromLang, toLang]);
+
+  // Save AR history to localStorage
+  useEffect(() => {
+    if (arHistory.length > 0) {
+      localStorage.setItem(AR_HISTORY_KEY, JSON.stringify(arHistory));
+    }
+  }, [arHistory]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Handle live mode transcripts
+  useEffect(() => {
+    if (inputTranscript && isLive) {
+      // Add user message from transcript
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        text: inputTranscript,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, userMessage]);
+    }
+  }, [inputTranscript, isLive]);
+
+  useEffect(() => {
+    if (outputTranscript && isLive) {
+      // Add assistant message from transcript
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        text: outputTranscript,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    }
+  }, [outputTranscript, isLive]);
+
+  // Handle text message send
+  const handleSend = async (text: string, attachment?: string) => {
+    if (!text.trim() && !attachment) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      text: text.trim() || 'What is this?',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      attachment,
     };
 
-    // Send frame every 2 seconds
-    const interval = setInterval(sendFrame, 2000);
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
 
-    return () => clearInterval(interval);
-  }, [isConnected, cameraActive, sendImage]);
+    try {
+      const response = await translateAndChat(
+        userMessage.text,
+        fromLang.name,
+        toLang.name,
+        attachment
+      );
 
-  const handleConnect = async () => {
-    console.log('[DEBUG] handleConnect called, isConnected:', isConnected);
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        text: response.response,
+        translation: response.translation,
+        pronunciation: response.pronunciation,
+        originalText: response.response,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
 
-    if (isConnected) {
-      console.log('[DEBUG] Already connected, disconnecting...');
-      setIsStarting(false);
-      stopCamera();
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Translation error:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        text: 'Sorry, I had trouble with that. Please try again.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Toggle live voice mode
+  const handleToggleLive = useCallback(async () => {
+    if (isLive || isConnected) {
       disconnect();
-      return;
-    }
-
-    console.log('[DEBUG] apiKey present:', !!apiKey, 'length:', apiKey?.length);
-    if (!apiKey) {
-      console.error('NEXT_PUBLIC_GOOGLE_API_KEY is not set');
-      return;
-    }
-
-    // Set loading state immediately for visual feedback
-    setIsStarting(true);
-
-    try {
-      console.log('[DEBUG] Starting camera...');
-      await startCamera();
-      console.log('[DEBUG] Camera started, connecting to Gemini...');
+      setIsLive(false);
+    } else {
+      setIsLive(true);
       await connect();
-      console.log('[DEBUG] Gemini connection complete');
-      setIsStarting(false);
-    } catch (err) {
-      console.error('[DEBUG] Connection failed:', err);
-      setIsStarting(false);
-      stopCamera();
+    }
+  }, [isLive, isConnected, connect, disconnect]);
+
+  // Swap languages
+  const handleSwapLanguages = () => {
+    setFromLang(toLang);
+    setToLang(fromLang);
+  };
+
+  // Toggle favorite
+  const handleToggleFavorite = (id: string) => {
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === id ? { ...msg, isFavorite: !msg.isFavorite } : msg))
+    );
+  };
+
+  // Clear history
+  const handleClearHistory = () => {
+    setMessages([]);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
+  // Navigate to settings
+  const handleSettingsClick = () => {
+    setViewMode('settings');
+  };
+
+  // Play audio (placeholder - could use Web Speech API)
+  const handlePlayAudio = (text: string, langCode: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = langCode;
+      speechSynthesis.speak(utterance);
     }
   };
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setCameraActive(true);
-      }
-    } catch (err) {
-      console.error('Camera error:', err);
-      throw err;
-    }
+  // AR History handlers
+  const handleAddArScan = (scan: ARScan) => {
+    setArHistory((prev) => [scan, ...prev]);
   };
 
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-      setCameraActive(false);
-    }
+  const handleClearArHistory = () => {
+    setArHistory([]);
+    localStorage.removeItem(AR_HISTORY_KEY);
   };
 
-  // Compute VoiceOrb state based on connection status
-  const getOrbState = (): VoiceOrbState => {
-    if (isStarting || isConnecting) return 'connecting';
-    if (isConnected && isListening) return 'listening';
-    if (isConnected && isSpeaking) return 'speaking';
-    if (isConnected) return 'listening';
-    return 'idle';
+  const handleDeleteArItem = (id: string) => {
+    setArHistory((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleToggleArFavorite = (id: string) => {
+    setArHistory((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, isFavorite: !item.isFavorite } : item))
+    );
+  };
+
+  // Launch AR view
+  const handleLaunchAR = () => {
+    setViewMode('ar');
+  };
+
+  // Exit AR view
+  const handleExitAR = () => {
+    setViewMode('tools');
+  };
+
+  // Render chat view
+  const renderChatView = () => (
+    <div className="flex flex-col flex-1 overflow-hidden">
+      <Header onClearHistory={handleClearHistory} onSettingsClick={handleSettingsClick} />
+
+      <LanguageSelector
+        fromLang={fromLang}
+        toLang={toLang}
+        onSwap={handleSwapLanguages}
+        onFromChange={setFromLang}
+        onToChange={setToLang}
+      />
+
+      {/* Visualizer - shown when live */}
+      {(isLive || isConnecting) && (
+        <Visualizer isActive={true} isLive={isLive} volume={micVolume} />
+      )}
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 no-scrollbar">
+        {messages.map((message) => (
+          <ChatBubble
+            key={message.id}
+            message={message}
+            onToggleFavorite={handleToggleFavorite}
+            onPlayAudio={handlePlayAudio}
+            targetLangCode={toLang.code}
+          />
+        ))}
+
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="glass-morphic rounded-2xl p-4">
+              <div className="flex gap-1">
+                <span className="w-2 h-2 bg-fluent-primary rounded-full animate-bounce"></span>
+                <span
+                  className="w-2 h-2 bg-fluent-primary rounded-full animate-bounce"
+                  style={{ animationDelay: '0.1s' }}
+                ></span>
+                <span
+                  className="w-2 h-2 bg-fluent-primary rounded-full animate-bounce"
+                  style={{ animationDelay: '0.2s' }}
+                ></span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      <InputArea
+        onSend={handleSend}
+        isLoading={isLoading}
+        isLive={isLive || isConnected}
+        onToggleLive={handleToggleLive}
+      />
+    </div>
+  );
+
+  // Render favorites view
+  const renderFavoritesView = () => (
+    <FavoritesView
+      messages={messages}
+      arScans={arHistory}
+      onToggleMessageFavorite={handleToggleFavorite}
+      onToggleScanFavorite={handleToggleArFavorite}
+      onPlayAudio={handlePlayAudio}
+      onBack={() => setViewMode('chat')}
+      targetLangCode={toLang.code}
+    />
+  );
+
+  // Render tools view
+  const renderToolsView = () => (
+    <TravelToolsView
+      currentLanguage={toLang}
+      onLaunchAR={handleLaunchAR}
+      onBack={() => setViewMode('chat')}
+    />
+  );
+
+  // Render AR view
+  const renderARView = () => (
+    <ARView
+      currentLanguage={toLang}
+      onBack={handleExitAR}
+      onSaveScan={handleAddArScan}
+      history={arHistory}
+      onClearHistory={handleClearArHistory}
+      onDeleteHistoryItem={handleDeleteArItem}
+      onToggleFavoriteScan={handleToggleArFavorite}
+    />
+  );
+
+  // Render settings view
+  const renderSettingsView = () => (
+    <SettingsView
+      settings={settings}
+      onToggle={toggleSetting}
+      onReset={resetSettings}
+      onBack={() => setViewMode('chat')}
+    />
+  );
+
+  // Render current view
+  const renderCurrentView = () => {
+    switch (viewMode) {
+      case 'chat':
+        return renderChatView();
+      case 'favs':
+        return renderFavoritesView();
+      case 'tools':
+        return renderToolsView();
+      case 'ar':
+        return renderARView();
+      case 'settings':
+        return renderSettingsView();
+      default:
+        return renderChatView();
+    }
   };
 
   return (
-    <main className="relative min-h-dvh flex flex-col">
-      <Onboarding />
-
-      {/* Hidden canvas for frame capture */}
-      <canvas ref={canvasRef} className="hidden" />
-
-      {/* Header */}
-      <header className="fixed top-0 inset-x-0 z-50 glass-card border-b border-white/5">
-        <div className="px-4 py-3 flex items-center justify-between safe-area-top">
-          <div className="w-10" /> {/* Spacer for centering */}
-          <div className="flex items-center gap-2">
-            <Languages className="w-6 h-6" />
-            <h1 className="font-medium text-lg">Voice Translator</h1>
-          </div>
-          <HistoryDrawer />
-        </div>
-      </header>
-
-      {/* Camera View - Full screen background */}
-      <div className="fixed inset-0 z-0">
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          className={`w-full h-full object-cover ${cameraActive ? 'opacity-100' : 'opacity-0'}`}
-        />
-        {/* Dark overlay for text readability */}
-        {cameraActive && (
-          <div className="absolute inset-0 bg-black/40" />
-        )}
-        {!cameraActive && (
-          <div className="absolute inset-0 flex items-center justify-center bg-ink-950">
-            <div className="text-center text-ink-400">
-              <Camera className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Tap the button to start</p>
-              <p className="text-sm mt-1">Speak or point at something</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Transcript Area */}
-      <div className="flex-1 overflow-y-auto px-4 pb-40 pt-[80px] relative z-10">
-        <ChatPanel className="max-w-lg mx-auto min-h-[200px] max-h-[60vh]">
-          <div className="space-y-2">
-            {transcripts.map((t) => (
-              <ChatMessage
-                key={t.id}
-                role={t.role === 'user' ? 'user' : 'assistant'}
-                content={t.text}
-              />
-            ))}
-
-            {/* Streaming text */}
-            {streamingText && (
-              <ChatMessage
-                role="assistant"
-                content={streamingText}
-                className="opacity-70"
-              />
-            )}
-
-            {/* Speaking indicator */}
-            {isSpeaking && !streamingText && (
-              <div className="flex justify-start">
-                <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-4 backdrop-blur-sm">
-                  <div className="audio-wave">
-                    <span /><span /><span /><span /><span />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Empty state */}
-            {transcripts.length === 0 && !streamingText && !isSpeaking && (
-              <div className="text-center text-ink-400 py-8">
-                <p>Start speaking or point your camera</p>
-                <p className="text-sm mt-1">Translations will appear here</p>
-              </div>
-            )}
-          </div>
-        </ChatPanel>
-      </div>
-
-      {/* Bottom Controls */}
-      <div className="fixed bottom-0 inset-x-0 glass-card border-t border-white/5 safe-area-bottom">
-        <div className="px-4 py-6">
-          {/* Error display */}
-          {error && (
-            <div className="mb-4 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
-              <p className="text-red-400 text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* API key warning */}
-          {!apiKey && (
-            <div className="mb-4 px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-center">
-              <p className="text-yellow-400 text-sm">Set NEXT_PUBLIC_GOOGLE_API_KEY in your environment</p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-center gap-6">
-            {/* Mute button */}
-            <button
-              onClick={() => setMuted(!muted)}
-              disabled={!isConnected}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                isConnected
-                  ? 'bg-ink-800 text-white hover:bg-ink-700'
-                  : 'bg-ink-900 text-ink-600'
-              }`}
-            >
-              {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-            </button>
-
-            {/* Main action button - VoiceOrb */}
-            <button
-              onClick={handleConnect}
-              disabled={isStarting || isConnecting}
-              className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-transparent rounded-full"
-            >
-              <VoiceOrb state={getOrbState()} className="w-20 h-20 cursor-pointer hover:scale-105 transition-transform" />
-            </button>
-
-            {/* Placeholder for symmetry */}
-            <div className="w-12 h-12" />
-          </div>
-
-          {/* Status text */}
-          <p className="text-center text-sm text-ink-400 mt-4">
-            {isStarting && !isConnecting && 'Starting...'}
-            {isConnecting && 'Connecting...'}
-            {isConnected && isListening && 'Listening...'}
-            {isConnected && isSpeaking && 'Speaking...'}
-            {isConnected && !isListening && !isSpeaking && 'Ready - speak or point camera'}
-            {!isConnected && !isConnecting && !isStarting && 'Tap to start'}
-          </p>
-        </div>
-      </div>
+    <main className="min-h-dvh flex flex-col bg-background-dark text-white font-display fluent-theme">
+      {renderCurrentView()}
+      {viewMode !== 'ar' && <BottomNav activeTab={viewMode} onTabChange={setViewMode} />}
     </main>
   );
 }
