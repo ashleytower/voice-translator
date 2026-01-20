@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Message, Language, ViewMode, ARScan } from '@/types';
 import { LANGUAGES, INITIAL_MESSAGES } from '@/lib/constants';
 import { translateAndChat } from '@/lib/gemini-service';
@@ -22,12 +22,17 @@ const STORAGE_KEY = 'fluent-messages';
 const LANG_STORAGE_KEY = 'fluent-languages';
 const AR_HISTORY_KEY = 'fluent-ar-history';
 
-const SYSTEM_INSTRUCTION = `You are Fluent, a helpful, friendly, and concise travel companion translator.
-When translating:
-1. Translate naturally between languages
-2. Provide pronunciation (romanization) when the target language uses non-Latin script
-3. Give short, conversational responses
-Keep responses brief and helpful.`;
+// Dynamic system instruction that includes the selected languages
+const getSystemInstruction = (fromLang: string, toLang: string) => `You are Fluent, a helpful, friendly, and concise travel companion translator.
+
+IMPORTANT: The user speaks ${fromLang}. You must respond in ${toLang}.
+
+When the user speaks in ${fromLang}:
+1. Translate their speech into ${toLang}
+2. Respond naturally and conversationally in ${toLang}
+3. If ${toLang} uses non-Latin script, also provide romanization/pronunciation
+
+Keep your responses brief, natural, and helpful. Always respond in ${toLang}.`;
 
 export default function FluentPage() {
   // State
@@ -43,6 +48,12 @@ export default function FluentPage() {
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
 
+  // Dynamic system instruction based on selected languages (memoized to prevent unnecessary recalculations)
+  const systemInstruction = useMemo(
+    () => getSystemInstruction(fromLang.name, toLang.name),
+    [fromLang.name, toLang.name]
+  );
+
   // Gemini Live hook
   const {
     status,
@@ -56,9 +67,15 @@ export default function FluentPage() {
   } = useGeminiLive({
     apiKey,
     model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
-    systemInstruction: SYSTEM_INSTRUCTION,
+    systemInstruction,
     voiceName: 'Kore',
   });
+
+  // Refs to track accumulated transcripts (prevent word-by-word messages)
+  const pendingInputRef = useRef<string>('');
+  const pendingOutputRef = useRef<string>('');
+  const inputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const outputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // App settings hook
   const { settings, toggleSetting, resetSettings } = useAppSettings();
@@ -107,6 +124,20 @@ export default function FluentPage() {
     );
   }, [fromLang, toLang]);
 
+  // Reconnect Gemini Live when languages change (if in live mode)
+  useEffect(() => {
+    if (isLive && isConnected) {
+      // Disconnect and reconnect with new language settings
+      disconnect();
+      // Small delay before reconnecting to ensure clean disconnect
+      const timer = setTimeout(() => {
+        connect();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromLang.code, toLang.code]);
+
   // Save AR history to localStorage
   useEffect(() => {
     if (arHistory.length > 0) {
@@ -119,31 +150,69 @@ export default function FluentPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle live mode transcripts
+  // Handle live mode transcripts with debouncing to prevent word-by-word messages
   useEffect(() => {
     if (inputTranscript && isLive) {
-      // Add user message from transcript
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        role: 'user',
-        text: inputTranscript,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, userMessage]);
+      // Update pending transcript
+      pendingInputRef.current = inputTranscript;
+
+      // Clear existing timeout
+      if (inputTimeoutRef.current) {
+        clearTimeout(inputTimeoutRef.current);
+      }
+
+      // Set a debounce timeout - only add message after speech pause (800ms)
+      inputTimeoutRef.current = setTimeout(() => {
+        if (pendingInputRef.current) {
+          const userMessage: Message = {
+            id: Date.now().toString(),
+            role: 'user',
+            text: pendingInputRef.current,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          };
+          setMessages((prev) => [...prev, userMessage]);
+          pendingInputRef.current = '';
+        }
+      }, 800);
     }
+
+    return () => {
+      if (inputTimeoutRef.current) {
+        clearTimeout(inputTimeoutRef.current);
+      }
+    };
   }, [inputTranscript, isLive]);
 
   useEffect(() => {
     if (outputTranscript && isLive) {
-      // Add assistant message from transcript
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        text: outputTranscript,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Update pending transcript
+      pendingOutputRef.current = outputTranscript;
+
+      // Clear existing timeout
+      if (outputTimeoutRef.current) {
+        clearTimeout(outputTimeoutRef.current);
+      }
+
+      // Set a debounce timeout - only add message after speech pause (800ms)
+      outputTimeoutRef.current = setTimeout(() => {
+        if (pendingOutputRef.current) {
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            text: pendingOutputRef.current,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          };
+          setMessages((prev) => [...prev, assistantMessage]);
+          pendingOutputRef.current = '';
+        }
+      }, 800);
     }
+
+    return () => {
+      if (outputTimeoutRef.current) {
+        clearTimeout(outputTimeoutRef.current);
+      }
+    };
   }, [outputTranscript, isLive]);
 
   // Handle text message send
