@@ -8,24 +8,48 @@ interface CurrencyConverterViewProps {
   onBack: () => void;
 }
 
-// Currency data by language code
-const CURRENCY_DATA: Record<string, { code: string; symbol: string; name: string; rateToUSD: number }> = {
-  ja: { code: 'JPY', symbol: '¥', name: 'Japanese Yen', rateToUSD: 0.0067 },
-  es: { code: 'EUR', symbol: '€', name: 'Euro', rateToUSD: 1.09 },
-  fr: { code: 'EUR', symbol: '€', name: 'Euro', rateToUSD: 1.09 },
-  ko: { code: 'KRW', symbol: '₩', name: 'Korean Won', rateToUSD: 0.00075 },
-  zh: { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', rateToUSD: 0.14 },
-  en: { code: 'USD', symbol: '$', name: 'US Dollar', rateToUSD: 1 },
+// All available currencies for selection
+const ALL_CURRENCIES = [
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen', rateToUSD: 0.0067 },
+  { code: 'EUR', symbol: '€', name: 'Euro', rateToUSD: 1.09 },
+  { code: 'GBP', symbol: '£', name: 'British Pound', rateToUSD: 1.27 },
+  { code: 'KRW', symbol: '₩', name: 'Korean Won', rateToUSD: 0.00075 },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', rateToUSD: 0.14 },
+  { code: 'USD', symbol: '$', name: 'US Dollar', rateToUSD: 1 },
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', rateToUSD: 0.74 },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', rateToUSD: 0.65 },
+  { code: 'MXN', symbol: '$', name: 'Mexican Peso', rateToUSD: 0.058 },
+  { code: 'THB', symbol: '฿', name: 'Thai Baht', rateToUSD: 0.029 },
+];
+
+// Currency data by language code (for default selection)
+const CURRENCY_BY_LANG: Record<string, string> = {
+  ja: 'JPY',
+  es: 'EUR',
+  fr: 'EUR',
+  ko: 'KRW',
+  zh: 'CNY',
+  en: 'USD',
 };
 
 // Common amounts for quick conversion
 const QUICK_AMOUNTS = [100, 500, 1000, 5000, 10000];
 
+// Format number with commas for display
+const formatNumber = (num: number | string): string => {
+  const n = typeof num === 'string' ? parseFloat(num) : num;
+  if (isNaN(n)) return '0';
+  return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+};
+
 export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
   currentLanguage,
   onBack,
 }) => {
-  const currency = CURRENCY_DATA[currentLanguage.code] || CURRENCY_DATA['en'];
+  const defaultCurrencyCode = CURRENCY_BY_LANG[currentLanguage.code] || 'USD';
+  const [selectedCurrencyCode, setSelectedCurrencyCode] = useState<string>(defaultCurrencyCode);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const currency = ALL_CURRENCIES.find(c => c.code === selectedCurrencyCode) || ALL_CURRENCIES[5];
   const [amount, setAmount] = useState<string>('');
   const [converted, setConverted] = useState<string>('0.00');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -205,22 +229,56 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
           <p className="text-xs text-white/60">{currency.name} to USD</p>
         </div>
 
-        {/* Scan/Camera buttons */}
-        <div className="absolute bottom-4 left-6 right-6 flex gap-3 z-10">
+        {/* Scan button and Beautiful Blue Eye Camera button */}
+        <div className="absolute bottom-4 left-6 right-6 flex items-center gap-4 z-10">
+          {/* Scan button */}
           <button
             onClick={handleScanClick}
-            className="flex-1 py-3 px-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center gap-2 hover:bg-white/20 transition-all active:scale-95"
+            className="py-3 px-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center gap-2 hover:bg-white/20 transition-all active:scale-95"
           >
             <span className="material-symbols-outlined text-fluent-primary">document_scanner</span>
             <span className="text-sm font-semibold text-white">Scan</span>
           </button>
+
+          {/* Beautiful Blue Eye Camera Button */}
           <button
             onClick={handleCameraClick}
-            className="flex-1 py-3 px-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center gap-2 hover:bg-white/20 transition-all active:scale-95"
+            className="relative flex-1 group"
+            aria-label="Capture price tag"
           >
-            <span className="material-symbols-outlined text-fluent-secondary">photo_camera</span>
-            <span className="text-sm font-semibold text-white">Camera</span>
+            <div className="flex items-center justify-center">
+              {/* Outer pulsing ring */}
+              <div className="absolute w-20 h-20 rounded-full border-2 border-cyan-400/30 animate-ping" style={{ animationDuration: '2s' }} />
+              {/* Middle rotating ring */}
+              <div
+                className="absolute w-16 h-16 rounded-full border-2 border-transparent"
+                style={{
+                  background: 'linear-gradient(135deg, transparent 40%, rgba(0, 242, 255, 0.4) 50%, transparent 60%)',
+                  animation: 'spin 3s linear infinite'
+                }}
+              />
+              {/* Inner glow ring */}
+              <div className="absolute w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-600/20 blur-sm" />
+              {/* Main eye button */}
+              <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/50 group-hover:shadow-cyan-400/70 transition-all group-hover:scale-105 group-active:scale-95">
+                {/* Inner iris ring */}
+                <div className="absolute w-10 h-10 rounded-full border-2 border-white/30" />
+                {/* Pupil/lens */}
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center">
+                  {/* Highlight/reflection */}
+                  <div className="absolute w-2 h-2 bg-white/80 rounded-full -translate-x-1 -translate-y-1" />
+                  <span className="material-symbols-outlined text-cyan-400 text-sm">photo_camera</span>
+                </div>
+              </div>
+            </div>
+            <p className="text-center text-xs text-cyan-300 mt-2 font-medium">Tap to capture</p>
           </button>
+
+          {/* Manual input hint */}
+          <div className="py-3 px-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center gap-2">
+            <span className="material-symbols-outlined text-white/60">edit</span>
+            <span className="text-sm font-semibold text-white/60">or type</span>
+          </div>
         </div>
 
         {/* Hidden file input */}
@@ -255,22 +313,34 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 no-scrollbar pb-24">
         {/* Converter */}
         <div className="space-y-3">
-          {/* From Currency */}
+          {/* From Currency - Tappable Selector */}
           <div className="glass-panel-light p-5 rounded-2xl space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">From</span>
-              <span className="text-[10px] text-fluent-primary">{currency.name}</span>
+              {/* Currency selector button */}
+              <button
+                onClick={() => setShowCurrencyPicker(true)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-fluent-primary/20 hover:bg-fluent-primary/30 transition-all active:scale-95"
+              >
+                <span className="text-xs font-bold text-fluent-primary">{currency.code}</span>
+                <span className="material-symbols-outlined text-fluent-primary text-sm">expand_more</span>
+              </button>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-bold text-white/40">{currency.symbol}</span>
               <input
                 type="number"
+                inputMode="decimal"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0"
-                className="flex-1 bg-transparent border-none focus:ring-0 text-3xl font-bold text-white placeholder:text-white/20 text-right"
+                className="flex-1 bg-transparent border-none focus:ring-0 text-3xl font-bold text-white placeholder:text-white/20 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
+            {/* Show formatted amount below input */}
+            {amount && parseFloat(amount) > 999 && (
+              <p className="text-right text-xs text-white/40">{currency.symbol}{formatNumber(amount)}</p>
+            )}
           </div>
 
           {/* Arrow */}
@@ -288,8 +358,8 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-bold text-fluent-primary">$</span>
-              <div className="flex-1 text-3xl font-bold text-fluent-primary text-right">
-                {converted}
+              <div className="flex-1 text-2xl sm:text-3xl font-bold text-fluent-primary text-right tabular-nums">
+                {formatNumber(converted)}
               </div>
             </div>
           </div>
@@ -298,18 +368,18 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
         {/* Quick Amounts */}
         <div className="space-y-2">
           <h3 className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Quick Convert</h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {QUICK_AMOUNTS.map((value) => (
               <button
                 key={value}
                 onClick={() => handleQuickAmount(value)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+                className={`px-2 sm:px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all active:scale-95 tabular-nums ${
                   amount === value.toString()
                     ? 'bg-fluent-primary text-white'
                     : 'bg-white/5 text-white/70 hover:bg-white/10'
                 }`}
               >
-                {currency.symbol}{value.toLocaleString()}
+                {currency.symbol}{formatNumber(value)}
               </button>
             ))}
           </div>
@@ -361,6 +431,59 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
             </button>
           </div>
           <canvas ref={canvasRef} className="hidden" />
+        </div>
+      )}
+
+      {/* Currency Picker Modal */}
+      {showCurrencyPicker && (
+        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
+          <div className="w-full sm:w-96 max-h-[70vh] bg-surface-dark rounded-t-3xl sm:rounded-3xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <h2 className="text-lg font-bold text-white">Select Currency</h2>
+              <button
+                onClick={() => setShowCurrencyPicker(false)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"
+              >
+                <span className="material-symbols-outlined text-white text-sm">close</span>
+              </button>
+            </div>
+            {/* Currency list */}
+            <div className="overflow-y-auto max-h-[50vh] p-2">
+              {ALL_CURRENCIES.map((curr) => (
+                <button
+                  key={curr.code}
+                  onClick={() => {
+                    setSelectedCurrencyCode(curr.code);
+                    setShowCurrencyPicker(false);
+                  }}
+                  className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${
+                    selectedCurrencyCode === curr.code
+                      ? 'bg-fluent-primary/20 border border-fluent-primary/50'
+                      : 'hover:bg-white/5'
+                  }`}
+                >
+                  {/* Currency symbol badge */}
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${
+                    selectedCurrencyCode === curr.code
+                      ? 'bg-fluent-primary text-white'
+                      : 'bg-white/10 text-white/60'
+                  }`}>
+                    {curr.symbol}
+                  </div>
+                  {/* Currency info */}
+                  <div className="flex-1 text-left">
+                    <p className="font-bold text-white">{curr.code}</p>
+                    <p className="text-xs text-white/50">{curr.name}</p>
+                  </div>
+                  {/* Checkmark for selected */}
+                  {selectedCurrencyCode === curr.code && (
+                    <span className="material-symbols-outlined text-fluent-primary">check_circle</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
