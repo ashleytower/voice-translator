@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Message, Language, ViewMode } from '@/types';
 import { LANGUAGES, INITIAL_MESSAGES } from '@/lib/constants';
 import { translateAndChat } from '@/lib/gemini-service';
-import { useGeminiLive } from '@/hooks/useGeminiLive';
+import { useVoiceTranslator } from '@/hooks/useVoiceTranslator';
 
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -20,55 +20,70 @@ import { useAppSettings } from '@/hooks/useAppSettings';
 const STORAGE_KEY = 'fluent-messages';
 const LANG_STORAGE_KEY = 'fluent-languages';
 
-const getSystemInstruction = (fromLang: string, toLang: string) => `You are Fluent, a helpful, friendly, and concise travel companion translator.
-
-IMPORTANT: The user speaks ${fromLang}. You must respond in ${toLang}.
-
-When the user speaks in ${fromLang}:
-1. Translate their speech into ${toLang}
-2. Respond naturally and conversationally in ${toLang}
-3. If ${toLang} uses non-Latin script, also provide romanization/pronunciation
-
-Keep your responses brief, natural, and helpful. Always respond in ${toLang}.`;
-
 export default function FluentPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [fromLang, setFromLang] = useState<Language>(LANGUAGES[0]);
   const [toLang, setToLang] = useState<Language>(LANGUAGES[1]);
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
   const [isLoading, setIsLoading] = useState(false);
-  const [isLive, setIsLive] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
 
-  const systemInstruction = useMemo(
-    () => getSystemInstruction(fromLang.name, toLang.name),
-    [fromLang.name, toLang.name]
+  // API Keys from environment
+  const deepgramApiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || '';
+  const cartesiaApiKey = process.env.NEXT_PUBLIC_CARTESIA_API_KEY || '';
+
+  // Handle translation results from voice
+  const handleVoiceTranslation = useCallback(
+    (original: string, translation: string, pronunciation?: string) => {
+      // Add user message
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        text: original,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      // Add assistant message with translation
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        text: original,
+        translation,
+        pronunciation,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      setMessages((prev) => [...prev, userMessage, assistantMessage]);
+    },
+    []
   );
 
+  // Voice translator hook with Deepgram + Cartesia
   const {
+    status: voiceStatus,
     isConnected,
-    isConnecting,
+    isListening,
+    isSpeaking,
     micVolume,
-    inputTranscript,
-    outputTranscript,
-    connect,
-    disconnect,
-  } = useGeminiLive({
-    apiKey,
-    model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
-    systemInstruction,
-    voiceName: 'Kore',
+    currentTranscript,
+    connect: connectVoice,
+    disconnect: disconnectVoice,
+    stopSpeaking,
+  } = useVoiceTranslator({
+    deepgramApiKey,
+    cartesiaApiKey,
+    fromLanguage: fromLang.name,
+    toLanguage: toLang.name,
+    onTranslation: handleVoiceTranslation,
+    onError: (error) => {
+      console.error('Voice error:', error);
+    },
   });
-
-  const pendingInputRef = useRef<string>('');
-  const pendingOutputRef = useRef<string>('');
-  const inputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const outputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { settings, toggleSetting, resetSettings } = useAppSettings();
 
+  // Load messages and languages from localStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -91,12 +106,14 @@ export default function FluentPage() {
     }
   }, []);
 
+  // Save messages to localStorage
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     }
   }, [messages]);
 
+  // Save languages to localStorage
   useEffect(() => {
     localStorage.setItem(
       LANG_STORAGE_KEY,
@@ -104,79 +121,12 @@ export default function FluentPage() {
     );
   }, [fromLang, toLang]);
 
-  useEffect(() => {
-    if (isLive && isConnected) {
-      disconnect();
-      const timer = setTimeout(() => {
-        connect();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromLang.code, toLang.code]);
-
+  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  useEffect(() => {
-    if (inputTranscript && isLive) {
-      pendingInputRef.current = inputTranscript;
-
-      if (inputTimeoutRef.current) {
-        clearTimeout(inputTimeoutRef.current);
-      }
-
-      inputTimeoutRef.current = setTimeout(() => {
-        if (pendingInputRef.current) {
-          const userMessage: Message = {
-            id: Date.now().toString(),
-            role: 'user',
-            text: pendingInputRef.current,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          };
-          setMessages((prev) => [...prev, userMessage]);
-          pendingInputRef.current = '';
-        }
-      }, 800);
-    }
-
-    return () => {
-      if (inputTimeoutRef.current) {
-        clearTimeout(inputTimeoutRef.current);
-      }
-    };
-  }, [inputTranscript, isLive]);
-
-  useEffect(() => {
-    if (outputTranscript && isLive) {
-      pendingOutputRef.current = outputTranscript;
-
-      if (outputTimeoutRef.current) {
-        clearTimeout(outputTimeoutRef.current);
-      }
-
-      outputTimeoutRef.current = setTimeout(() => {
-        if (pendingOutputRef.current) {
-          const assistantMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            text: pendingOutputRef.current,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          };
-          setMessages((prev) => [...prev, assistantMessage]);
-          pendingOutputRef.current = '';
-        }
-      }, 800);
-    }
-
-    return () => {
-      if (outputTimeoutRef.current) {
-        clearTimeout(outputTimeoutRef.current);
-      }
-    };
-  }, [outputTranscript, isLive]);
-
+  // Handle text message send
   const handleSend = async (text: string, attachment?: string) => {
     if (!text.trim() && !attachment) return;
 
@@ -224,36 +174,40 @@ export default function FluentPage() {
     }
   };
 
+  // Toggle live voice mode
   const handleToggleLive = useCallback(async () => {
-    if (isLive || isConnected) {
-      disconnect();
-      setIsLive(false);
+    if (isConnected) {
+      disconnectVoice();
     } else {
-      setIsLive(true);
-      await connect();
+      await connectVoice();
     }
-  }, [isLive, isConnected, connect, disconnect]);
+  }, [isConnected, connectVoice, disconnectVoice]);
 
+  // Swap languages
   const handleSwapLanguages = () => {
     setFromLang(toLang);
     setToLang(fromLang);
   };
 
+  // Toggle favorite
   const handleToggleFavorite = (id: string) => {
     setMessages((prev) =>
       prev.map((msg) => (msg.id === id ? { ...msg, isFavorite: !msg.isFavorite } : msg))
     );
   };
 
+  // Clear history
   const handleClearHistory = () => {
     setMessages([]);
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  // Navigate to settings
   const handleSettingsClick = () => {
     setViewMode('settings');
   };
 
+  // Play audio using browser TTS
   const handlePlayAudio = (text: string, langCode: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
@@ -261,6 +215,10 @@ export default function FluentPage() {
       speechSynthesis.speak(utterance);
     }
   };
+
+  // Determine if we should show the visualizer
+  const showVisualizer = isConnected || voiceStatus === 'connecting';
+  const isLive = isListening || isSpeaking;
 
   const renderChatView = () => (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -274,7 +232,30 @@ export default function FluentPage() {
         onToChange={setToLang}
       />
 
-      {(isLive || isConnecting) && (
+      {/* Voice status indicator */}
+      {showVisualizer && (
+        <div className="px-4 py-2 border-b border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${
+                voiceStatus === 'listening' ? 'bg-green-500 animate-pulse' :
+                voiceStatus === 'processing' ? 'bg-yellow-500 animate-pulse' :
+                voiceStatus === 'speaking' ? 'bg-blue-500 animate-pulse' :
+                voiceStatus === 'connecting' ? 'bg-orange-500 animate-pulse' :
+                'bg-gray-500'
+              }`} />
+              <span className="text-xs text-muted-foreground capitalize">{voiceStatus}</span>
+            </div>
+            {currentTranscript && (
+              <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                {currentTranscript}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showVisualizer && (
         <Visualizer isActive={true} isLive={isLive} volume={micVolume} />
       )}
 
@@ -307,7 +288,7 @@ export default function FluentPage() {
       <InputArea
         onSend={handleSend}
         isLoading={isLoading}
-        isLive={isLive || isConnected}
+        isLive={isConnected}
         onToggleLive={handleToggleLive}
       />
     </div>
