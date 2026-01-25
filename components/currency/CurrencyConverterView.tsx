@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Language } from '@/types';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Camera, Upload, X, ArrowDown, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface CurrencyConverterViewProps {
   currentLanguage: Language;
   onBack: () => void;
 }
 
-// Currency data by language code
 const CURRENCY_DATA: Record<string, { code: string; symbol: string; name: string; rateToUSD: number }> = {
   ja: { code: 'JPY', symbol: '¥', name: 'Japanese Yen', rateToUSD: 0.0067 },
   es: { code: 'EUR', symbol: '€', name: 'Euro', rateToUSD: 1.09 },
@@ -18,7 +20,6 @@ const CURRENCY_DATA: Record<string, { code: string; symbol: string; name: string
   en: { code: 'USD', symbol: '$', name: 'US Dollar', rateToUSD: 1 },
 };
 
-// Common amounts for quick conversion
 const QUICK_AMOUNTS = [100, 500, 1000, 5000, 10000];
 
 export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
@@ -45,7 +46,6 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
     }
   }, [amount, currency.rateToUSD]);
 
-  // Cleanup camera on unmount
   useEffect(() => {
     return () => {
       if (cameraStream) {
@@ -56,10 +56,6 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
 
   const handleQuickAmount = (value: number) => {
     setAmount(value.toString());
-  };
-
-  const handleScanClick = () => {
-    fileInputRef.current?.click();
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,12 +99,7 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
         setCapturedImage(canvas.toDataURL('image/jpeg'));
       }
     }
-    // Stop camera
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-    }
-    setShowCamera(false);
+    closeCamera();
   };
 
   const closeCamera = () => {
@@ -124,106 +115,35 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background-dark">
-      {/* Hero with city background */}
-      <div className="relative h-48 overflow-hidden">
-        {/* City skyline gradient background */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `
-              linear-gradient(to bottom,
-                rgba(15, 23, 42, 0.3) 0%,
-                rgba(15, 23, 42, 0.6) 50%,
-                rgba(15, 23, 42, 1) 100%
-              ),
-              linear-gradient(135deg,
-                #1e3a5f 0%,
-                #0f172a 50%,
-                #1e1b4b 100%
-              )
-            `
-          }}
-        >
-          {/* City silhouette effect */}
-          <div className="absolute bottom-0 left-0 right-0 h-24 opacity-30"
-            style={{
-              background: `
-                linear-gradient(90deg,
-                  transparent 0%,
-                  #3b82f6 2%, #3b82f6 3%,
-                  transparent 4%,
-                  transparent 8%,
-                  #3b82f6 9%, #3b82f6 12%,
-                  transparent 13%,
-                  transparent 18%,
-                  #3b82f6 19%, #3b82f6 21%,
-                  transparent 22%,
-                  transparent 30%,
-                  #3b82f6 31%, #3b82f6 35%,
-                  transparent 36%,
-                  transparent 45%,
-                  #3b82f6 46%, #3b82f6 48%,
-                  transparent 49%,
-                  transparent 55%,
-                  #3b82f6 56%, #3b82f6 60%,
-                  transparent 61%,
-                  transparent 70%,
-                  #3b82f6 71%, #3b82f6 73%,
-                  transparent 74%,
-                  transparent 82%,
-                  #3b82f6 83%, #3b82f6 87%,
-                  transparent 88%,
-                  transparent 95%,
-                  #3b82f6 96%, #3b82f6 98%,
-                  transparent 100%
-                )
-              `,
-              maskImage: 'linear-gradient(to top, black 0%, transparent 100%)'
-            }}
-          />
-          {/* Glowing dots for windows */}
-          <div className="absolute bottom-8 left-[10%] w-1 h-1 bg-yellow-300 rounded-full animate-pulse" />
-          <div className="absolute bottom-12 left-[15%] w-1 h-1 bg-yellow-200 rounded-full animate-pulse" style={{animationDelay: '0.5s'}} />
-          <div className="absolute bottom-6 left-[35%] w-1 h-1 bg-yellow-300 rounded-full animate-pulse" style={{animationDelay: '0.3s'}} />
-          <div className="absolute bottom-14 left-[50%] w-1 h-1 bg-yellow-200 rounded-full animate-pulse" style={{animationDelay: '0.7s'}} />
-          <div className="absolute bottom-10 left-[70%] w-1 h-1 bg-yellow-300 rounded-full animate-pulse" style={{animationDelay: '0.2s'}} />
-          <div className="absolute bottom-8 left-[85%] w-1 h-1 bg-yellow-200 rounded-full animate-pulse" style={{animationDelay: '0.6s'}} />
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+      {/* Header */}
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-border">
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-lg font-semibold">Currency Converter</h1>
+          <p className="text-xs text-muted-foreground">{currency.name} to USD</p>
         </div>
-
-        {/* Back button */}
-        <button
-          onClick={onBack}
-          className="absolute top-10 left-6 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center hover:bg-black/50 transition-all active:scale-95 z-10"
-        >
-          <span className="material-symbols-outlined text-lg text-white">arrow_back</span>
-        </button>
-
-        {/* Title */}
-        <div className="absolute top-10 left-20 right-6 z-10">
-          <h1 className="text-2xl font-bold text-white">Currency Converter</h1>
-          <p className="text-xs text-white/60">{currency.name} to USD</p>
-        </div>
-
-        {/* Scan/Camera buttons */}
-        <div className="absolute bottom-4 left-6 right-6 flex gap-3 z-10">
-          <button
-            onClick={handleScanClick}
-            className="flex-1 py-3 px-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center gap-2 hover:bg-white/20 transition-all active:scale-95"
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="gap-2"
           >
-            <span className="material-symbols-outlined text-fluent-primary">document_scanner</span>
-            <span className="text-sm font-semibold text-white">Scan</span>
-          </button>
-          <button
+            <Upload className="h-4 w-4" />
+            Upload
+          </Button>
+          <Button
+            size="sm"
             onClick={handleCameraClick}
-            className="flex-1 py-3 px-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center gap-2 hover:bg-white/20 transition-all active:scale-95"
+            className="gap-2"
           >
-            <span className="material-symbols-outlined text-fluent-secondary">photo_camera</span>
-            <span className="text-sm font-semibold text-white">Camera</span>
-          </button>
+            <Camera className="h-4 w-4" />
+            Scan
+          </Button>
         </div>
-
-        {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"
@@ -235,130 +155,137 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
 
       {/* Captured image preview */}
       {capturedImage && (
-        <div className="px-6 py-3">
-          <div className="relative rounded-2xl overflow-hidden">
+        <div className="p-4 border-b border-border">
+          <div className="relative rounded-lg overflow-hidden bg-secondary">
             <img src={capturedImage} alt="Captured" className="w-full h-32 object-cover" />
-            <button
+            <Button
+              variant="destructive"
+              size="icon"
               onClick={clearImage}
-              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center"
+              className="absolute top-2 right-2 h-6 w-6"
             >
-              <span className="material-symbols-outlined text-white text-sm">close</span>
-            </button>
-            <div className="absolute bottom-2 left-2 px-3 py-1 rounded-full bg-black/50 backdrop-blur-sm">
-              <span className="text-xs text-white/80">Enter amount from image below</span>
+              <X className="h-3 w-3" />
+            </Button>
+            <div className="absolute bottom-2 left-2 px-2 py-1 rounded bg-background/80 backdrop-blur-sm">
+              <span className="text-xs text-muted-foreground">Enter amount from image below</span>
             </div>
           </div>
         </div>
       )}
 
       {/* Main content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 no-scrollbar pb-24">
-        {/* Converter */}
-        <div className="space-y-3">
-          {/* From Currency */}
-          <div className="glass-panel-light p-5 rounded-2xl space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">From</span>
-              <span className="text-[10px] text-fluent-primary">{currency.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-white/40">{currency.symbol}</span>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0"
-                className="flex-1 bg-transparent border-none focus:ring-0 text-3xl font-bold text-white placeholder:text-white/20 text-right"
-              />
-            </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* From Currency */}
+        <div className="rounded-lg border border-border p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground">From</span>
+            <span className="text-xs text-primary">{currency.name}</span>
           </div>
-
-          {/* Arrow */}
-          <div className="flex justify-center">
-            <div className="w-10 h-10 rounded-full bg-fluent-primary/20 flex items-center justify-center">
-              <span className="material-symbols-outlined text-fluent-primary text-sm">arrow_downward</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-semibold text-muted-foreground">{currency.symbol}</span>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+              className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-3xl font-semibold text-right"
+            />
           </div>
+        </div>
 
-          {/* To USD */}
-          <div className="glass-panel-light p-5 rounded-2xl space-y-2 border border-fluent-primary/30">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">To</span>
-              <span className="text-[10px] text-fluent-primary">US Dollar</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-fluent-primary">$</span>
-              <div className="flex-1 text-3xl font-bold text-fluent-primary text-right">
-                {converted}
-              </div>
+        {/* Arrow */}
+        <div className="flex justify-center">
+          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+            <ArrowDown className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+
+        {/* To USD */}
+        <div className="rounded-lg border-2 border-primary/50 bg-primary/5 p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground">To</span>
+            <span className="text-xs text-primary">US Dollar</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-semibold text-primary">$</span>
+            <div className="flex-1 text-3xl font-semibold text-primary text-right">
+              {converted}
             </div>
           </div>
         </div>
 
         {/* Quick Amounts */}
         <div className="space-y-2">
-          <h3 className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Quick Convert</h3>
+          <span className="text-xs font-medium text-muted-foreground">Quick amounts</span>
           <div className="flex flex-wrap gap-2">
             {QUICK_AMOUNTS.map((value) => (
-              <button
+              <Button
                 key={value}
+                variant={amount === value.toString() ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => handleQuickAmount(value)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
-                  amount === value.toString()
-                    ? 'bg-fluent-primary text-white'
-                    : 'bg-white/5 text-white/70 hover:bg-white/10'
-                }`}
               >
                 {currency.symbol}{value.toLocaleString()}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
 
-        {/* Exchange Rate */}
-        <div className="glass-panel-light p-3 rounded-xl flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-fluent-primary/10 flex items-center justify-center">
-            <span className="material-symbols-outlined text-fluent-primary text-sm">info</span>
+        {/* Exchange Rate Info */}
+        <div className="rounded-lg border border-border p-3 flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+            <Info className="h-4 w-4 text-muted-foreground" />
           </div>
           <div>
-            <p className="text-xs text-white">1 {currency.code} = ${currency.rateToUSD.toFixed(4)} USD</p>
-            <p className="text-[10px] text-white/30">Rates are approximate</p>
+            <p className="text-sm">1 {currency.code} = ${currency.rateToUSD.toFixed(4)} USD</p>
+            <p className="text-xs text-muted-foreground">Rates are approximate</p>
           </div>
         </div>
       </div>
 
       {/* Camera overlay */}
       {showCamera && (
-        <div className="absolute inset-0 z-50 bg-black flex flex-col">
-          <div className="flex-1 relative">
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          <div className="flex-1 relative bg-black">
             <video
               ref={videoRef}
               autoPlay
               playsInline
               className="w-full h-full object-cover"
             />
-            {/* Guide overlay */}
+            {/* Scanning frame overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-[80%] h-[40%] border-2 border-fluent-primary/50 rounded-2xl">
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 px-4 py-1 rounded-full">
-                  <span className="text-xs text-fluent-primary">Point at price</span>
-                </div>
+              <div className="relative w-72 h-36">
+                {/* Corner brackets */}
+                <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary rounded-tl" />
+                <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary rounded-tr" />
+                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary rounded-bl" />
+                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary rounded-br" />
+                {/* Scanning line animation */}
+                <div className="absolute inset-x-0 top-1/2 h-0.5 bg-primary/50 animate-pulse" />
+              </div>
+            </div>
+            {/* Instructions */}
+            <div className="absolute top-4 inset-x-0 flex justify-center">
+              <div className="bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full">
+                <span className="text-sm font-medium">Point at price tag</span>
               </div>
             </div>
           </div>
-          <div className="p-6 bg-background-dark flex gap-4">
-            <button
+          <div className="p-4 bg-background border-t border-border flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1"
               onClick={closeCamera}
-              className="flex-1 py-4 rounded-2xl bg-white/10 text-white font-bold"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              className="flex-1"
               onClick={capturePhoto}
-              className="flex-1 py-4 rounded-2xl bg-fluent-primary text-background-dark font-bold"
             >
               Capture
-            </button>
+            </Button>
           </div>
           <canvas ref={canvasRef} className="hidden" />
         </div>

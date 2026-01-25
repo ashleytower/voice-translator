@@ -2,6 +2,9 @@
 
 import React from 'react';
 import { AppSettings } from '@/types';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Volume2, Vibrate, History, RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface SettingsViewProps {
   settings: AppSettings;
@@ -15,34 +18,36 @@ interface ToggleRowProps {
   description: string;
   isEnabled: boolean;
   onToggle: () => void;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 const ToggleRow: React.FC<ToggleRowProps> = ({ title, description, isEnabled, onToggle, icon }) => (
   <button
     onClick={onToggle}
-    className="w-full glass-morphic rounded-2xl p-4 text-left active:scale-[0.98] transition-all"
+    className="w-full rounded-lg border border-border p-4 text-left hover:bg-secondary/50 transition-colors"
   >
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-fluent-primary/10 flex items-center justify-center">
-          <span className="material-symbols-outlined text-fluent-primary">{icon}</span>
+        <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground">
+          {icon}
         </div>
         <div>
-          <h3 className="font-medium text-white">{title}</h3>
-          <p className="text-sm text-gray-400">{description}</p>
+          <h3 className="font-medium">{title}</h3>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
       <div
-        className={`w-12 h-7 rounded-full relative transition-colors ${
-          isEnabled ? 'bg-fluent-primary' : 'bg-white/10'
-        }`}
+        className={cn(
+          'w-11 h-6 rounded-full relative transition-colors',
+          isEnabled ? 'bg-primary' : 'bg-secondary'
+        )}
       >
         <div
-          className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all shadow-md ${
-            isEnabled ? 'right-1' : 'left-1'
-          }`}
-        ></div>
+          className={cn(
+            'w-5 h-5 bg-background rounded-full absolute top-0.5 transition-all shadow-sm',
+            isEnabled ? 'right-0.5' : 'left-0.5'
+          )}
+        />
       </div>
     </div>
   </button>
@@ -55,97 +60,97 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onBack,
 }) => {
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 bg-background-dark">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
-      <div className="pt-10 pb-4 px-6 flex items-center gap-4 bg-background-dark/40 backdrop-blur-md sticky top-0 z-20 border-b border-white/5">
-        <button
-          onClick={onBack}
-          className="w-10 h-10 rounded-full glass-morphic flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
-        >
-          <span className="material-symbols-outlined text-lg">arrow_back</span>
-        </button>
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-border">
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Settings</h1>
-          <p className="text-[10px] text-white/50 uppercase tracking-widest">Preferences</p>
+          <h1 className="text-lg font-semibold">Settings</h1>
+          <p className="text-xs text-muted-foreground">Preferences</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 no-scrollbar pb-24">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* Audio Section */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold text-white/50 tracking-widest uppercase px-1">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
             Audio & Feedback
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             <ToggleRow
               title="Auto-play Audio"
               description="Automatically play translations"
               isEnabled={settings.autoPlay}
               onToggle={() => onToggle('autoPlay')}
-              icon="volume_up"
+              icon={<Volume2 className="h-5 w-5" />}
             />
             <ToggleRow
               title="Haptic Feedback"
               description="Vibrate on actions"
               isEnabled={settings.hapticFeedback}
               onToggle={() => onToggle('hapticFeedback')}
-              icon="vibration"
+              icon={<Vibrate className="h-5 w-5" />}
             />
           </div>
         </div>
 
         {/* Data Section */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold text-white/50 tracking-widest uppercase px-1">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
             Data & Privacy
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             <ToggleRow
               title="Save History"
-              description="Keep translation and scan history"
+              description="Keep translation history"
               isEnabled={settings.saveHistory}
               onToggle={() => onToggle('saveHistory')}
-              icon="history"
+              icon={<History className="h-5 w-5" />}
             />
           </div>
         </div>
 
         {/* About Section */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold text-white/50 tracking-widest uppercase px-1">About</h3>
-          <div className="glass-morphic rounded-2xl p-4">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
+            About
+          </h3>
+          <div className="rounded-lg border border-border p-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-fluent-primary to-fluent-secondary flex items-center justify-center">
-                <span className="material-symbols-outlined text-white text-2xl">translate</span>
+              <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
+                <span className="material-symbols-outlined text-primary-foreground text-xl">
+                  translate
+                </span>
               </div>
               <div>
-                <h3 className="font-bold text-white">Fluent</h3>
-                <p className="text-sm text-gray-400">Version 1.0.0</p>
+                <h3 className="font-semibold">Fluent</h3>
+                <p className="text-sm text-muted-foreground">Version 1.0.0</p>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-4 leading-relaxed">
-              Your AI-powered travel companion. Real-time translation, AR scanning, and cultural
-              insights for seamless travel experiences.
+            <p className="text-sm text-muted-foreground mt-4">
+              Your AI-powered travel companion with real-time translation and currency conversion.
             </p>
           </div>
         </div>
 
-        {/* Danger Zone */}
+        {/* Reset */}
         <div className="space-y-3 pt-4">
-          <h3 className="text-xs font-bold text-red-400/70 tracking-widest uppercase px-1">
+          <h3 className="text-xs font-medium text-destructive uppercase tracking-wide px-1">
             Danger Zone
           </h3>
           <button
             onClick={onReset}
-            className="w-full glass-morphic rounded-2xl p-4 text-left border border-red-500/20 hover:bg-red-500/10 active:scale-[0.98] transition-all"
+            className="w-full rounded-lg border border-destructive/30 p-4 text-left hover:bg-destructive/10 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-red-400">restart_alt</span>
+              <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <RefreshCw className="h-5 w-5 text-destructive" />
               </div>
               <div>
-                <h3 className="font-medium text-red-400">Reset All Settings</h3>
-                <p className="text-sm text-gray-500">Restore to default values</p>
+                <h3 className="font-medium text-destructive">Reset All Settings</h3>
+                <p className="text-sm text-muted-foreground">Restore to default values</p>
               </div>
             </div>
           </button>

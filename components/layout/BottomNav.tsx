@@ -2,9 +2,11 @@
 
 import React from 'react';
 import { ViewMode } from '@/types';
+import { MessageSquare, Star, Repeat, Settings } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface NavButtonProps {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   isActive?: boolean;
   onClick: () => void;
@@ -13,30 +15,20 @@ interface NavButtonProps {
 const NavButton = ({ icon, label, isActive, onClick }: NavButtonProps) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 group active:scale-95 transition-transform ${
-      isActive ? 'text-fluent-primary' : 'text-gray-500'
-    }`}
+    className={cn(
+      'flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors',
+      isActive
+        ? 'text-foreground'
+        : 'text-muted-foreground hover:text-foreground'
+    )}
   >
-    <div
-      className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${
-        isActive ? 'bg-fluent-primary/20 text-fluent-primary' : 'group-hover:bg-fluent-primary/10'
-      }`}
-    >
-      <span
-        className={`material-symbols-outlined ${
-          isActive ? 'text-fluent-primary' : 'text-gray-500'
-        } group-hover:text-fluent-primary`}
-      >
-        {icon}
-      </span>
+    <div className={cn(
+      'p-2 rounded-lg transition-colors',
+      isActive && 'bg-secondary'
+    )}>
+      {icon}
     </div>
-    <span
-      className={`text-[9px] font-bold tracking-widest uppercase ${
-        isActive ? 'text-fluent-primary' : 'text-gray-600'
-      } group-hover:text-fluent-primary`}
-    >
-      {label}
-    </span>
+    <span className="text-[10px] font-medium">{label}</span>
   </button>
 );
 
@@ -47,32 +39,32 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
   return (
-    <div className="flex justify-between items-center px-10 pb-6 pt-2 bg-background-dark border-t border-white/5 z-30 relative">
+    <nav className="flex justify-around items-center px-4 py-2 border-t border-border bg-background">
       <NavButton
-        icon="chat"
+        icon={<MessageSquare className="h-5 w-5" />}
         label="Chat"
         isActive={activeTab === 'chat'}
         onClick={() => onTabChange('chat')}
       />
       <NavButton
-        icon="star"
-        label="Favs"
+        icon={<Star className="h-5 w-5" />}
+        label="Saved"
         isActive={activeTab === 'favs'}
         onClick={() => onTabChange('favs')}
       />
       <NavButton
-        icon="currency_exchange"
-        label="Converter"
+        icon={<Repeat className="h-5 w-5" />}
+        label="Convert"
         isActive={activeTab === 'currency'}
         onClick={() => onTabChange('currency')}
       />
       <NavButton
-        icon="settings"
-        label="Config"
+        icon={<Settings className="h-5 w-5" />}
+        label="Settings"
         isActive={activeTab === 'settings'}
         onClick={() => onTabChange('settings')}
       />
-    </div>
+    </nav>
   );
 };
 

@@ -2,6 +2,9 @@
 
 import React from 'react';
 import { Language } from '@/types';
+import { Button } from '@/components/ui/button';
+import { X, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface LanguagePickerProps {
   isOpen: boolean;
@@ -23,23 +26,18 @@ export const LanguagePicker: React.FC<LanguagePickerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 flex flex-col justify-end sm:justify-center">
-      <div className="absolute inset-0" onClick={onClose}></div>
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0" onClick={onClose} />
 
-      <div className="relative bg-background-dark/90 border-t border-white/10 rounded-t-3xl sm:rounded-3xl sm:mx-6 max-h-[85vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom-10 duration-300 w-full sm:w-auto overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/5">
-          <h2 className="text-lg font-bold text-white">{title}</h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors border border-white/5"
-          >
-            <span className="material-symbols-outlined text-sm">close</span>
-          </button>
+      <div className="relative w-full sm:max-w-md bg-background border border-border rounded-t-xl sm:rounded-xl shadow-lg max-h-[80vh] flex flex-col animate-fade-up">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
-        {/* List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
+        <div className="flex-1 overflow-y-auto p-2">
           {languages.map((lang) => (
             <button
               key={lang.code}
@@ -47,29 +45,20 @@ export const LanguagePicker: React.FC<LanguagePickerProps> = ({
                 onSelect(lang);
                 onClose();
               }}
-              className={`w-full p-4 rounded-xl flex items-center justify-between group active:scale-[0.98] transition-all border ${
+              className={cn(
+                'w-full p-3 rounded-lg flex items-center justify-between transition-colors',
                 lang.code === selectedLanguage.code
-                  ? 'bg-fluent-primary/10 border-fluent-primary/50'
-                  : 'bg-white/5 border-white/5 hover:bg-white/10'
-              }`}
+                  ? 'bg-secondary'
+                  : 'hover:bg-secondary/50'
+              )}
             >
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{lang.flag}</span>
-                <span
-                  className={`text-sm font-bold ${
-                    lang.code === selectedLanguage.code
-                      ? 'text-fluent-primary'
-                      : 'text-white'
-                  }`}
-                >
-                  {lang.name}
-                </span>
+                <span className="text-xl">{lang.flag}</span>
+                <span className="text-sm font-medium">{lang.name}</span>
               </div>
 
               {lang.code === selectedLanguage.code && (
-                <span className="material-symbols-outlined text-fluent-primary">
-                  check_circle
-                </span>
+                <Check className="h-4 w-4 text-primary" />
               )}
             </button>
           ))}

@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Language } from '@/types';
 import { LANGUAGES } from '@/lib/constants';
 import { LanguagePicker } from './LanguagePicker';
+import { Button } from '@/components/ui/button';
+import { ArrowLeftRight, ChevronDown } from 'lucide-react';
 
 interface LanguageSelectorProps {
   fromLang: Language;
@@ -25,46 +27,36 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
 
   return (
     <>
-      <div className="px-6 py-4 flex items-center justify-center gap-3 relative z-10">
+      <div className="px-4 py-3 flex items-center gap-2 border-b border-border">
         <button
           onClick={() => setIsFromOpen(true)}
-          className="flex-1 glass-morphic rounded-2xl py-3 px-4 flex items-center justify-between group active:scale-95 transition-all"
+          className="flex-1 flex items-center justify-between px-3 py-2 rounded-lg border border-input bg-background hover:bg-accent transition-colors"
         >
-          <span className="text-xs font-bold text-gray-400 group-hover:text-fluent-primary uppercase tracking-tighter">
-            From
-          </span>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold">{fromLang.name}</span>
-            <span className="material-symbols-outlined text-sm opacity-50">
-              expand_more
-            </span>
+            <span className="text-lg">{fromLang.flag}</span>
+            <span className="text-sm font-medium">{fromLang.name}</span>
           </div>
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </button>
 
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onSwap}
-          className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10 hover:bg-white/10 active:rotate-180 transition-all"
+          className="h-9 w-9 shrink-0"
         >
-          <span className="material-symbols-outlined text-xs text-fluent-primary">
-            sync_alt
-          </span>
-        </button>
+          <ArrowLeftRight className="h-4 w-4" />
+        </Button>
 
         <button
           onClick={() => setIsToOpen(true)}
-          className="flex-1 glass-morphic rounded-2xl py-3 px-4 flex items-center justify-between group active:scale-95 transition-all"
+          className="flex-1 flex items-center justify-between px-3 py-2 rounded-lg border border-input bg-background hover:bg-accent transition-colors"
         >
-          <span className="text-xs font-bold text-gray-400 group-hover:text-fluent-primary uppercase tracking-tighter">
-            To
-          </span>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-fluent-primary">
-              {toLang.name}
-            </span>
-            <span className="material-symbols-outlined text-sm opacity-50 text-fluent-primary">
-              expand_more
-            </span>
+            <span className="text-lg">{toLang.flag}</span>
+            <span className="text-sm font-medium">{toLang.name}</span>
           </div>
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
 

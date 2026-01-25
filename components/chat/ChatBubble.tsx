@@ -2,6 +2,9 @@
 
 import React from 'react';
 import { Message } from '@/types';
+import { Star, Volume2, Bot } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface ChatBubbleProps {
   message: Message;
@@ -20,101 +23,90 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   if (isUser) {
     return (
-      <div className="flex flex-col items-end group animate-in slide-in-from-right-5 duration-300">
-        <div className="max-w-[85%] glass-morphic rounded-3xl rounded-tr-none p-4 shadow-xl relative pr-10 overflow-hidden">
+      <div className="flex flex-col items-end animate-fade-up">
+        <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3 relative">
           {message.attachment && (
-            <div className="mb-3 -mx-4 -mt-4">
+            <div className="mb-2 -mx-2 -mt-1">
               <img
                 src={message.attachment}
-                alt="Upload"
-                className="w-full h-auto object-cover max-h-60"
+                alt="Attachment"
+                className="w-full h-auto rounded-lg max-h-48 object-cover"
               />
             </div>
           )}
-          <p className="text-[15px] leading-relaxed break-words">{message.text}</p>
+          <p className="text-sm">{message.text}</p>
           {onToggleFavorite && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => onToggleFavorite(message.id)}
-              className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
+              className={cn(
+                'absolute -top-1 -right-1 h-6 w-6',
                 message.isFavorite
-                  ? 'text-fluent-primary'
-                  : 'text-white/10 hover:text-white/40'
-              }`}
+                  ? 'text-yellow-500'
+                  : 'text-primary-foreground/30 hover:text-primary-foreground/60'
+              )}
             >
-              <span
-                className={`material-symbols-outlined text-[16px] ${
-                  message.isFavorite ? 'font-variation-fill' : ''
-                }`}
-              >
-                star
-              </span>
-            </button>
+              <Star className={cn('h-3 w-3', message.isFavorite && 'fill-current')} />
+            </Button>
           )}
         </div>
-        <span className="text-[10px] text-gray-500 mt-2 mr-2 font-medium uppercase tracking-widest">
-          Sent {message.timestamp}
+        <span className="text-[10px] text-muted-foreground mt-1 mr-1">
+          {message.timestamp}
         </span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-start group animate-in slide-in-from-left-5 duration-300">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-6 h-6 rounded-lg bg-fluent-primary/20 flex items-center justify-center">
-          <span className="material-symbols-outlined text-[14px] text-fluent-primary">
-            smart_toy
-          </span>
+    <div className="flex flex-col items-start animate-fade-up">
+      <div className="flex items-center gap-2 mb-1">
+        <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center">
+          <Bot className="h-3 w-3 text-muted-foreground" />
         </div>
-        <span className="text-[10px] font-bold text-fluent-primary tracking-widest uppercase">
-          Companion AI
-        </span>
+        <span className="text-xs text-muted-foreground">Assistant</span>
       </div>
-      <div className="max-w-[85%] bg-gradient-to-br from-fluent-primary/10 to-fluent-secondary/10 backdrop-blur-2xl border border-fluent-primary/20 rounded-3xl rounded-tl-none p-5 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-2 flex gap-1">
+      <div className="max-w-[80%] bg-secondary rounded-2xl rounded-tl-md px-4 py-3 relative">
+        <div className="absolute top-2 right-2 flex gap-1">
           {onToggleFavorite && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => onToggleFavorite(message.id)}
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors active:scale-95 ${
+              className={cn(
+                'h-6 w-6',
                 message.isFavorite
-                  ? 'text-fluent-primary'
-                  : 'text-fluent-primary/20 hover:text-fluent-primary/50'
-              }`}
+                  ? 'text-yellow-500'
+                  : 'text-muted-foreground/30 hover:text-muted-foreground'
+              )}
             >
-              <span
-                className={`material-symbols-outlined text-lg ${
-                  message.isFavorite ? 'font-variation-fill' : ''
-                }`}
-              >
-                star
-              </span>
-            </button>
+              <Star className={cn('h-3 w-3', message.isFavorite && 'fill-current')} />
+            </Button>
           )}
-          <button
-            onClick={() => {
-              if (onPlayAudio && message.translation && targetLangCode) {
-                onPlayAudio(message.translation, targetLangCode);
-              }
-            }}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-fluent-primary/50 hover:text-fluent-primary transition-colors active:scale-95"
-          >
-            <span className="material-symbols-outlined text-lg">volume_up</span>
-          </button>
+          {onPlayAudio && message.translation && targetLangCode && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onPlayAudio(message.translation!, targetLangCode)}
+              className="h-6 w-6 text-muted-foreground/50 hover:text-muted-foreground"
+            >
+              <Volume2 className="h-3 w-3" />
+            </Button>
+          )}
         </div>
 
         {message.translation && (
-          <>
-            <p className="text-lg font-bold text-white mb-1 pr-6">
-              {message.translation}
-            </p>
-            <p className="text-xs text-fluent-primary/70 font-medium mb-3">
-              {message.pronunciation}
-            </p>
-            <div className="h-px bg-white/10 w-full mb-3"></div>
-          </>
+          <div className="pr-14 space-y-1 mb-2">
+            <p className="text-sm font-medium">{message.translation}</p>
+            {message.pronunciation && (
+              <p className="text-xs text-muted-foreground">{message.pronunciation}</p>
+            )}
+          </div>
         )}
 
-        <p className="text-sm text-gray-300">{message.text}</p>
+        {message.translation && <div className="h-px bg-border mb-2" />}
+
+        <p className="text-sm text-muted-foreground">{message.text}</p>
       </div>
     </div>
   );
