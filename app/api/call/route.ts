@@ -79,9 +79,9 @@ export async function POST(request: NextRequest) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('[VAPI] Call creation failed:', errorText);
+    console.error('[VAPI] Call creation failed:', response.status, errorText);
     return NextResponse.json(
-      { error: 'Failed to initiate call' },
+      { error: `VAPI error (${response.status}): ${errorText}` },
       { status: response.status }
     );
   }
