@@ -17,14 +17,21 @@ export interface CartesiaConfig {
   };
 }
 
-// Cartesia voice presets for different languages
+// Cartesia voice presets for different languages (real voice IDs from API)
 export const CARTESIA_VOICES: Record<string, { id: string; name: string }> = {
-  en: { id: '79a125e8-cd45-4c13-8a67-188112f4dd22', name: 'British Lady' },
-  ja: { id: 'e6b3c3c1-79e3-4f56-9c1b-7e5c4d9a2e8f', name: 'Japanese Female' },
-  es: { id: 'a7c43c8a-4f63-4c22-b07c-789c46a8f29b', name: 'Spanish Female' },
-  fr: { id: 'b8c76d9e-5a42-4e13-a18d-892a56b7d38c', name: 'French Female' },
-  ko: { id: 'c9d87e0f-6b53-4f24-b29e-903b67c8e49d', name: 'Korean Female' },
-  zh: { id: 'd0e98f1a-7c64-5a35-c30f-a14c78d9f50e', name: 'Chinese Female' },
+  en: { id: 'cec7cae1-ac8b-4a59-9eac-ec48366f37ae', name: 'Haley - Engaging Friend' },
+  ja: { id: '498e7f37-7fa3-4e2c-b8e2-8b6e9276f956', name: 'Aiko - Calming Voice' },
+  es: { id: '399002e9-7f7d-42d4-a6a8-9b91bd809b9d', name: 'Diego - Hype Guy' },
+  fr: { id: '2d693a9c-fc75-4313-aefb-c9cfaa17dd83', name: 'Gerard - Monsieur Noir' },
+  ko: { id: '15628352-2ede-4f1b-89e6-ceda0c983fbc', name: 'Jiwoo - Service Specialist' },
+  zh: { id: '0b904166-a29f-4d2e-bb20-41ca302f98e9', name: 'Fei - Broadcast Narrator' },
+  pt: { id: 'f39bf583-3b3d-402f-9ffb-6179d9ec3e35', name: 'Isabel - Confident Woman' },
+  de: { id: 'd42fc8d7-efdd-44df-bb2e-a6e093601917', name: 'Oskar - Steady Advisor' },
+  it: { id: '029c3c7a-b6d9-44f0-814b-200d849830ff', name: 'Giancarlo - Support Leader' },
+  hi: { id: '20e68f5c-08e5-42d0-8e9b-6e716fd1ae66', name: 'Vivek - Composed Voice' },
+  ar: { id: '664aec8a-64a4-4437-8a0b-a61aa4f51fe6', name: 'Hassan - Authoritative Narrator' },
+  th: { id: '5de076e9-7b28-4442-b279-e7d80d573505', name: 'Somchai - Star' },
+  vi: { id: '0e58d60a-2f1a-4252-81bd-3db6af45fb41', name: 'Minh - Conversational Partner' },
 };
 
 export class CartesiaClient {
@@ -201,7 +208,7 @@ export class CartesiaClient {
     this.contextId = `ctx_${Date.now()}`;
 
     const message = {
-      model_id: this.config.modelId || 'sonic-english',
+      model_id: this.config.modelId || 'sonic-2',
       transcript: text,
       voice: {
         mode: 'id',
