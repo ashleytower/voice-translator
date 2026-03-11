@@ -17,6 +17,8 @@ import { CurrencyConverterView } from '@/components/currency/CurrencyConverterVi
 import { SettingsView } from '@/components/settings/SettingsView';
 import { FavoritesView } from '@/components/favorites/FavoritesView';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { useVapiCall } from '@/hooks/useVapiCall';
+import { CallSheet } from '@/components/call/CallSheet';
 
 const STORAGE_KEY = 'fluent-messages';
 const LANG_STORAGE_KEY = 'fluent-languages';
@@ -27,6 +29,7 @@ export default function FluentPage() {
   const [toLang, setToLang] = useState<Language>(LANGUAGES[1]);
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
   const [isLoading, setIsLoading] = useState(false);
+  const [showCallSheet, setShowCallSheet] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -84,6 +87,17 @@ export default function FluentPage() {
   });
 
   const { settings, updateSetting, toggleSetting, resetSettings } = useAppSettings();
+
+  const {
+    status: callStatus,
+    transcript: callTranscript,
+    duration: callDuration,
+    result: callResult,
+    error: callError,
+    startCall,
+    endCall,
+    resetCall,
+  } = useVapiCall();
 
   // Load messages and languages from localStorage
   useEffect(() => {
@@ -204,6 +218,21 @@ export default function FluentPage() {
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  // Handle call sheet open/close — add summary message when sheet closes after a completed call
+  const handleCallSheetOpenChange = useCallback((nextOpen: boolean) => {
+    if (!nextOpen && callResult !== null) {
+      const summaryMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        text: `Call completed: ${callResult.summary}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, summaryMessage]);
+      resetCall();
+    }
+    setShowCallSheet(nextOpen);
+  }, [callResult, resetCall]);
+
   // Navigate to settings
   const handleSettingsClick = () => {
     setViewMode('settings');
@@ -306,6 +335,20 @@ export default function FluentPage() {
         isLoading={isLoading}
         isLive={isConnected}
         onToggleLive={handleToggleLive}
+        onStartCall={() => setShowCallSheet(true)}
+      />
+
+      <CallSheet
+        open={showCallSheet}
+        onOpenChange={handleCallSheetOpenChange}
+        targetLanguage={toLang.name}
+        status={callStatus}
+        transcript={callTranscript}
+        duration={callDuration}
+        result={callResult}
+        error={callError}
+        onStartCall={startCall}
+        onEndCall={endCall}
       />
     </div>
   );

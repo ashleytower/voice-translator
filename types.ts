@@ -67,3 +67,29 @@ export interface AppSettings {
 }
 
 export type ViewMode = 'chat' | 'currency' | 'ar' | 'settings' | 'favs';
+
+export interface CallRequest {
+  phoneNumber: string;
+  taskDescription: string;
+  targetLanguage: string;
+  userName?: string;
+  partySize?: number;
+  date?: string;
+  time?: string;
+  specialRequests?: string;
+}
+
+export interface CallTranscript {
+  role: 'assistant' | 'user';
+  text: string;
+  timestamp: string;
+}
+
+export type CallStatus = 'idle' | 'starting' | 'ringing' | 'in-progress' | 'ended' | 'error';
+
+export interface CallResult {
+  status: 'success' | 'failed';
+  duration: number;
+  summary: string;
+  transcript: CallTranscript[];
+}

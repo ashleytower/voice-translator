@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ImagePlus, Send, Mic, Square, X } from 'lucide-react';
+import { ImagePlus, Phone, Send, Mic, Square, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InputAreaProps {
@@ -10,6 +10,7 @@ interface InputAreaProps {
   isLoading: boolean;
   isLive?: boolean;
   onToggleLive?: () => void;
+  onStartCall?: () => void;
 }
 
 export const InputArea: React.FC<InputAreaProps> = ({
@@ -17,6 +18,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
   isLoading,
   isLive,
   onToggleLive,
+  onStartCall,
 }) => {
   const [input, setInput] = useState('');
   const [attachment, setAttachment] = useState<string | null>(null);
@@ -116,6 +118,17 @@ export const InputArea: React.FC<InputAreaProps> = ({
         <Button
           variant="ghost"
           size="icon"
+          onClick={onStartCall}
+          disabled={isLive}
+          className="h-9 w-9 shrink-0 text-muted-foreground"
+          aria-label="Make a phone call"
+        >
+          <Phone className="h-5 w-5" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={handleFileClick}
           disabled={isLive}
           className="h-9 w-9 shrink-0 text-muted-foreground"
@@ -151,8 +164,6 @@ export const InputArea: React.FC<InputAreaProps> = ({
             'h-9 w-9 shrink-0 rounded-lg',
             isLive
               ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse-soft'
-              : input.length > 0 || attachment
-              ? 'bg-primary hover:bg-primary/90'
               : 'bg-primary hover:bg-primary/90'
           )}
         >
@@ -168,5 +179,3 @@ export const InputArea: React.FC<InputAreaProps> = ({
     </div>
   );
 };
-
-export default InputArea;

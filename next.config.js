@@ -19,7 +19,7 @@ const nextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob:",
               "media-src 'self' blob:",
-              "connect-src 'self' https://generativelanguage.googleapis.com https://api.deepgram.com wss://api.deepgram.com https://api.cartesia.ai wss://api.cartesia.ai https://open.er-api.com",
+              "connect-src 'self' https://generativelanguage.googleapis.com https://api.deepgram.com wss://api.deepgram.com https://api.cartesia.ai wss://api.cartesia.ai https://open.er-api.com https://api.vapi.ai",
               "worker-src 'self' blob:",
             ].join('; '),
           },
