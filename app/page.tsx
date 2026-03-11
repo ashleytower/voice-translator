@@ -5,6 +5,7 @@ import { Message, Language, ViewMode } from '@/types';
 import { LANGUAGES, INITIAL_MESSAGES } from '@/lib/constants';
 import { translateAndChat } from '@/lib/gemini-service';
 import { useVoiceTranslator } from '@/hooks/useVoiceTranslator';
+import { CartesiaClient } from '@/lib/cartesia-client';
 
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -35,7 +36,7 @@ export default function FluentPage() {
 
   // Handle translation results from voice
   const handleVoiceTranslation = useCallback(
-    (original: string, translation: string, pronunciation?: string) => {
+    (original: string, translation: string, pronunciation?: string, response?: string) => {
       // Add user message
       const userMessage: Message = {
         id: Date.now().toString(),
@@ -44,13 +45,14 @@ export default function FluentPage() {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
-      // Add assistant message with translation
+      // Add assistant message with translation + contextual explanation
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: original,
+        text: response || original,
         translation,
         pronunciation,
+        originalText: response || undefined,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -207,14 +209,28 @@ export default function FluentPage() {
     setViewMode('settings');
   };
 
-  // Play audio using browser TTS
-  const handlePlayAudio = (text: string, langCode: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = langCode;
-      speechSynthesis.speak(utterance);
+  // Persistent Cartesia client for on-demand TTS playback
+  const ttsClientRef = useRef<CartesiaClient | null>(null);
+
+  const handlePlayAudio = useCallback(async (text: string, langCode: string) => {
+    if (!cartesiaApiKey) {
+      // Fallback to browser TTS if no Cartesia key
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = langCode;
+        speechSynthesis.speak(utterance);
+      }
+      return;
     }
-  };
+
+    // Create or reuse Cartesia client
+    if (!ttsClientRef.current || ttsClientRef.current.status !== 'connected') {
+      ttsClientRef.current = new CartesiaClient({ apiKey: cartesiaApiKey });
+      await ttsClientRef.current.connect();
+    }
+
+    ttsClientRef.current.speak(text, langCode);
+  }, [cartesiaApiKey]);
 
   // Determine if we should show the visualizer
   const showVisualizer = isConnected || voiceStatus === 'connecting';

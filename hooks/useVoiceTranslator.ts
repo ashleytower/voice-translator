@@ -17,7 +17,7 @@ export interface VoiceTranslatorConfig {
   fromLanguage: string;
   toLanguage: string;
   onTranscript?: (text: string, isFinal: boolean) => void;
-  onTranslation?: (original: string, translation: string, pronunciation?: string) => void;
+  onTranslation?: (original: string, translation: string, pronunciation?: string, response?: string) => void;
   onError?: (error: Error) => void;
 }
 
@@ -66,12 +66,13 @@ export function useVoiceTranslator(config: VoiceTranslatorConfig): UseVoiceTrans
         configRef.current.toLanguage
       );
 
-      // Notify about translation
+      // Notify about translation (include the contextual response)
       if (configRef.current.onTranslation) {
         configRef.current.onTranslation(
           text,
           response.translation,
-          response.pronunciation
+          response.pronunciation,
+          response.response
         );
       }
 
