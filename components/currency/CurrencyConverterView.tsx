@@ -3,32 +3,86 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Language } from '@/types';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Camera, Upload, X, ArrowDown, Info } from 'lucide-react';
+import { ArrowLeft, Camera, Upload, X, ArrowDown, Info, RefreshCw, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 
 interface CurrencyConverterViewProps {
   currentLanguage: Language;
+  homeCurrency: string;
+  onChangeHomeCurrency: (code: string) => void;
   onBack: () => void;
 }
 
-const CURRENCY_DATA: Record<string, { code: string; symbol: string; name: string; rateToUSD: number }> = {
-  ja: { code: 'JPY', symbol: '¥', name: 'Japanese Yen', rateToUSD: 0.0067 },
-  es: { code: 'EUR', symbol: '€', name: 'Euro', rateToUSD: 1.09 },
-  fr: { code: 'EUR', symbol: '€', name: 'Euro', rateToUSD: 1.09 },
-  ko: { code: 'KRW', symbol: '₩', name: 'Korean Won', rateToUSD: 0.00075 },
-  zh: { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', rateToUSD: 0.14 },
-  en: { code: 'USD', symbol: '$', name: 'US Dollar', rateToUSD: 1 },
+const LANG_TO_CURRENCY: Record<string, { code: string; symbol: string; name: string }> = {
+  ja: { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  es: { code: 'EUR', symbol: '€', name: 'Euro' },
+  fr: { code: 'EUR', symbol: '€', name: 'Euro' },
+  ko: { code: 'KRW', symbol: '₩', name: 'Korean Won' },
+  zh: { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+  en: { code: 'USD', symbol: '$', name: 'US Dollar' },
+  pt: { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+  de: { code: 'EUR', symbol: '€', name: 'Euro' },
+  it: { code: 'EUR', symbol: '€', name: 'Euro' },
+  hi: { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  ar: { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+  th: { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+  vi: { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' },
 };
+
+const HOME_CURRENCIES = [
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+  { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
+  { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  { code: 'KRW', symbol: '₩', name: 'Korean Won' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+  { code: 'MXN', symbol: 'Mex$', name: 'Mexican Peso' },
+  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+  { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
+  { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
+  { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
+  { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
+  { code: 'PLN', symbol: 'zł', name: 'Polish Zloty' },
+  { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+  { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+  { code: 'TRY', symbol: '₺', name: 'Turkish Lira' },
+  { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+  { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
+  { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' },
+  { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' },
+  { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' },
+  { code: 'COP', symbol: 'COL$', name: 'Colombian Peso' },
+  { code: 'CLP', symbol: 'CL$', name: 'Chilean Peso' },
+  { code: 'PEN', symbol: 'S/', name: 'Peruvian Sol' },
+  { code: 'ARS', symbol: 'AR$', name: 'Argentine Peso' },
+  { code: 'ILS', symbol: '₪', name: 'Israeli Shekel' },
+  { code: 'EGP', symbol: 'E£', name: 'Egyptian Pound' },
+  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
+  { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling' },
+];
 
 const QUICK_AMOUNTS = [100, 500, 1000, 5000, 10000];
 
 export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
   currentLanguage,
+  homeCurrency,
+  onChangeHomeCurrency,
   onBack,
 }) => {
-  const currency = CURRENCY_DATA[currentLanguage.code] || CURRENCY_DATA['en'];
+  const foreignCurrency = LANG_TO_CURRENCY[currentLanguage.code] || LANG_TO_CURRENCY['en'];
+  const home = HOME_CURRENCIES.find(c => c.code === homeCurrency) || HOME_CURRENCIES[0];
+  const { rates, isLoading: ratesLoading, lastUpdated, convert } = useExchangeRates();
+
   const [amount, setAmount] = useState<string>('');
   const [converted, setConverted] = useState<string>('0.00');
+  const [showHomePicker, setShowHomePicker] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -38,13 +92,13 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
 
   useEffect(() => {
     const val = parseFloat(amount);
-    if (!isNaN(val)) {
-      const res = val * currency.rateToUSD;
-      setConverted(res.toFixed(2));
+    if (!isNaN(val) && rates[foreignCurrency.code] && rates[home.code]) {
+      const result = convert(val, foreignCurrency.code, home.code);
+      setConverted(result.toFixed(2));
     } else {
       setConverted('0.00');
     }
-  }, [amount, currency.rateToUSD]);
+  }, [amount, foreignCurrency.code, home.code, rates, convert]);
 
   useEffect(() => {
     return () => {
@@ -114,6 +168,10 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
     setCapturedImage(null);
   };
 
+  const rate = rates[foreignCurrency.code] && rates[home.code]
+    ? (rates[home.code] / rates[foreignCurrency.code])
+    : null;
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
@@ -123,7 +181,9 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
         </Button>
         <div className="flex-1">
           <h1 className="text-lg font-semibold">Currency Converter</h1>
-          <p className="text-xs text-muted-foreground">{currency.name} to USD</p>
+          <p className="text-xs text-muted-foreground">
+            {foreignCurrency.name} to {home.name}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -179,10 +239,10 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
         <div className="rounded-lg border border-border p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">From</span>
-            <span className="text-xs text-primary">{currency.name}</span>
+            <span className="text-xs text-primary">{foreignCurrency.name}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-muted-foreground">{currency.symbol}</span>
+            <span className="text-2xl font-semibold text-muted-foreground">{foreignCurrency.symbol}</span>
             <input
               type="number"
               value={amount}
@@ -200,16 +260,22 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
           </div>
         </div>
 
-        {/* To USD */}
+        {/* To Home Currency */}
         <div className="rounded-lg border-2 border-primary/50 bg-primary/5 p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">To</span>
-            <span className="text-xs text-primary">US Dollar</span>
+            <button
+              onClick={() => setShowHomePicker(true)}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              {home.name}
+              <ChevronDown className="h-3 w-3" />
+            </button>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-primary">$</span>
+            <span className="text-2xl font-semibold text-primary">{home.symbol}</span>
             <div className="flex-1 text-3xl font-semibold text-primary text-right">
-              {converted}
+              {ratesLoading ? '...' : converted}
             </div>
           </div>
         </div>
@@ -225,7 +291,7 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
                 size="sm"
                 onClick={() => handleQuickAmount(value)}
               >
-                {currency.symbol}{value.toLocaleString()}
+                {foreignCurrency.symbol}{value.toLocaleString()}
               </Button>
             ))}
           </div>
@@ -234,14 +300,64 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
         {/* Exchange Rate Info */}
         <div className="rounded-lg border border-border p-3 flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
-            <Info className="h-4 w-4 text-muted-foreground" />
+            {ratesLoading ? (
+              <RefreshCw className="h-4 w-4 text-muted-foreground animate-spin" />
+            ) : (
+              <Info className="h-4 w-4 text-muted-foreground" />
+            )}
           </div>
           <div>
-            <p className="text-sm">1 {currency.code} = ${currency.rateToUSD.toFixed(4)} USD</p>
-            <p className="text-xs text-muted-foreground">Rates are approximate</p>
+            {rate !== null ? (
+              <>
+                <p className="text-sm">1 {foreignCurrency.code} = {home.symbol}{rate.toFixed(4)} {home.code}</p>
+                <p className="text-xs text-muted-foreground">
+                  Live rate {lastUpdated ? `as of ${lastUpdated}` : ''}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading exchange rates...</p>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Home Currency Picker */}
+      {showHomePicker && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          <div className="px-4 py-3 flex items-center gap-3 border-b border-border">
+            <Button variant="ghost" size="icon" onClick={() => setShowHomePicker(false)} className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-lg font-semibold">Home Currency</h1>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {HOME_CURRENCIES.map((c) => (
+              <button
+                key={c.code}
+                onClick={() => {
+                  onChangeHomeCurrency(c.code);
+                  setShowHomePicker(false);
+                }}
+                className={cn(
+                  'w-full px-4 py-3 flex items-center justify-between hover:bg-secondary/50 transition-colors border-b border-border/50',
+                  c.code === homeCurrency && 'bg-primary/10'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg font-semibold w-10">{c.symbol}</span>
+                  <div className="text-left">
+                    <p className="font-medium">{c.code}</p>
+                    <p className="text-sm text-muted-foreground">{c.name}</p>
+                  </div>
+                </div>
+                {c.code === homeCurrency && (
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Camera overlay */}
       {showCamera && (

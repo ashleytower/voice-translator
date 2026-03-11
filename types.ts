@@ -63,6 +63,7 @@ export interface AppSettings {
   saveHistory: boolean;
   defaultFromLang: string;
   defaultToLang: string;
+  homeCurrency: string;
 }
 
 export type ViewMode = 'chat' | 'currency' | 'ar' | 'settings' | 'favs';

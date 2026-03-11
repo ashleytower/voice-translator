@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   saveHistory: true,
   defaultFromLang: 'en',
   defaultToLang: 'ja',
+  homeCurrency: 'CAD',
 };
 
 export function useAppSettings() {

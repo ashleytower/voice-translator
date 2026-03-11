@@ -81,7 +81,7 @@ export default function FluentPage() {
     },
   });
 
-  const { settings, toggleSetting, resetSettings } = useAppSettings();
+  const { settings, updateSetting, toggleSetting, resetSettings } = useAppSettings();
 
   // Load messages and languages from localStorage
   useEffect(() => {
@@ -307,6 +307,8 @@ export default function FluentPage() {
   const renderCurrencyView = () => (
     <CurrencyConverterView
       currentLanguage={toLang}
+      homeCurrency={settings.homeCurrency}
+      onChangeHomeCurrency={(code) => updateSetting('homeCurrency', code)}
       onBack={() => setViewMode('chat')}
     />
   );
@@ -315,6 +317,7 @@ export default function FluentPage() {
     <SettingsView
       settings={settings}
       onToggle={toggleSetting}
+      onUpdateSetting={updateSetting}
       onReset={resetSettings}
       onBack={() => setViewMode('chat')}
     />

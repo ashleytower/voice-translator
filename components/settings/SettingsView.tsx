@@ -1,14 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AppSettings } from '@/types';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Volume2, Vibrate, History, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Volume2, Vibrate, History, RefreshCw, Coins, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SettingsViewProps {
   settings: AppSettings;
   onToggle: (key: keyof AppSettings) => void;
+  onUpdateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
   onReset: () => void;
   onBack: () => void;
 }
@@ -20,6 +21,35 @@ interface ToggleRowProps {
   onToggle: () => void;
   icon: React.ReactNode;
 }
+
+const HOME_CURRENCIES = [
+  { code: 'CAD', name: 'Canadian Dollar' },
+  { code: 'USD', name: 'US Dollar' },
+  { code: 'EUR', name: 'Euro' },
+  { code: 'GBP', name: 'British Pound' },
+  { code: 'AUD', name: 'Australian Dollar' },
+  { code: 'NZD', name: 'New Zealand Dollar' },
+  { code: 'CHF', name: 'Swiss Franc' },
+  { code: 'JPY', name: 'Japanese Yen' },
+  { code: 'KRW', name: 'Korean Won' },
+  { code: 'CNY', name: 'Chinese Yuan' },
+  { code: 'INR', name: 'Indian Rupee' },
+  { code: 'BRL', name: 'Brazilian Real' },
+  { code: 'MXN', name: 'Mexican Peso' },
+  { code: 'SGD', name: 'Singapore Dollar' },
+  { code: 'HKD', name: 'Hong Kong Dollar' },
+  { code: 'SEK', name: 'Swedish Krona' },
+  { code: 'NOK', name: 'Norwegian Krone' },
+  { code: 'PLN', name: 'Polish Zloty' },
+  { code: 'THB', name: 'Thai Baht' },
+  { code: 'ZAR', name: 'South African Rand' },
+  { code: 'TRY', name: 'Turkish Lira' },
+  { code: 'PHP', name: 'Philippine Peso' },
+  { code: 'MYR', name: 'Malaysian Ringgit' },
+  { code: 'IDR', name: 'Indonesian Rupiah' },
+  { code: 'VND', name: 'Vietnamese Dong' },
+  { code: 'AED', name: 'UAE Dirham' },
+];
 
 const ToggleRow: React.FC<ToggleRowProps> = ({ title, description, isEnabled, onToggle, icon }) => (
   <button
@@ -56,9 +86,49 @@ const ToggleRow: React.FC<ToggleRowProps> = ({ title, description, isEnabled, on
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
   onToggle,
+  onUpdateSetting,
   onReset,
   onBack,
 }) => {
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const currentCurrency = HOME_CURRENCIES.find(c => c.code === settings.homeCurrency) || HOME_CURRENCIES[0];
+
+  if (showCurrencyPicker) {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+        <div className="px-4 py-3 flex items-center gap-3 border-b border-border">
+          <Button variant="ghost" size="icon" onClick={() => setShowCurrencyPicker(false)} className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-lg font-semibold">Home Currency</h1>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {HOME_CURRENCIES.map((c) => (
+            <button
+              key={c.code}
+              onClick={() => {
+                onUpdateSetting('homeCurrency', c.code);
+                setShowCurrencyPicker(false);
+              }}
+              className={cn(
+                'w-full px-4 py-3 flex items-center justify-between hover:bg-secondary/50 transition-colors border-b border-border/50',
+                c.code === settings.homeCurrency && 'bg-primary/10'
+              )}
+            >
+              <div>
+                <p className="font-medium">{c.code}</p>
+                <p className="text-sm text-muted-foreground">{c.name}</p>
+              </div>
+              {c.code === settings.homeCurrency && (
+                <div className="w-2 h-2 rounded-full bg-primary" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
@@ -73,6 +143,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* Currency Section */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
+            Currency
+          </h3>
+          <button
+            onClick={() => setShowCurrencyPicker(true)}
+            className="w-full rounded-lg border border-border p-4 text-left hover:bg-secondary/50 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground">
+                  <Coins className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Home Currency</h3>
+                  <p className="text-sm text-muted-foreground">{currentCurrency.code} - {currentCurrency.name}</p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </button>
+        </div>
+
         {/* Audio Section */}
         <div className="space-y-3">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
