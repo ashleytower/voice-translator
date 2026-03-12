@@ -7,9 +7,11 @@ export interface UseVapiCallReturn {
   duration: number;
   result: CallResult | null;
   error: string | null;
+  pendingDecision: { question: string; options: string[] | null } | null;
   startCall: (request: CallRequest) => Promise<void>;
   endCall: () => Promise<void>;
   sendMessage: (message: string) => Promise<void>;
+  sendDecision: (decision: string) => Promise<void>;
   resetCall: () => void;
 }
 
@@ -54,17 +56,26 @@ export function useVapiCall(): UseVapiCallReturn {
   const [duration, setDuration] = useState(0);
   const [result, setResult] = useState<CallResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDecision, setPendingDecision] = useState<{
+    question: string;
+    options: string[] | null;
+  } | null>(null);
 
   const callIdRef = useRef<string | null>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const transcriptPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const startTimeRef = useRef<number>(0);
 
   const cleanup = useCallback(() => {
-    if (pollIntervalRef.current !== null) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
+    if (statusPollRef.current !== null) {
+      clearInterval(statusPollRef.current);
+      statusPollRef.current = null;
+    }
+    if (transcriptPollRef.current !== null) {
+      clearInterval(transcriptPollRef.current);
+      transcriptPollRef.current = null;
     }
     if (durationIntervalRef.current !== null) {
       clearInterval(durationIntervalRef.current);
@@ -83,7 +94,7 @@ export function useVapiCall(): UseVapiCallReturn {
     };
   }, [cleanup]);
 
-  // Connect to VAPI monitor WebSocket for real-time transcript
+  // Connect to VAPI monitor WebSocket — raw audio only, used as a fallback status signal
   const connectMonitor = useCallback((monitorUrl: string) => {
     try {
       const ws = new WebSocket(monitorUrl);
@@ -91,52 +102,20 @@ export function useVapiCall(): UseVapiCallReturn {
 
       ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse(event.data as string);
 
-          // conversation-update has the full conversation array
-          if (data.type === 'conversation-update' && Array.isArray(data.conversation)) {
-            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const entries: CallTranscript[] = data.conversation
-              .filter((m: { role: string }) => m.role === 'assistant' || m.role === 'user')
-              .map((m: { role: string; content?: string }) => ({
-                role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
-                text: m.content ?? '',
-                timestamp: now,
-              }));
-            if (entries.length > 0) {
-              setTranscript(entries);
-            }
-          }
-
-          // Individual transcript events
-          if (data.type === 'transcript' && data.transcript) {
-            if (data.transcriptType === 'final') {
-              const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              setTranscript((prev) => [
-                ...prev,
-                {
-                  role: data.role === 'bot' || data.role === 'assistant' ? ('assistant' as const) : ('user' as const),
-                  text: data.transcript,
-                  timestamp: now,
-                },
-              ]);
-            }
-          }
-
-          // Status changes from monitor
           if (data.type === 'status-update') {
-            const mapped = mapVapiStatus(data.status);
+            const mapped = mapVapiStatus(data.status as string);
             if (mapped) setStatus(mapped);
           }
 
-          // Call ended
           if (data.type === 'end-of-call-report') {
             setStatus('ended');
             setResult({
               status: 'success',
               duration: Math.round((Date.now() - startTimeRef.current) / 1000),
-              summary: data.summary || 'Call completed',
-              transcript: data.messages ? parseVapiMessages(data.messages) : [],
+              summary: (data.summary as string) || 'Call completed',
+              transcript: data.messages ? parseVapiMessages(data.messages as unknown[]) : [],
             });
             cleanup();
           }
@@ -157,53 +136,73 @@ export function useVapiCall(): UseVapiCallReturn {
     }
   }, [cleanup]);
 
+  // Poll VAPI status endpoint to detect call end/error
   const pollCallStatus = useCallback(async (callId: string) => {
     try {
       const res = await fetch(`/api/call?callId=${encodeURIComponent(callId)}`);
       if (!res.ok) return;
 
-      const data = await res.json();
-      const mappedStatus = mapVapiStatus(data.status);
+      const data = await res.json() as Record<string, unknown>;
+      const mappedStatus = mapVapiStatus(data.status as string);
 
       if (mappedStatus !== null) {
         setStatus(mappedStatus);
       }
 
-      // Try every possible location for transcript messages
-      const msgs = data.messages ?? data.artifact?.messages ?? [];
-      let parsedMessages = parseVapiMessages(msgs);
-
-      // Fallback: parse the plain transcript string if no structured messages
-      if (parsedMessages.length === 0 && data.transcript) {
-        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        parsedMessages = [{
-          role: 'assistant' as const,
-          text: data.transcript,
-          timestamp: now,
-        }];
-      }
-
-      // Always update transcript from poll (WebSocket is bonus, not gate)
-      if (parsedMessages.length > 0) {
-        setTranscript(parsedMessages);
-      }
-
       if (mappedStatus === 'ended') {
+        const msgs = (data.messages ?? (data.artifact as Record<string, unknown> | undefined)?.messages ?? []) as unknown[];
+        const parsedMessages = parseVapiMessages(msgs);
         cleanup();
         setResult({
           status: 'success',
           duration: Math.round((Date.now() - startTimeRef.current) / 1000),
-          summary: data.summary || data.artifact?.summary || 'Call completed',
+          summary: (data.summary ?? (data.artifact as Record<string, unknown> | undefined)?.summary ?? 'Call completed') as string,
           transcript: parsedMessages,
         });
       } else if (mappedStatus === 'error') {
         cleanup();
-        setError(data.endedReason || 'Call failed');
+        setError((data.endedReason as string) || 'Call failed');
       }
     } catch (err) {
-      console.error('[useVapiCall] Poll error:', err);
+      console.error('[useVapiCall] Status poll error:', err);
     }
   }, [cleanup]);
+
+  // Poll our webhook-backed transcript endpoint for real-time transcript and pending decisions
+  const pollTranscript = useCallback(async (callId: string) => {
+    try {
+      const res = await fetch(`/api/vapi/transcript?callId=${encodeURIComponent(callId)}`);
+      if (!res.ok) return;
+
+      const data = await res.json() as {
+        transcript: Array<{ role: string; text: string; timestamp: string }>;
+        pendingDecision: { question: string; options: string[] | null; resolved: boolean } | null;
+      };
+
+      if (Array.isArray(data.transcript) && data.transcript.length > 0) {
+        const entries: CallTranscript[] = data.transcript.map((e) => ({
+          role: e.role === 'assistant' || e.role === 'bot' ? ('assistant' as const) : ('user' as const),
+          text: e.text,
+          timestamp: new Date(e.timestamp).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        }));
+        setTranscript(entries);
+      }
+
+      if (data.pendingDecision && !data.pendingDecision.resolved) {
+        setPendingDecision({
+          question: data.pendingDecision.question,
+          options: data.pendingDecision.options,
+        });
+      } else {
+        setPendingDecision(null);
+      }
+    } catch (err) {
+      console.error('[useVapiCall] Transcript poll error:', err);
+    }
+  }, []);
 
   const startCall = useCallback(async (request: CallRequest) => {
     setStatus('starting');
@@ -211,6 +210,7 @@ export function useVapiCall(): UseVapiCallReturn {
     setTranscript([]);
     setResult(null);
     setDuration(0);
+    setPendingDecision(null);
     callIdRef.current = null;
 
     try {
@@ -221,34 +221,43 @@ export function useVapiCall(): UseVapiCallReturn {
       });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error || 'Failed to start call');
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(data.error || 'Failed to start call');
       }
 
-      const { callId, monitorUrl } = (await res.json()) as { callId: string; monitorUrl: string | null };
+      const { callId, monitorUrl } = (await res.json()) as {
+        callId: string;
+        monitorUrl: string | null;
+        controlUrl: string | null;
+      };
       callIdRef.current = callId;
       startTimeRef.current = Date.now();
       setStatus('ringing');
 
-      // Connect to real-time WebSocket monitor if available
+      // Connect to VAPI WebSocket for status signals (not transcript)
       if (monitorUrl) {
         connectMonitor(monitorUrl);
       }
 
-      // Duration counter ticks every second
+      // Duration counter
       durationIntervalRef.current = setInterval(() => {
         setDuration(Math.round((Date.now() - startTimeRef.current) / 1000));
       }, 1000);
 
-      // Poll VAPI for status (fallback for transcript if no WS)
-      pollIntervalRef.current = setInterval(() => {
+      // Poll VAPI for call status (ended, error detection)
+      statusPollRef.current = setInterval(() => {
         pollCallStatus(callId);
-      }, 2000);
+      }, 3000);
+
+      // Poll our webhook transcript endpoint every 1.5 seconds for real-time transcript
+      transcriptPollRef.current = setInterval(() => {
+        pollTranscript(callId);
+      }, 1500);
     } catch (err) {
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Unknown error');
     }
-  }, [pollCallStatus, connectMonitor]);
+  }, [pollCallStatus, pollTranscript, connectMonitor]);
 
   const endCall = useCallback(async () => {
     const callId = callIdRef.current;
@@ -287,6 +296,28 @@ export function useVapiCall(): UseVapiCallReturn {
     }
   }, []);
 
+  const sendDecision = useCallback(async (decision: string) => {
+    const callId = callIdRef.current;
+    if (!callId || !decision.trim()) return;
+
+    try {
+      const res = await fetch('/api/vapi/decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ callId, decision: decision.trim() }),
+      });
+
+      if (!res.ok) {
+        console.error('[useVapiCall] Send decision failed:', await res.text());
+      } else {
+        // Immediately clear the local pending decision UI
+        setPendingDecision(null);
+      }
+    } catch (err) {
+      console.error('[useVapiCall] Send decision error:', err);
+    }
+  }, []);
+
   const resetCall = useCallback(() => {
     cleanup();
     setStatus('idle');
@@ -294,8 +325,21 @@ export function useVapiCall(): UseVapiCallReturn {
     setDuration(0);
     setResult(null);
     setError(null);
+    setPendingDecision(null);
     callIdRef.current = null;
   }, [cleanup]);
 
-  return { status, transcript, duration, result, error, startCall, endCall, sendMessage, resetCall };
+  return {
+    status,
+    transcript,
+    duration,
+    result,
+    error,
+    pendingDecision,
+    startCall,
+    endCall,
+    sendMessage,
+    sendDecision,
+    resetCall,
+  };
 }

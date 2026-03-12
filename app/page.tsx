@@ -117,6 +117,7 @@ export default function FluentPage() {
     startCall,
     endCall,
     sendMessage: sendCallMessage,
+    sendDecision,
     resetCall,
   } = useVapiCall();
 
@@ -238,8 +239,10 @@ export default function FluentPage() {
     setMessages((prev) => [...prev, userMessage]);
 
     // During an active call, route chat responses to the call
+    // Call both sendCallMessage (VAPI say) and sendDecision (unblock tool hold)
     if (isCallActive && !attachment) {
       sendCallMessage(text.trim());
+      sendDecision(text.trim());
       const ackMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

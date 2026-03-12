@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
     callId: call.id,
     status: call.status,
     monitorUrl: call.monitor?.listenUrl || null,
+    controlUrl: call.monitor?.controlUrl || null,
   });
 }
 
