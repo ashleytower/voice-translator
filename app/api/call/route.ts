@@ -45,16 +45,33 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const name = userName || 'a traveler';
+
+  const systemPrompt = [
+    'You are making an OUTBOUND phone call. You are the CALLER. The person who answers is a business.',
+    '',
+    `Your task: ${taskDescription}`,
+    `Speak in: ${targetLanguage}`,
+    `Name for booking: ${name}`,
+    '',
+    `When the person answers, greet them and state your request in ${targetLanguage}. One greeting plus one request sentence.`,
+    '',
+    'RULES:',
+    `- ALWAYS speak in ${targetLanguage}. Never switch to English unless the target language is English.`,
+    '- Be brief. Max 1-2 sentences per turn.',
+    '- NEVER mention a client or say on behalf of anyone. You are the customer.',
+    `- If the business offers an alternative or asks a question you cannot answer: say one moment in ${targetLanguage} then IMMEDIATELY call check_with_user. Never decide yourself.`,
+    `- After check_with_user returns the answer, relay it in ${targetLanguage}.`,
+    '- Never repeat your original request after being offered an alternative.',
+    '- Once confirmed, thank them and wrap up.',
+  ].join('\n');
+
   const assistantOverrides = {
-    variableValues: {
-      task_description: taskDescription,
-      target_language: targetLanguage,
-      user_name: userName || 'a traveler',
-      party_size: partySize?.toString() || 'not specified',
-      date: date || 'not specified',
-      time: time || 'not specified',
-      special_requests: specialRequests || 'none',
+    model: {
+      messages: [{ role: 'system' as const, content: systemPrompt }],
     },
+    firstMessage: taskDescription,
+    firstMessageMode: 'assistant-speaks-first-with-model-generated-message' as const,
   };
 
   let response: Response;
