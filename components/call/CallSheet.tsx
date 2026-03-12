@@ -342,8 +342,17 @@ export function CallSheet({
         </div>
 
         {/* Live correction + End Call footer — only shown during active call */}
-        {isActiveCall && (
+        {isActiveCall && (() => {
+          const lastAssistant = [...transcript].reverse().find((t) => t.role === 'assistant');
+          const isWaiting = lastAssistant && /check with (my|the) client|one moment|let me confirm/i.test(lastAssistant.text);
+          return (
           <div className="px-6 py-3 border-t border-border shrink-0 space-y-2">
+            {isWaiting && (
+              <div className="flex items-center gap-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 px-3 py-2 animate-pulse">
+                <AlertCircle className="h-4 w-4 text-yellow-400 shrink-0" />
+                <p className="text-xs text-yellow-300">The AI is waiting for your answer. Type your response below.</p>
+              </div>
+            )}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -358,8 +367,12 @@ export function CallSheet({
                 type="text"
                 value={liveMessage}
                 onChange={(e) => setLiveMessage(e.target.value)}
-                placeholder="Correct or guide the AI..."
-                className="flex-1 rounded-lg border border-input bg-secondary px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                placeholder={isWaiting ? "Tell the AI what to do..." : "Correct or guide the AI..."}
+                className={cn(
+                  "flex-1 rounded-lg border px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring",
+                  isWaiting ? "border-yellow-500/40 bg-yellow-500/5" : "border-input bg-secondary"
+                )}
+                autoFocus={isWaiting || undefined}
               />
               <Button
                 type="submit"
@@ -379,7 +392,8 @@ export function CallSheet({
               End Call
             </Button>
           </div>
-        )}
+          );
+        })()}
       </SheetContent>
     </Sheet>
   );
