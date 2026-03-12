@@ -58,6 +58,7 @@ export function useVapiCall(): UseVapiCallReturn {
   const callIdRef = useRef<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const startTimeRef = useRef<number>(0);
 
   const cleanup = useCallback(() => {
@@ -69,13 +70,91 @@ export function useVapiCall(): UseVapiCallReturn {
       clearInterval(durationIntervalRef.current);
       durationIntervalRef.current = null;
     }
+    if (wsRef.current !== null) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
   }, []);
 
-  // Clean up intervals on unmount
+  // Clean up on unmount
   useEffect(() => {
     return () => {
       cleanup();
     };
+  }, [cleanup]);
+
+  // Connect to VAPI monitor WebSocket for real-time transcript
+  const connectMonitor = useCallback((monitorUrl: string) => {
+    try {
+      const ws = new WebSocket(monitorUrl);
+      wsRef.current = ws;
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          // conversation-update has the full conversation array
+          if (data.type === 'conversation-update' && Array.isArray(data.conversation)) {
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const entries: CallTranscript[] = data.conversation
+              .filter((m: { role: string }) => m.role === 'assistant' || m.role === 'user')
+              .map((m: { role: string; content?: string }) => ({
+                role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+                text: m.content ?? '',
+                timestamp: now,
+              }));
+            if (entries.length > 0) {
+              setTranscript(entries);
+            }
+          }
+
+          // Individual transcript events
+          if (data.type === 'transcript' && data.transcript) {
+            if (data.transcriptType === 'final') {
+              const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              setTranscript((prev) => [
+                ...prev,
+                {
+                  role: data.role === 'bot' || data.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+                  text: data.transcript,
+                  timestamp: now,
+                },
+              ]);
+            }
+          }
+
+          // Status changes from monitor
+          if (data.type === 'status-update') {
+            const mapped = mapVapiStatus(data.status);
+            if (mapped) setStatus(mapped);
+          }
+
+          // Call ended
+          if (data.type === 'end-of-call-report') {
+            setStatus('ended');
+            setResult({
+              status: 'success',
+              duration: Math.round((Date.now() - startTimeRef.current) / 1000),
+              summary: data.summary || 'Call completed',
+              transcript: data.messages ? parseVapiMessages(data.messages) : [],
+            });
+            cleanup();
+          }
+        } catch (err) {
+          console.error('[useVapiCall] WS parse error:', err);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error('[useVapiCall] WS error:', err);
+      };
+
+      ws.onclose = () => {
+        wsRef.current = null;
+      };
+    } catch (err) {
+      console.error('[useVapiCall] WS connect error:', err);
+    }
   }, [cleanup]);
 
   const pollCallStatus = useCallback(async (callId: string) => {
@@ -90,10 +169,17 @@ export function useVapiCall(): UseVapiCallReturn {
         setStatus(mappedStatus);
       }
 
-      const parsedMessages = parseVapiMessages(data.messages ?? []);
+      // Only use poll for messages if WebSocket isn't connected
+      if (wsRef.current === null || wsRef.current.readyState !== WebSocket.OPEN) {
+        const parsedMessages = parseVapiMessages(data.messages ?? []);
+        if (parsedMessages.length > 0) {
+          setTranscript(parsedMessages);
+        }
+      }
 
       if (mappedStatus === 'ended') {
         cleanup();
+        const parsedMessages = parseVapiMessages(data.messages ?? []);
         setResult({
           status: 'success',
           duration: Math.round((Date.now() - startTimeRef.current) / 1000),
@@ -103,10 +189,6 @@ export function useVapiCall(): UseVapiCallReturn {
       } else if (mappedStatus === 'error') {
         cleanup();
         setError(data.endedReason || 'Call failed');
-      }
-
-      if (parsedMessages.length > 0) {
-        setTranscript(parsedMessages);
       }
     } catch (err) {
       console.error('[useVapiCall] Poll error:', err);
@@ -133,17 +215,22 @@ export function useVapiCall(): UseVapiCallReturn {
         throw new Error((data as { error?: string }).error || 'Failed to start call');
       }
 
-      const { callId } = (await res.json()) as { callId: string };
+      const { callId, monitorUrl } = (await res.json()) as { callId: string; monitorUrl: string | null };
       callIdRef.current = callId;
       startTimeRef.current = Date.now();
       setStatus('ringing');
+
+      // Connect to real-time WebSocket monitor if available
+      if (monitorUrl) {
+        connectMonitor(monitorUrl);
+      }
 
       // Duration counter ticks every second
       durationIntervalRef.current = setInterval(() => {
         setDuration(Math.round((Date.now() - startTimeRef.current) / 1000));
       }, 1000);
 
-      // Poll VAPI for call status every 2 seconds
+      // Poll VAPI for status (fallback for transcript if no WS)
       pollIntervalRef.current = setInterval(() => {
         pollCallStatus(callId);
       }, 2000);
@@ -151,7 +238,7 @@ export function useVapiCall(): UseVapiCallReturn {
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Unknown error');
     }
-  }, [pollCallStatus]);
+  }, [pollCallStatus, connectMonitor]);
 
   const endCall = useCallback(async () => {
     const callId = callIdRef.current;

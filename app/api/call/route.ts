@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     callId: call.id,
     status: call.status,
+    monitorUrl: call.monitor?.listenUrl || null,
   });
 }
 
