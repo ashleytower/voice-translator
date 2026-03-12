@@ -23,6 +23,24 @@ import { CallSheet } from '@/components/call/CallSheet';
 const STORAGE_KEY = 'fluent-messages';
 const LANG_STORAGE_KEY = 'fluent-languages';
 
+// Detect call intent: message contains a phone number + call-related keyword
+const PHONE_REGEX = /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
+const CALL_KEYWORDS = /\b(call|phone|ring|dial)\b/i;
+
+function extractCallIntent(text: string): { task: string; phone: string } | null {
+  const phoneMatch = text.match(PHONE_REGEX);
+  if (!phoneMatch || !CALL_KEYWORDS.test(text)) return null;
+
+  const rawPhone = phoneMatch[0];
+  const digits = rawPhone.replace(/\D/g, '');
+  const phone = digits.length === 10 ? `+1${digits}` : digits.startsWith('1') ? `+${digits}` : `+${digits}`;
+
+  // Task is the message without the phone number
+  const task = text.replace(rawPhone, '').replace(/\s{2,}/g, ' ').trim();
+
+  return { task, phone };
+}
+
 export default function FluentPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [fromLang, setFromLang] = useState<Language>(LANGUAGES[0]);
@@ -30,6 +48,7 @@ export default function FluentPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
   const [isLoading, setIsLoading] = useState(false);
   const [showCallSheet, setShowCallSheet] = useState(false);
+  const [callPreFill, setCallPreFill] = useState<{ task: string; phone: string } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -156,6 +175,22 @@ export default function FluentPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+
+    // Detect call intent — phone number + "call" keyword
+    const callIntent = extractCallIntent(text);
+    if (callIntent && !attachment) {
+      const ackMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        text: `Setting up call to ${callIntent.phone}...`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, ackMessage]);
+      setCallPreFill(callIntent);
+      setShowCallSheet(true);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -219,24 +254,24 @@ export default function FluentPage() {
     localStorage.removeItem(STORAGE_KEY);
   };
 
-  // Build chat context from recent user messages for the call sheet
-  const chatContext = messages
-    .filter((m) => m.role === 'user')
-    .slice(-3)
-    .map((m) => m.text)
-    .join(' | ');
+  // Build chat context: use extracted task from call intent, or fall back to recent messages
+  const chatContext = callPreFill?.task
+    ?? messages.filter((m) => m.role === 'user').slice(-3).map((m) => m.text).join(' | ');
 
   // Handle call sheet open/close — add summary message when sheet closes after a completed call
   const handleCallSheetOpenChange = useCallback((nextOpen: boolean) => {
-    if (!nextOpen && callResult !== null) {
-      const summaryMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        text: `Call completed: ${callResult.summary}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, summaryMessage]);
-      resetCall();
+    if (!nextOpen) {
+      setCallPreFill(null);
+      if (callResult !== null) {
+        const summaryMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          text: `Call completed: ${callResult.summary}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, summaryMessage]);
+        resetCall();
+      }
     }
     setShowCallSheet(nextOpen);
   }, [callResult, resetCall]);
@@ -351,6 +386,7 @@ export default function FluentPage() {
         onOpenChange={handleCallSheetOpenChange}
         targetLanguage={toLang.name}
         chatContext={chatContext}
+        defaultPhoneNumber={callPreFill?.phone}
         status={callStatus}
         transcript={callTranscript}
         duration={callDuration}

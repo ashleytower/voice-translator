@@ -18,6 +18,8 @@ interface CallSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   targetLanguage: string;
+  chatContext: string;
+  defaultPhoneNumber?: string;
   status: CallStatus;
   transcript: CallTranscript[];
   duration: number;
@@ -112,16 +114,23 @@ export function CallSheet({
   duration,
   result,
   error,
+  chatContext,
+  defaultPhoneNumber,
   onStartCall,
   onEndCall,
   onSendMessage,
 }: CallSheetProps) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
-  const [partySize, setPartySize] = useState('');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
   const [liveMessage, setLiveMessage] = useState('');
+
+  // Pre-fill task and phone from chat context when sheet opens
+  useEffect(() => {
+    if (open && status === 'idle') {
+      if (chatContext) setTaskDescription(chatContext);
+      if (defaultPhoneNumber) setPhoneNumber(defaultPhoneNumber);
+    }
+  }, [open, status, chatContext, defaultPhoneNumber]);
 
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
@@ -135,9 +144,6 @@ export function CallSheet({
     if (!nextOpen && (status === 'idle' || status === 'ended' || status === 'error')) {
       setPhoneNumber('');
       setTaskDescription('');
-      setPartySize('');
-      setDate('');
-      setTime('');
     }
     onOpenChange(nextOpen);
   };
@@ -157,9 +163,6 @@ export function CallSheet({
       phoneNumber: stripped,
       taskDescription: taskDescription.trim(),
       targetLanguage,
-      partySize: partySize ? parseInt(partySize, 10) : undefined,
-      date: date || undefined,
-      time: time || undefined,
     };
 
     onStartCall(request);
@@ -206,6 +209,39 @@ export function CallSheet({
           {/* PRE-CALL FORM */}
           {status === 'idle' && (
             <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+              {/* Task from chat context - shown as editable summary */}
+              {taskDescription && (
+                <div className="rounded-lg bg-secondary/50 border border-border px-4 py-3 space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Task from chat
+                  </p>
+                  <textarea
+                    value={taskDescription}
+                    onChange={(e) => setTaskDescription(e.target.value)}
+                    rows={2}
+                    className="w-full bg-transparent border-none text-sm focus:outline-none resize-none p-0"
+                  />
+                </div>
+              )}
+
+              {/* No chat context - show full task input */}
+              {!taskDescription && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground" htmlFor="task-description">
+                    What should the AI say?
+                  </label>
+                  <textarea
+                    id="task-description"
+                    value={taskDescription}
+                    onChange={(e) => setTaskDescription(e.target.value)}
+                    placeholder="e.g. Make a dinner reservation for 2 at 7pm under Ashley"
+                    rows={3}
+                    className="w-full rounded-lg border border-input bg-secondary px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                    required
+                  />
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground" htmlFor="phone-number">
                   Phone number
@@ -219,79 +255,17 @@ export function CallSheet({
                   className="w-full rounded-lg border border-input bg-secondary px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   required
                   autoComplete="tel"
+                  autoFocus
                 />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground" htmlFor="task-description">
-                  What should the AI say?
-                </label>
-                <textarea
-                  id="task-description"
-                  value={taskDescription}
-                  onChange={(e) => setTaskDescription(e.target.value)}
-                  placeholder="What should the AI say?"
-                  rows={3}
-                  className="w-full rounded-lg border border-input bg-secondary px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-                  required
-                />
-              </div>
-
-              {/* Optional fields */}
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
-                  Optional details
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-muted-foreground" htmlFor="party-size">
-                      Party size
-                    </label>
-                    <input
-                      id="party-size"
-                      type="number"
-                      min="1"
-                      max="99"
-                      value={partySize}
-                      onChange={(e) => setPartySize(e.target.value)}
-                      placeholder="2"
-                      className="w-full rounded-lg border border-input bg-secondary px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-muted-foreground" htmlFor="call-date">
-                      Date
-                    </label>
-                    <input
-                      id="call-date"
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-secondary px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground" htmlFor="call-time">
-                    Time
-                  </label>
-                  <input
-                    id="call-time"
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    className="w-full rounded-lg border border-input bg-secondary px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  />
-                </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full gap-2"
                 disabled={!phoneNumber.trim() || !taskDescription.trim()}
               >
                 <Phone className="h-4 w-4" />
-                Call
+                Call Now
               </Button>
             </form>
           )}
