@@ -51,6 +51,7 @@ export default function FluentPage() {
   const [callPreFill, setCallPreFill] = useState<{ task: string; phone: string } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastRelayedLenRef = useRef(0);
 
   // API Keys from environment
   const deepgramApiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || '';
@@ -162,6 +163,45 @@ export default function FluentPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Relay call questions to main chat — "friend asking for a friend" pattern
+  const isCallActive = callStatus === 'starting' || callStatus === 'ringing' || callStatus === 'in-progress';
+
+  useEffect(() => {
+    if (callStatus !== 'in-progress' || callTranscript.length === 0) return;
+    if (callTranscript.length <= lastRelayedLenRef.current) return;
+
+    const last = callTranscript[callTranscript.length - 1];
+
+    if (last.role === 'assistant' && /check with (my|the) client|one moment|let me confirm/i.test(last.text)) {
+      // Find what the recipient said right before the AI paused
+      const recipientMessages = callTranscript.filter((t) => t.role === 'user');
+      const lastRecipient = recipientMessages[recipientMessages.length - 1];
+
+      const relayText = lastRecipient
+        ? `On the call: "${lastRecipient.text}"\n\nWhat should I tell them?`
+        : 'On the call: They have a question. What should I tell them?';
+
+      const relayMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        text: relayText,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      setMessages((prev) => [...prev, relayMessage]);
+      setShowCallSheet(false); // bring user back to chat
+    }
+
+    lastRelayedLenRef.current = callTranscript.length;
+  }, [callTranscript, callStatus]);
+
+  // Reset relay tracker when call ends
+  useEffect(() => {
+    if (callStatus === 'idle') {
+      lastRelayedLenRef.current = 0;
+    }
+  }, [callStatus]);
+
   // Handle text message send
   const handleSend = async (text: string, attachment?: string) => {
     if (!text.trim() && !attachment) return;
@@ -175,6 +215,19 @@ export default function FluentPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+
+    // During an active call, route chat responses to the call
+    if (isCallActive && !attachment) {
+      sendCallMessage(text.trim());
+      const ackMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        text: 'Got it, relaying that now.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, ackMessage]);
+      return;
+    }
 
     // Detect call intent — phone number + "call" keyword
     const callIntent = extractCallIntent(text);
