@@ -65,6 +65,19 @@ export async function POST(request: NextRequest) {
     `- After check_with_user returns the answer, relay it naturally in ${targetLanguage}.`,
     '- Never repeat your original request after being offered an alternative.',
     '- Once confirmed, thank them and wrap up.',
+    '',
+    'VOICEMAIL / ANSWERING MACHINE:',
+    `- If you hear a voicemail greeting or "leave a message after the tone", WAIT for the beep, then leave a brief message in ${targetLanguage}.`,
+    `- The message should state: your name (${name}), what you need (${taskDescription}), and ask them to call back.`,
+    '- After leaving the message, call check_with_user to let the user know you reached voicemail and left a message.',
+    '- NEVER hang up without leaving a message.',
+    '',
+    'IVR / PHONE MENU:',
+    '- If you hear "press 1 for..., press 2 for..." or similar automated menu, listen to all options and select the one closest to your task.',
+    '- Use DTMF tones to navigate (say the digit clearly).',
+    '- If no option fits, choose the option for general inquiries or to speak with a person.',
+    '- If placed on hold, wait patiently. Do NOT hang up.',
+    `- If on hold for more than 60 seconds, call check_with_user to ask if the user wants to keep waiting.`,
   ].join('\n');
 
   const assistantOverrides = {
