@@ -219,6 +219,13 @@ export default function FluentPage() {
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  // Build chat context from recent user messages for the call sheet
+  const chatContext = messages
+    .filter((m) => m.role === 'user')
+    .slice(-3)
+    .map((m) => m.text)
+    .join(' | ');
+
   // Handle call sheet open/close — add summary message when sheet closes after a completed call
   const handleCallSheetOpenChange = useCallback((nextOpen: boolean) => {
     if (!nextOpen && callResult !== null) {
@@ -343,6 +350,7 @@ export default function FluentPage() {
         open={showCallSheet}
         onOpenChange={handleCallSheetOpenChange}
         targetLanguage={toLang.name}
+        chatContext={chatContext}
         status={callStatus}
         transcript={callTranscript}
         duration={callDuration}
