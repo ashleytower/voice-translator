@@ -163,7 +163,7 @@ export default function FluentPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Stream entire call transcript into chat in real time with translations
+  // Stream call transcript into chat — show immediately, translate in background
   const isCallActive = callStatus === 'starting' || callStatus === 'ringing' || callStatus === 'in-progress';
 
   useEffect(() => {
@@ -172,45 +172,41 @@ export default function FluentPage() {
     const newEntries = callTranscript.slice(lastRelayedLenRef.current);
     if (newEntries.length === 0) return;
 
-    // Capture the current index before async work
     const baseIndex = lastRelayedLenRef.current;
     lastRelayedLenRef.current = callTranscript.length;
 
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Translate and relay each entry
-    (async () => {
-      for (let i = 0; i < newEntries.length; i++) {
-        const entry = newEntries[i];
-        const isAgent = entry.role === 'assistant';
-        const label = isAgent ? 'Your agent' : 'Them';
-        const isWaiting = isAgent && /check with (my|the) client|one moment|let me confirm/i.test(entry.text);
+    // Show each entry in chat immediately (original language)
+    for (let i = 0; i < newEntries.length; i++) {
+      const entry = newEntries[i];
+      const isAgent = entry.role === 'assistant';
+      const label = isAgent ? 'Your agent' : 'Them';
+      const msgId = `call-${Date.now()}-${baseIndex + i}`;
 
-        // Translate to user's language (fromLang = their language)
-        const english = await quickTranslate(entry.text, toLang.name, fromLang.name);
-        const sameLanguage = english.toLowerCase().trim() === entry.text.toLowerCase().trim();
+      const msg: Message = {
+        id: msgId,
+        role: 'assistant' as const,
+        text: `${label}: ${entry.text}`,
+        timestamp: now,
+      };
 
-        let text: string;
-        if (isWaiting) {
-          text = sameLanguage
-            ? `${label}: ${entry.text}\n\nWhat should I tell them?`
-            : `${label}: ${english}\n(${entry.text})\n\nWhat should I tell them?`;
-        } else {
-          text = sameLanguage
-            ? `${label}: ${entry.text}`
-            : `${label}: ${english}\n(${entry.text})`;
+      setMessages((prev) => [...prev, msg]);
+
+      // Translate in background and update the message
+      quickTranslate(entry.text, toLang.name, fromLang.name).then((translated) => {
+        const same = translated.toLowerCase().trim() === entry.text.toLowerCase().trim();
+        if (!same) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === msgId
+                ? { ...m, text: `${label}: ${translated}\n(${entry.text})` }
+                : m
+            )
+          );
         }
-
-        const msg: Message = {
-          id: `call-${Date.now()}-${baseIndex + i}`,
-          role: 'assistant' as const,
-          text,
-          timestamp: now,
-        };
-
-        setMessages((prev) => [...prev, msg]);
-      }
-    })();
+      });
+    }
   }, [callTranscript, callStatus, toLang.name, fromLang.name]);
 
   // Auto-minimize call sheet when call connects so user sees chat

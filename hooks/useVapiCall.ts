@@ -169,21 +169,31 @@ export function useVapiCall(): UseVapiCallReturn {
         setStatus(mappedStatus);
       }
 
-      // Only use poll for messages if WebSocket isn't connected
-      if (wsRef.current === null || wsRef.current.readyState !== WebSocket.OPEN) {
-        const parsedMessages = parseVapiMessages(data.messages ?? []);
-        if (parsedMessages.length > 0) {
-          setTranscript(parsedMessages);
-        }
+      // Try every possible location for transcript messages
+      const msgs = data.messages ?? data.artifact?.messages ?? [];
+      let parsedMessages = parseVapiMessages(msgs);
+
+      // Fallback: parse the plain transcript string if no structured messages
+      if (parsedMessages.length === 0 && data.transcript) {
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        parsedMessages = [{
+          role: 'assistant' as const,
+          text: data.transcript,
+          timestamp: now,
+        }];
+      }
+
+      // Always update transcript from poll (WebSocket is bonus, not gate)
+      if (parsedMessages.length > 0) {
+        setTranscript(parsedMessages);
       }
 
       if (mappedStatus === 'ended') {
         cleanup();
-        const parsedMessages = parseVapiMessages(data.messages ?? []);
         setResult({
           status: 'success',
           duration: Math.round((Date.now() - startTimeRef.current) / 1000),
-          summary: data.summary || 'Call completed',
+          summary: data.summary || data.artifact?.summary || 'Call completed',
           transcript: parsedMessages,
         });
       } else if (mappedStatus === 'error') {
