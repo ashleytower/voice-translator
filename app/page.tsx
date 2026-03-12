@@ -163,37 +163,42 @@ export default function FluentPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Relay call questions to main chat — "friend asking for a friend" pattern
+  // Stream entire call transcript into chat in real time
   const isCallActive = callStatus === 'starting' || callStatus === 'ringing' || callStatus === 'in-progress';
 
   useEffect(() => {
     if (callStatus !== 'in-progress' || callTranscript.length === 0) return;
-    if (callTranscript.length <= lastRelayedLenRef.current) return;
 
-    const last = callTranscript[callTranscript.length - 1];
+    // Only process new entries
+    const newEntries = callTranscript.slice(lastRelayedLenRef.current);
+    if (newEntries.length === 0) return;
 
-    if (last.role === 'assistant' && /check with (my|the) client|one moment|let me confirm/i.test(last.text)) {
-      // Find what the recipient said right before the AI paused
-      const recipientMessages = callTranscript.filter((t) => t.role === 'user');
-      const lastRecipient = recipientMessages[recipientMessages.length - 1];
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const newMessages: Message[] = newEntries.map((entry, i) => {
+      const isAgent = entry.role === 'assistant';
+      const label = isAgent ? 'Your agent' : 'Them';
+      const isWaiting = isAgent && /check with (my|the) client|one moment|let me confirm/i.test(entry.text);
 
-      const relayText = lastRecipient
-        ? `On the call: "${lastRecipient.text}"\n\nWhat should I tell them?`
-        : 'On the call: They have a question. What should I tell them?';
-
-      const relayMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        text: relayText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      return {
+        id: `call-${Date.now()}-${lastRelayedLenRef.current + i}`,
+        role: 'assistant' as const,
+        text: isWaiting
+          ? `${label}: "${entry.text}"\n\nWhat should I tell them?`
+          : `${label}: "${entry.text}"`,
+        timestamp: now,
       };
+    });
 
-      setMessages((prev) => [...prev, relayMessage]);
-      setShowCallSheet(false); // bring user back to chat
-    }
-
+    setMessages((prev) => [...prev, ...newMessages]);
     lastRelayedLenRef.current = callTranscript.length;
   }, [callTranscript, callStatus]);
+
+  // Auto-minimize call sheet when call connects so user sees chat
+  useEffect(() => {
+    if (callStatus === 'in-progress' && showCallSheet) {
+      setShowCallSheet(false);
+    }
+  }, [callStatus, showCallSheet]);
 
   // Reset relay tracker when call ends
   useEffect(() => {
