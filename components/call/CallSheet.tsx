@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Phone, PhoneOff, Clock, MessageSquare, AlertCircle } from 'lucide-react';
+import { Phone, PhoneOff, Clock, MessageSquare, AlertCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -25,6 +25,7 @@ interface CallSheetProps {
   error: string | null;
   onStartCall: (request: CallRequest) => void;
   onEndCall: () => void;
+  onSendMessage: (message: string) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -113,12 +114,14 @@ export function CallSheet({
   error,
   onStartCall,
   onEndCall,
+  onSendMessage,
 }: CallSheetProps) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [partySize, setPartySize] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [liveMessage, setLiveMessage] = useState('');
 
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
@@ -364,9 +367,35 @@ export function CallSheet({
           )}
         </div>
 
-        {/* End Call footer — only shown during active call */}
+        {/* Live correction + End Call footer — only shown during active call */}
         {isActiveCall && (
-          <div className="px-6 py-4 border-t border-border shrink-0">
+          <div className="px-6 py-3 border-t border-border shrink-0 space-y-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (liveMessage.trim()) {
+                  onSendMessage(liveMessage.trim());
+                  setLiveMessage('');
+                }
+              }}
+              className="flex items-center gap-2"
+            >
+              <input
+                type="text"
+                value={liveMessage}
+                onChange={(e) => setLiveMessage(e.target.value)}
+                placeholder="Correct or guide the AI..."
+                className="flex-1 rounded-lg border border-input bg-secondary px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <Button
+                type="submit"
+                size="icon"
+                disabled={!liveMessage.trim()}
+                className="h-9 w-9 shrink-0"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
             <Button
               variant="destructive"
               className="w-full gap-2"

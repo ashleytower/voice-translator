@@ -96,6 +96,7 @@ export default function FluentPage() {
     error: callError,
     startCall,
     endCall,
+    sendMessage: sendCallMessage,
     resetCall,
   } = useVapiCall();
 
@@ -349,6 +350,7 @@ export default function FluentPage() {
         error={callError}
         onStartCall={startCall}
         onEndCall={endCall}
+        onSendMessage={sendCallMessage}
       />
     </div>
   );

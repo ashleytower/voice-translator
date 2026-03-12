@@ -9,6 +9,7 @@ export interface UseVapiCallReturn {
   error: string | null;
   startCall: (request: CallRequest) => Promise<void>;
   endCall: () => Promise<void>;
+  sendMessage: (message: string) => Promise<void>;
   resetCall: () => void;
 }
 
@@ -170,6 +171,25 @@ export function useVapiCall(): UseVapiCallReturn {
     callIdRef.current = null;
   }, [cleanup]);
 
+  const sendMessage = useCallback(async (message: string) => {
+    const callId = callIdRef.current;
+    if (!callId || !message.trim()) return;
+
+    try {
+      const res = await fetch('/api/call', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ callId, message: message.trim() }),
+      });
+
+      if (!res.ok) {
+        console.error('[useVapiCall] Send message failed:', await res.text());
+      }
+    } catch (err) {
+      console.error('[useVapiCall] Send message error:', err);
+    }
+  }, []);
+
   const resetCall = useCallback(() => {
     cleanup();
     setStatus('idle');
@@ -180,5 +200,5 @@ export function useVapiCall(): UseVapiCallReturn {
     callIdRef.current = null;
   }, [cleanup]);
 
-  return { status, transcript, duration, result, error, startCall, endCall, resetCall };
+  return { status, transcript, duration, result, error, startCall, endCall, sendMessage, resetCall };
 }

@@ -123,6 +123,54 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(await response.json());
 }
 
+export async function PATCH(request: NextRequest) {
+  if (!VAPI_API_KEY) {
+    return NextResponse.json({ error: 'VAPI not configured' }, { status: 500 });
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+
+  const { callId, message } = body as { callId?: string; message?: string };
+  if (!validateCallId(callId ?? null) || !message?.trim()) {
+    return NextResponse.json({ error: 'Valid callId and message are required' }, { status: 400 });
+  }
+
+  let response: Response;
+  try {
+    // Inject a system message into the active call to redirect the AI
+    response = await fetch(`https://api.vapi.ai/call/${callId}/say`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${VAPI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message,
+        endCallAfterSpoken: false,
+      }),
+    });
+  } catch (err) {
+    console.error('[VAPI] Network error sending message:', err);
+    return NextResponse.json({ error: 'Failed to reach VAPI' }, { status: 502 });
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[VAPI] Say message failed:', response.status, errorText);
+    return NextResponse.json(
+      { error: `VAPI error (${response.status}): ${errorText}` },
+      { status: response.status }
+    );
+  }
+
+  return NextResponse.json({ success: true });
+}
+
 export async function DELETE(request: NextRequest) {
   if (!VAPI_API_KEY) {
     return NextResponse.json({ error: 'VAPI not configured' }, { status: 500 });
