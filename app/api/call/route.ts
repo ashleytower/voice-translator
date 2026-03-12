@@ -48,13 +48,14 @@ export async function POST(request: NextRequest) {
   const name = userName || 'a traveler';
 
   const systemPrompt = [
-    'You are making an OUTBOUND phone call. You are the CALLER. The person who answers is a business.',
+    'You are ALREADY connected to a business on the phone. The call is live. You are the CALLER.',
+    'Do NOT ask for a phone number, restaurant name, or any other details. You have everything you need.',
     '',
     `Your task: ${taskDescription}`,
     `Speak in: ${targetLanguage}`,
     `Name for booking: ${name}`,
     '',
-    `When the person answers, greet them and state your request in ${targetLanguage}. One greeting plus one request sentence.`,
+    `Greet the business and state your request in ${targetLanguage}. One greeting plus one request sentence.`,
     '',
     'RULES:',
     `- ALWAYS speak in ${targetLanguage}. Never switch to English unless the target language is English.`,
@@ -72,7 +73,6 @@ export async function POST(request: NextRequest) {
       model: 'claude-3-5-haiku-20241022',
       messages: [{ role: 'system' as const, content: systemPrompt }],
     },
-    firstMessage: taskDescription,
     firstMessageMode: 'assistant-speaks-first-with-model-generated-message' as const,
   };
 

@@ -27,6 +27,10 @@ const LANG_STORAGE_KEY = 'fluent-languages';
 const PHONE_REGEX = /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
 const CALL_KEYWORDS = /\b(call|phone|ring|dial)\b/i;
 
+// Strip meta-instruction prefixes like "can you call X and", "call this restaurant and", etc.
+// Captures optional "can you" + verb (call/phone/ring/dial) + optional noun phrase + "and/to"
+const CALL_PREFIX_REGEX = /^(?:can\s+you\s+)?(?:call|phone|ring|dial)\s+(?:this\s+\w+\s+)?(?:and|to)\s+/i;
+
 function extractCallIntent(text: string): { task: string; phone: string } | null {
   const phoneMatch = text.match(PHONE_REGEX);
   if (!phoneMatch || !CALL_KEYWORDS.test(text)) return null;
@@ -35,8 +39,9 @@ function extractCallIntent(text: string): { task: string; phone: string } | null
   const digits = rawPhone.replace(/\D/g, '');
   const phone = digits.length === 10 ? `+1${digits}` : digits.startsWith('1') ? `+${digits}` : `+${digits}`;
 
-  // Task is the message without the phone number
-  const task = text.replace(rawPhone, '').replace(/\s{2,}/g, ' ').trim();
+  // Remove the phone number, then strip any leading meta-instruction prefix
+  const withoutPhone = text.replace(rawPhone, '').replace(/\s{2,}/g, ' ').trim();
+  const task = withoutPhone.replace(CALL_PREFIX_REGEX, '').trim();
 
   return { task, phone };
 }
