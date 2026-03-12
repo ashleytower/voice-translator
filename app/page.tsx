@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Message, Language, ViewMode } from '@/types';
 import { LANGUAGES, INITIAL_MESSAGES } from '@/lib/constants';
-import { translateAndChat } from '@/lib/gemini-service';
+import { translateAndChat, quickTranslate } from '@/lib/gemini-service';
 import { useVoiceTranslator } from '@/hooks/useVoiceTranslator';
 import { CartesiaClient } from '@/lib/cartesia-client';
 
@@ -163,35 +163,55 @@ export default function FluentPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Stream entire call transcript into chat in real time
+  // Stream entire call transcript into chat in real time with translations
   const isCallActive = callStatus === 'starting' || callStatus === 'ringing' || callStatus === 'in-progress';
 
   useEffect(() => {
     if (callStatus !== 'in-progress' || callTranscript.length === 0) return;
 
-    // Only process new entries
     const newEntries = callTranscript.slice(lastRelayedLenRef.current);
     if (newEntries.length === 0) return;
 
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const newMessages: Message[] = newEntries.map((entry, i) => {
-      const isAgent = entry.role === 'assistant';
-      const label = isAgent ? 'Your agent' : 'Them';
-      const isWaiting = isAgent && /check with (my|the) client|one moment|let me confirm/i.test(entry.text);
-
-      return {
-        id: `call-${Date.now()}-${lastRelayedLenRef.current + i}`,
-        role: 'assistant' as const,
-        text: isWaiting
-          ? `${label}: "${entry.text}"\n\nWhat should I tell them?`
-          : `${label}: "${entry.text}"`,
-        timestamp: now,
-      };
-    });
-
-    setMessages((prev) => [...prev, ...newMessages]);
+    // Capture the current index before async work
+    const baseIndex = lastRelayedLenRef.current;
     lastRelayedLenRef.current = callTranscript.length;
-  }, [callTranscript, callStatus]);
+
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Translate and relay each entry
+    (async () => {
+      for (let i = 0; i < newEntries.length; i++) {
+        const entry = newEntries[i];
+        const isAgent = entry.role === 'assistant';
+        const label = isAgent ? 'Your agent' : 'Them';
+        const isWaiting = isAgent && /check with (my|the) client|one moment|let me confirm/i.test(entry.text);
+
+        // Translate to user's language (fromLang = their language)
+        const english = await quickTranslate(entry.text, toLang.name, fromLang.name);
+        const sameLanguage = english.toLowerCase().trim() === entry.text.toLowerCase().trim();
+
+        let text: string;
+        if (isWaiting) {
+          text = sameLanguage
+            ? `${label}: ${entry.text}\n\nWhat should I tell them?`
+            : `${label}: ${english}\n(${entry.text})\n\nWhat should I tell them?`;
+        } else {
+          text = sameLanguage
+            ? `${label}: ${entry.text}`
+            : `${label}: ${english}\n(${entry.text})`;
+        }
+
+        const msg: Message = {
+          id: `call-${Date.now()}-${baseIndex + i}`,
+          role: 'assistant' as const,
+          text,
+          timestamp: now,
+        };
+
+        setMessages((prev) => [...prev, msg]);
+      }
+    })();
+  }, [callTranscript, callStatus, toLang.name, fromLang.name]);
 
   // Auto-minimize call sheet when call connects so user sees chat
   useEffect(() => {

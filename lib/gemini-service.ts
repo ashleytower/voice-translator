@@ -98,3 +98,33 @@ export const translateAndChat = async (
     };
   }
 };
+
+/**
+ * Lightweight translate-only: returns just the English translation of text.
+ * Used for live call transcript relay so the user can read in their language.
+ */
+export const quickTranslate = async (
+  text: string,
+  fromLang: string,
+  toLang: string
+): Promise<string> => {
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: `Translate this from ${fromLang} to ${toLang}. Return ONLY the translation, nothing else.\n\n"${text}"`,
+            },
+          ],
+        },
+      ],
+    });
+    return response.text?.trim().replace(/^"|"$/g, '') || text;
+  } catch {
+    return text;
+  }
+};
