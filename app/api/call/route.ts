@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
     `- ALWAYS speak in ${targetLanguage}. Never switch to English unless the target language is English.`,
     '- Be brief. Max 1-2 sentences per turn.',
     '- NEVER mention a client or say on behalf of anyone. You are the customer.',
-    `- If the business offers an alternative or asks a question you cannot answer: say one moment in ${targetLanguage} then IMMEDIATELY call check_with_user. Never decide yourself.`,
-    `- After check_with_user returns the answer, relay it in ${targetLanguage}.`,
+    `- If the business offers an alternative or asks a question you cannot answer: say something natural like "hold on one second, let me check" in ${targetLanguage}, then IMMEDIATELY call check_with_user. Never decide yourself.`,
+    `- After check_with_user returns the answer, relay it naturally in ${targetLanguage}.`,
     '- Never repeat your original request after being offered an alternative.',
     '- Once confirmed, thank them and wrap up.',
   ].join('\n');
