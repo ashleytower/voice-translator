@@ -1,3 +1,5 @@
+export const maxDuration = 30;
+
 import { NextRequest, NextResponse } from 'next/server';
 
 const VAPI_API_KEY = process.env.VAPI_API_KEY;
