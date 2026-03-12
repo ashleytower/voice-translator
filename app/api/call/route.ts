@@ -72,6 +72,31 @@ export async function POST(request: NextRequest) {
       provider: 'anthropic' as const,
       model: 'claude-3-5-haiku-20241022',
       messages: [{ role: 'system' as const, content: systemPrompt }],
+      tools: [
+        {
+          type: 'function' as const,
+          async: false,
+          function: {
+            name: 'check_with_user',
+            description: 'Pause and check with the real person for their decision. Use this IMMEDIATELY when the business asks a question, offers an alternative, or needs any decision.',
+            parameters: {
+              type: 'object' as const,
+              required: ['question'],
+              properties: {
+                question: {
+                  type: 'string' as const,
+                  description: 'The question or choice to present to the user. Always write this in English so the user can read it.',
+                },
+                options: {
+                  type: 'array' as const,
+                  items: { type: 'string' as const },
+                  description: 'Optional list of choices in English.',
+                },
+              },
+            },
+          },
+        },
+      ],
     },
     firstMessageMode: 'assistant-speaks-first-with-model-generated-message' as const,
   };
