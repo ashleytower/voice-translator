@@ -68,6 +68,8 @@ export async function POST(request: NextRequest) {
 
   const assistantOverrides = {
     model: {
+      provider: 'anthropic' as const,
+      model: 'claude-3-5-haiku-20241022',
       messages: [{ role: 'system' as const, content: systemPrompt }],
     },
     firstMessage: taskDescription,
