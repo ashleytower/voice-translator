@@ -16,6 +16,8 @@ import { Orb, OrbState } from '@/components/voice/Orb';
 import { CurrencyConverterView } from '@/components/currency/CurrencyConverterView';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { FavoritesView } from '@/components/favorites/FavoritesView';
+import { CameraTranslateView } from '@/components/CameraTranslate/CameraTranslateView';
+import type { CameraTranslationResult } from '@/types';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useVapiCall } from '@/hooks/useVapiCall';
 import { CallSheet } from '@/components/call/CallSheet';
@@ -320,6 +322,20 @@ export default function TranslatorPage() {
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  // Save camera translation result to chat
+  const handleSaveCamera = useCallback((result: CameraTranslationResult) => {
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const msg: Message = {
+      id: Date.now().toString(),
+      role: 'assistant',
+      text: result.extractedText,
+      translation: result.translatedText,
+      timestamp: now,
+    };
+    setMessages((prev) => [...prev, msg]);
+    setViewMode('chat');
+  }, []);
+
   // Build chat context for call
   const chatContext = callPreFill?.task
     ?? messages.filter((m) => m.role === 'user').slice(-3).map((m) => m.text).join(' | ');
@@ -512,6 +528,14 @@ export default function TranslatorPage() {
         return renderCurrencyView();
       case 'settings':
         return renderSettingsView();
+      case 'camera':
+        return (
+          <CameraTranslateView
+            toLang={toLang}
+            onClose={() => setViewMode('chat')}
+            onSaveTranslation={handleSaveCamera}
+          />
+        );
       default:
         return renderChatView();
     }

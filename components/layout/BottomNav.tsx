@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ViewMode } from '@/types';
-import { MessageSquare, Star, ArrowLeftRight, Settings } from 'lucide-react';
+import { MessageSquare, Star, ScanLine, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavButtonProps {
@@ -53,10 +53,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
         onClick={() => onTabChange('favs')}
       />
       <NavButton
-        icon={<ArrowLeftRight className="h-[18px] w-[18px]" />}
-        label="Convert"
-        isActive={activeTab === 'currency'}
-        onClick={() => onTabChange('currency')}
+        icon={<ScanLine className="h-[18px] w-[18px]" />}
+        label="Scan"
+        isActive={activeTab === 'camera'}
+        onClick={() => onTabChange('camera')}
       />
       <NavButton
         icon={<Settings className="h-[18px] w-[18px]" />}
