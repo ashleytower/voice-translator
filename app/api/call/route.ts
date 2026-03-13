@@ -63,7 +63,7 @@ Never say "I'm ready" or "I'm listening" or narrate what you're doing. You are a
   const assistantOverrides = {
     model: {
       provider: 'anthropic' as const,
-      model: 'claude-3-7-sonnet-20250219',
+      model: 'claude-haiku-4-5-20251001',
       messages: [{ role: 'system' as const, content: systemPrompt }],
       tools: [
         {
