@@ -342,13 +342,13 @@ export default function TranslatorPage() {
     const contextMsg: Message = {
       id: `dish-${Date.now()}`,
       role: 'assistant',
-      text: `${dish.dishName}${dish.localName ? ` (${dish.localName})` : ''} — ${dish.description}. Cuisine: ${dish.cuisineType}. Ingredients: ${dish.ingredients.join(', ')}.`,
+      text: `I identified this dish: ${dish.dishName}${dish.localName ? ` (${dish.localName})` : ''} — ${dish.description}. Cuisine: ${dish.cuisineType}. Ingredients: ${dish.ingredients.join(', ')}. If you want to order it or ask about it, I can help you say that in ${toLang.name}.`,
       timestamp: now,
     };
 
     setMessages((prev) => [...prev, contextMsg]);
     setViewMode('chat');
-  }, []);
+  }, [toLang.name]);
 
   // Build chat context for call
   const chatContext = callPreFill?.task
@@ -546,6 +546,7 @@ export default function TranslatorPage() {
         return (
           <CameraTranslateView
             toLang={toLang}
+            fromLang={fromLang}
             onClose={() => setViewMode('chat')}
             onSaveTranslation={handleSaveCamera}
             onSaveDish={handleSaveDish}

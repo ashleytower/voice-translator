@@ -10,6 +10,7 @@ import { DishCard } from '@/components/chat/DishCard';
 
 interface CameraTranslateViewProps {
   toLang: Language;
+  fromLang?: Language;
   onClose: () => void;
   onSaveTranslation: (result: CameraTranslationResult) => void;
   onSaveDish?: (dish: DishAnalysis) => void;
@@ -19,6 +20,7 @@ type CameraState = 'starting' | 'ready' | 'capturing' | 'translating' | 'result'
 
 export function CameraTranslateView({
   toLang,
+  fromLang,
   onClose,
   onSaveTranslation,
   onSaveDish,
@@ -92,7 +94,7 @@ export function CameraTranslateView({
 
     try {
       if (cameraMode === 'dish') {
-        const dishRes = await analyzeDish(base64, toLang.name);
+        const dishRes = await analyzeDish(base64, fromLang?.name ?? 'English');
         setDishResult(dishRes);
       } else {
         const translationResult = await translateCameraImage(base64, toLang.name);
