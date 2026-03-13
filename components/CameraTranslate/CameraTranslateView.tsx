@@ -229,18 +229,8 @@ export function CameraTranslateView({
 
         {/* Dish result */}
         {cameraState === 'result' && dishResult && cameraMode === 'dish' && (
-          <div className="px-4 pt-3 pb-2">
+          <div className="px-4 pt-3 pb-4">
             <DishCard dish={dishResult} onChatAboutThis={(dish) => { onSaveDish?.(dish); }} />
-            <div className="flex justify-end mt-2">
-              <button
-                aria-label="save"
-                onClick={handleSave}
-                className="h-8 px-3 flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
-              >
-                <Save className="h-3 w-3" />
-                Save
-              </button>
-            </div>
           </div>
         )}
 
