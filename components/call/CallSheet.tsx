@@ -25,9 +25,11 @@ interface CallSheetProps {
   duration: number;
   result: CallResult | null;
   error: string | null;
+  pendingDecision?: { question: string; options: string[] | null } | null;
   onStartCall: (request: CallRequest) => void;
   onEndCall: () => void;
   onSendMessage: (message: string) => void;
+  onSendDecision?: (decision: string) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -116,9 +118,11 @@ export function CallSheet({
   error,
   chatContext,
   defaultPhoneNumber,
+  pendingDecision,
   onStartCall,
   onEndCall,
   onSendMessage,
+  onSendDecision,
 }: CallSheetProps) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
@@ -341,48 +345,69 @@ export function CallSheet({
           )}
         </div>
 
-        {/* Live correction + End Call footer — only shown during active call */}
-        {isActiveCall && (() => {
-          const lastAssistant = [...transcript].reverse().find((t) => t.role === 'assistant');
-          const isWaiting = lastAssistant && /check with (my|the) client|one moment|let me confirm/i.test(lastAssistant.text);
-          return (
+        {/* Footer — only shown during active call */}
+        {isActiveCall && (
           <div className="px-6 py-3 border-t border-border shrink-0 space-y-2">
-            {isWaiting && (
-              <div className="flex items-center gap-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 px-3 py-2 animate-pulse">
-                <AlertCircle className="h-4 w-4 text-yellow-400 shrink-0" />
-                <p className="text-xs text-yellow-300">The AI is waiting for your answer. Type your response below.</p>
-              </div>
-            )}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (liveMessage.trim()) {
-                  onSendMessage(liveMessage.trim());
-                  setLiveMessage('');
-                }
-              }}
-              className="flex items-center gap-2"
-            >
-              <input
-                type="text"
-                value={liveMessage}
-                onChange={(e) => setLiveMessage(e.target.value)}
-                placeholder={isWaiting ? "Tell the AI what to do..." : "Correct or guide the AI..."}
-                className={cn(
-                  "flex-1 rounded-lg border px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring",
-                  isWaiting ? "border-yellow-500/40 bg-yellow-500/5" : "border-input bg-secondary"
+            {/* Decision card — shown when VAPI is holding for user input */}
+            {pendingDecision ? (
+              <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/30 px-4 py-3 space-y-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-yellow-400 shrink-0 mt-0.5" />
+                  <p className="text-sm text-yellow-200 font-medium">{pendingDecision.question}</p>
+                </div>
+                {pendingDecision.options && pendingDecision.options.length > 0 ? (
+                  <div className="flex gap-2">
+                    {pendingDecision.options.map((opt) => (
+                      <Button
+                        key={opt}
+                        size="sm"
+                        variant={opt.toLowerCase().startsWith('y') ? 'default' : 'outline'}
+                        className="flex-1"
+                        onClick={() => onSendDecision?.(opt)}
+                      >
+                        {opt}
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1" onClick={() => onSendDecision?.('Yes, confirm it')}>
+                      Yes
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => onSendDecision?.('No, decline politely')}>
+                      No
+                    </Button>
+                  </div>
                 )}
-                autoFocus={isWaiting || undefined}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                disabled={!liveMessage.trim()}
-                className="h-9 w-9 shrink-0"
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (liveMessage.trim()) {
+                    onSendMessage(liveMessage.trim());
+                    setLiveMessage('');
+                  }
+                }}
+                className="flex items-center gap-2"
               >
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
+                <input
+                  type="text"
+                  value={liveMessage}
+                  onChange={(e) => setLiveMessage(e.target.value)}
+                  placeholder="Correct or guide the AI..."
+                  className="flex-1 rounded-lg border border-input bg-secondary px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={!liveMessage.trim()}
+                  className="h-9 w-9 shrink-0"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            )}
             <Button
               variant="destructive"
               className="w-full gap-2"
@@ -392,8 +417,7 @@ export function CallSheet({
               End Call
             </Button>
           </div>
-          );
-        })()}
+        )}
       </SheetContent>
     </Sheet>
   );

@@ -115,6 +115,7 @@ export default function TranslatorPage() {
     duration: callDuration,
     result: callResult,
     error: callError,
+    pendingDecision: callPendingDecision,
     startCall,
     endCall,
     sendMessage: sendCallMessage,
@@ -496,9 +497,11 @@ export default function TranslatorPage() {
         duration={callDuration}
         result={callResult}
         error={callError}
+        pendingDecision={callPendingDecision}
         onStartCall={startCall}
         onEndCall={endCall}
         onSendMessage={sendCallMessage}
+        onSendDecision={sendDecision}
       />
     </div>
   );
