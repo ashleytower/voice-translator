@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { ImagePlus, Phone, Send, Mic, Square, X } from 'lucide-react';
+import { ImagePlus, Phone, Send, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InputAreaProps {
@@ -17,7 +16,6 @@ export const InputArea: React.FC<InputAreaProps> = ({
   onSend,
   isLoading,
   isLive,
-  onToggleLive,
   onStartCall,
 }) => {
   const [input, setInput] = useState('');
@@ -36,14 +34,6 @@ export const InputArea: React.FC<InputAreaProps> = ({
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-    }
-  };
-
-  const handleMicClick = () => {
-    if (input.length > 0 || attachment) {
-      handleSend();
-    } else if (onToggleLive) {
-      onToggleLive();
     }
   };
 
@@ -82,32 +72,30 @@ export const InputArea: React.FC<InputAreaProps> = ({
     }
   };
 
+  const canSend = (input.trim() || attachment) && !isLoading;
+
   return (
-    <div className="p-4 border-t border-border bg-background">
+    <div className="px-4 pb-4 pt-2 bg-background/80 backdrop-blur-xl">
       {/* Image Preview */}
       {attachment && (
         <div className="mb-3 relative inline-block">
           <img
             src={attachment}
             alt="Preview"
-            className="h-20 w-auto rounded-lg border border-border object-cover"
+            className="h-20 w-auto rounded-xl object-cover"
           />
-          <Button
-            variant="destructive"
-            size="icon"
+          <button
             onClick={removeAttachment}
-            className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
+            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center"
           >
             <X className="h-3 w-3" />
-          </Button>
+          </button>
         </div>
       )}
 
       <div className={cn(
-        'flex items-end gap-2 rounded-xl border bg-card p-2 transition-colors',
-        isLive
-          ? 'border-destructive bg-destructive/5'
-          : 'border-border hover:border-primary/30'
+        'flex items-end gap-1.5 rounded-2xl bg-secondary/50 p-1.5 transition-colors',
+        isLive && 'ring-1 ring-red-500/30 bg-red-500/5'
       )}>
         <input
           type="file"
@@ -117,67 +105,55 @@ export const InputArea: React.FC<InputAreaProps> = ({
           className="hidden"
         />
 
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
           onClick={onStartCall}
           disabled={isLive}
-          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors disabled:opacity-30"
           aria-label="Make a phone call"
         >
-          <Phone className="h-5 w-5" />
-        </Button>
+          <Phone className="h-[18px] w-[18px]" />
+        </button>
 
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
           onClick={handleFileClick}
           disabled={isLive}
-          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-30"
         >
-          <ImagePlus className="h-5 w-5" />
-        </Button>
+          <ImagePlus className="h-[18px] w-[18px]" />
+        </button>
 
         <textarea
           ref={textareaRef}
           value={input}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          className={cn(
-            'flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-sm resize-none max-h-32 py-2',
-            isLive && 'text-destructive placeholder:text-destructive/60'
-          )}
+          className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-sm resize-none max-h-32 py-2 px-1 placeholder:text-muted-foreground/50"
           placeholder={
             isLive
               ? 'Listening...'
               : isLoading
-              ? 'Processing...'
-              : 'Type a message...'
+              ? 'Translating...'
+              : 'Type or tap the orb to speak...'
           }
           rows={1}
           disabled={isLoading || isLive}
         />
 
-        <Button
-          onClick={handleMicClick}
-          disabled={isLoading && !isLive}
-          size="icon"
+        <button
+          onClick={handleSend}
+          disabled={!canSend}
           className={cn(
-            'h-9 w-9 shrink-0 rounded-lg',
-            isLive
-              ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse-soft'
-              : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+            'h-9 w-9 shrink-0 flex items-center justify-center rounded-xl transition-all duration-200',
+            canSend
+              ? 'bg-indigo-500 text-white hover:bg-indigo-400'
+              : 'text-muted-foreground/30'
           )}
         >
-          {input.length > 0 || attachment ? (
-            <Send className="h-4 w-4" />
-          ) : isLive ? (
-            <Square className="h-4 w-4 fill-current" />
-          ) : (
-            <Mic className="h-4 w-4" />
-          )}
-        </Button>
+          <Send className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
 };
+
+export default InputArea;

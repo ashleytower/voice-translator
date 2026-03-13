@@ -12,7 +12,7 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { InputArea } from '@/components/chat/InputArea';
 import { LanguageSelector } from '@/components/chat/LanguageSelector';
-import { Visualizer } from '@/components/voice/Visualizer';
+import { Orb, OrbState } from '@/components/voice/Orb';
 import { CurrencyConverterView } from '@/components/currency/CurrencyConverterView';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { FavoritesView } from '@/components/favorites/FavoritesView';
@@ -27,8 +27,7 @@ const LANG_STORAGE_KEY = 'fluent-languages';
 const PHONE_REGEX = /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
 const CALL_KEYWORDS = /\b(call|phone|ring|dial)\b/i;
 
-// Strip meta-instruction prefixes like "can you call X and", "call this restaurant and", etc.
-// Captures optional "can you" + verb (call/phone/ring/dial) + optional noun phrase + "and/to"
+// Strip meta-instruction prefixes
 const CALL_PREFIX_REGEX = /^(?:can\s+you\s+)?(?:call|phone|ring|dial)\s+(?:this\s+\w+\s+)?(?:and|to)\s+/i;
 
 function extractCallIntent(text: string): { task: string; phone: string } | null {
@@ -39,14 +38,13 @@ function extractCallIntent(text: string): { task: string; phone: string } | null
   const digits = rawPhone.replace(/\D/g, '');
   const phone = digits.length === 10 ? `+1${digits}` : digits.startsWith('1') ? `+${digits}` : `+${digits}`;
 
-  // Remove the phone number, then strip any leading meta-instruction prefix
   const withoutPhone = text.replace(rawPhone, '').replace(/\s{2,}/g, ' ').trim();
   const task = withoutPhone.replace(CALL_PREFIX_REGEX, '').trim();
 
   return { task, phone };
 }
 
-export default function FluentPage() {
+export default function TranslatorPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [fromLang, setFromLang] = useState<Language>(LANGUAGES[0]);
   const [toLang, setToLang] = useState<Language>(LANGUAGES[1]);
@@ -58,14 +56,12 @@ export default function FluentPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastRelayedLenRef = useRef(0);
 
-  // API Keys from environment
   const deepgramApiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || '';
   const cartesiaApiKey = process.env.NEXT_PUBLIC_CARTESIA_API_KEY || '';
 
   // Handle translation results from voice
   const handleVoiceTranslation = useCallback(
     (original: string, translation: string, pronunciation?: string, response?: string) => {
-      // Add user message
       const userMessage: Message = {
         id: Date.now().toString(),
         role: 'user',
@@ -73,7 +69,6 @@ export default function FluentPage() {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
-      // Add assistant message with translation + contextual explanation
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -89,7 +84,6 @@ export default function FluentPage() {
     []
   );
 
-  // Voice translator hook with Deepgram + Cartesia
   const {
     status: voiceStatus,
     isConnected,
@@ -169,7 +163,7 @@ export default function FluentPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Stream call transcript into chat — show immediately, translate in background
+  // Stream call transcript into chat
   const isCallActive = callStatus === 'starting' || callStatus === 'ringing' || callStatus === 'in-progress';
 
   useEffect(() => {
@@ -183,7 +177,6 @@ export default function FluentPage() {
 
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Show each entry in chat immediately (original language)
     for (let i = 0; i < newEntries.length; i++) {
       const entry = newEntries[i];
       const isAgent = entry.role === 'assistant';
@@ -199,7 +192,6 @@ export default function FluentPage() {
 
       setMessages((prev) => [...prev, msg]);
 
-      // Translate in background and update the message
       quickTranslate(entry.text, toLang.name, fromLang.name).then((translated) => {
         const same = translated.toLowerCase().trim() === entry.text.toLowerCase().trim();
         if (!same) {
@@ -236,8 +228,6 @@ export default function FluentPage() {
 
     setMessages((prev) => [...prev, userMessage]);
 
-    // During an active call, route chat responses to the call
-    // Call both sendCallMessage (VAPI say) and sendDecision (unblock tool hold)
     if (isCallActive && !attachment) {
       sendCallMessage(text.trim());
       sendDecision(text.trim());
@@ -251,7 +241,6 @@ export default function FluentPage() {
       return;
     }
 
-    // Detect call intent — phone number + "call" keyword
     const callIntent = extractCallIntent(text);
     if (callIntent && !attachment) {
       const ackMessage: Message = {
@@ -301,14 +290,16 @@ export default function FluentPage() {
     }
   };
 
-  // Toggle live voice mode
-  const handleToggleLive = useCallback(async () => {
-    if (isConnected) {
+  // Toggle live voice mode via orb
+  const handleOrbClick = useCallback(async () => {
+    if (isSpeaking) {
+      stopSpeaking();
+    } else if (isConnected) {
       disconnectVoice();
     } else {
       await connectVoice();
     }
-  }, [isConnected, connectVoice, disconnectVoice]);
+  }, [isConnected, isSpeaking, connectVoice, disconnectVoice, stopSpeaking]);
 
   // Swap languages
   const handleSwapLanguages = () => {
@@ -329,11 +320,10 @@ export default function FluentPage() {
     localStorage.removeItem(STORAGE_KEY);
   };
 
-  // Build chat context: use extracted task from call intent, or fall back to recent messages
+  // Build chat context for call
   const chatContext = callPreFill?.task
     ?? messages.filter((m) => m.role === 'user').slice(-3).map((m) => m.text).join(' | ');
 
-  // Handle call sheet open/close — add summary message when sheet closes after a completed call
   const handleCallSheetOpenChange = useCallback((nextOpen: boolean) => {
     if (!nextOpen) {
       setCallPreFill(null);
@@ -351,7 +341,6 @@ export default function FluentPage() {
     setShowCallSheet(nextOpen);
   }, [callResult, resetCall]);
 
-  // Navigate to settings
   const handleSettingsClick = () => {
     setViewMode('settings');
   };
@@ -361,7 +350,6 @@ export default function FluentPage() {
 
   const handlePlayAudio = useCallback(async (text: string, langCode: string) => {
     if (!cartesiaApiKey) {
-      // Fallback to browser TTS if no Cartesia key
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = langCode;
@@ -370,7 +358,6 @@ export default function FluentPage() {
       return;
     }
 
-    // Create or reuse Cartesia client
     if (!ttsClientRef.current || ttsClientRef.current.status !== 'connected') {
       ttsClientRef.current = new CartesiaClient({ apiKey: cartesiaApiKey });
       await ttsClientRef.current.connect();
@@ -379,9 +366,18 @@ export default function FluentPage() {
     ttsClientRef.current.speak(text, langCode);
   }, [cartesiaApiKey]);
 
-  // Determine if we should show the visualizer
-  const showVisualizer = isConnected || voiceStatus === 'connecting';
-  const isLive = isListening || isSpeaking;
+  // Derive orb state from voice/call status
+  const orbState: OrbState = isCallActive
+    ? 'call'
+    : isSpeaking
+      ? 'speaking'
+      : voiceStatus === 'processing' || isLoading
+        ? 'processing'
+        : isListening
+          ? 'listening'
+          : 'idle';
+
+  const hasMessages = messages.length > 0;
 
   const renderChatView = () => (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -395,64 +391,62 @@ export default function FluentPage() {
         onToChange={setToLang}
       />
 
-      {/* Voice status indicator */}
-      {showVisualizer && (
-        <div className="px-4 py-2 border-b border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${
-                voiceStatus === 'listening' ? 'bg-green-500 animate-pulse' :
-                voiceStatus === 'processing' ? 'bg-yellow-500 animate-pulse' :
-                voiceStatus === 'speaking' ? 'bg-blue-500 animate-pulse' :
-                voiceStatus === 'connecting' ? 'bg-orange-500 animate-pulse' :
-                'bg-gray-500'
-              }`} />
-              <span className="text-xs text-muted-foreground capitalize">{voiceStatus}</span>
-            </div>
-            {currentTranscript && (
-              <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                {currentTranscript}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {showVisualizer && (
-        <Visualizer isActive={true} isLive={isLive} volume={micVolume} />
-      )}
-
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {messages.map((message) => (
-          <ChatBubble
-            key={message.id}
-            message={message}
-            onToggleFavorite={handleToggleFavorite}
-            onPlayAudio={handlePlayAudio}
-            targetLangCode={toLang.code}
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto no-scrollbar">
+        {/* Orb - centered hero */}
+        <div className="flex items-center justify-center py-8">
+          <Orb
+            state={orbState}
+            volume={micVolume}
+            onClick={handleOrbClick}
+            size={180}
           />
-        ))}
+        </div>
 
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-secondary rounded-2xl px-4 py-3">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-              </div>
-            </div>
+        {/* Live transcript preview */}
+        {currentTranscript && (
+          <div className="px-6 pb-3">
+            <p className="text-sm text-center text-muted-foreground/70 italic">
+              {currentTranscript}
+            </p>
           </div>
         )}
 
-        <div ref={messagesEndRef} />
+        {/* Chat messages */}
+        {hasMessages && (
+          <div className="px-4 pb-4 space-y-1">
+            {messages.map((message) => (
+              <ChatBubble
+                key={message.id}
+                message={message}
+                onToggleFavorite={handleToggleFavorite}
+                onPlayAudio={handlePlayAudio}
+                targetLangCode={toLang.code}
+              />
+            ))}
+
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-secondary/60 rounded-2xl px-4 py-3">
+                  <div className="flex gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce" />
+                    <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                    <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+        )}
       </div>
 
       <InputArea
         onSend={handleSend}
         isLoading={isLoading}
         isLive={isConnected}
-        onToggleLive={handleToggleLive}
+        onToggleLive={handleOrbClick}
         onStartCall={() => setShowCallSheet(true)}
       />
 

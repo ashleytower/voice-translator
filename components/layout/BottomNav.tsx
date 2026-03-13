@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ViewMode } from '@/types';
-import { MessageSquare, Star, Repeat, Settings } from 'lucide-react';
+import { MessageSquare, Star, ArrowLeftRight, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavButtonProps {
@@ -16,16 +16,16 @@ const NavButton = ({ icon, label, isActive, onClick }: NavButtonProps) => (
   <button
     onClick={onClick}
     className={cn(
-      'relative flex flex-col items-center gap-1 px-3 py-2 transition-colors',
+      'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200',
       isActive
-        ? 'text-primary'
+        ? 'text-indigo-400'
         : 'text-muted-foreground hover:text-foreground'
     )}
   >
-    {isActive && (
-      <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
-    )}
-    <div className="flex items-center justify-center">
+    <div className={cn(
+      'flex items-center justify-center w-10 h-7 rounded-full transition-colors duration-200',
+      isActive && 'bg-indigo-500/15'
+    )}>
       {icon}
     </div>
     <span className="text-[10px] font-medium">{label}</span>
@@ -39,7 +39,7 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
   return (
-    <nav className="flex justify-around items-center px-4 py-2 border-t border-border bg-background">
+    <nav className="flex justify-around items-center px-2 py-1.5 bg-background/80 backdrop-blur-xl border-t border-border/50">
       <NavButton
         icon={<MessageSquare className="h-[18px] w-[18px]" />}
         label="Chat"
@@ -53,7 +53,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
         onClick={() => onTabChange('favs')}
       />
       <NavButton
-        icon={<Repeat className="h-[18px] w-[18px]" />}
+        icon={<ArrowLeftRight className="h-[18px] w-[18px]" />}
         label="Convert"
         isActive={activeTab === 'currency'}
         onClick={() => onTabChange('currency')}

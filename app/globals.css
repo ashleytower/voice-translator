@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 @tailwind base;
@@ -14,29 +14,15 @@ html {
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   min-height: 100dvh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-serif {
   font-family: 'Instrument Serif', Georgia, serif;
-}
-
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
 }
 
 /* Safe area for mobile */
@@ -50,7 +36,7 @@ body {
 
 /* Minimal scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 
 ::-webkit-scrollbar-track {
@@ -70,42 +56,42 @@ body {
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 239 84% 67%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.5rem;
+    --ring: 239 84% 67%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 220 15% 5%;
-    --foreground: 40 10% 95%;
-    --card: 220 13% 8%;
-    --card-foreground: 40 10% 95%;
-    --popover: 220 13% 8%;
-    --popover-foreground: 40 10% 95%;
-    --primary: 38 90% 55%;
-    --primary-foreground: 220 15% 5%;
-    --secondary: 220 12% 12%;
-    --secondary-foreground: 40 10% 90%;
-    --muted: 220 12% 15%;
-    --muted-foreground: 220 10% 55%;
-    --accent: 38 80% 50%;
-    --accent-foreground: 220 15% 5%;
+    --background: 240 15% 4%;
+    --foreground: 240 5% 92%;
+    --card: 240 12% 7%;
+    --card-foreground: 240 5% 92%;
+    --popover: 240 12% 7%;
+    --popover-foreground: 240 5% 92%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 10% 10%;
+    --secondary-foreground: 240 5% 85%;
+    --muted: 240 10% 12%;
+    --muted-foreground: 240 5% 45%;
+    --accent: 239 84% 67%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 12% 14%;
-    --input: 220 12% 14%;
-    --ring: 38 90% 55%;
+    --border: 240 10% 12%;
+    --input: 240 10% 12%;
+    --ring: 239 84% 67%;
   }
 }
 
@@ -127,14 +113,119 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+}
 
-  .animate-fade-up {
-    animation: fade-up 0.2s ease-out;
-  }
+/* =========================
+   Orb Animations
+   ========================= */
 
-  .animate-pulse-soft {
-    animation: pulse-soft 2s ease-in-out infinite;
+/* Idle: gentle breathing */
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+.orb-breathe {
+  animation: orb-breathe 4s ease-in-out infinite;
+}
+
+/* Processing: slow rotation */
+@keyframes orb-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.02); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.orb-spin {
+  animation: orb-spin 3s linear infinite;
+}
+
+/* Glow states */
+@keyframes glow-idle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.35; }
+}
+
+.orb-glow-idle {
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.4), transparent 70%);
+  animation: glow-idle 4s ease-in-out infinite;
+}
+
+@keyframes glow-listening {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.orb-glow-listening {
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.5), transparent 70%);
+  animation: glow-listening 2s ease-in-out infinite;
+}
+
+@keyframes glow-processing {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.55; }
+}
+
+.orb-glow-processing {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.4), transparent 70%);
+  animation: glow-processing 1.5s ease-in-out infinite;
+}
+
+.orb-glow-speaking {
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.4), transparent 70%);
+  animation: glow-listening 2.5s ease-in-out infinite;
+}
+
+.orb-glow-call {
+  background: radial-gradient(circle, rgba(251, 146, 60, 0.4), transparent 70%);
+  animation: glow-listening 2s ease-in-out infinite;
+}
+
+/* Ripple rings */
+@keyframes ripple-out {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes ripple-out-slow {
+  0% { transform: scale(1.1); opacity: 0.3; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.orb-ripple-1 {
+  animation: ripple-out 2s ease-out infinite;
+}
+
+.orb-ripple-2 {
+  animation: ripple-out-slow 2.5s ease-out infinite 0.5s;
+}
+
+.orb-ripple-speak {
+  animation: ripple-out 3s ease-out infinite;
+}
+
+.orb-ripple-speak-2 {
+  animation: ripple-out-slow 3.5s ease-out infinite 0.8s;
+}
+
+.orb-ripple-call {
+  animation: ripple-out 2.5s ease-out infinite;
+}
+
+/* Chat message fade-in */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.25s ease-out;
 }
 
 /* Material Symbols styling */

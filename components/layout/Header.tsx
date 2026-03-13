@@ -1,42 +1,27 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Trash2, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 interface HeaderProps {
   onClearHistory?: () => void;
   onSettingsClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onClearHistory, onSettingsClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
   return (
-    <header className="px-4 py-3 flex items-center justify-between border-b border-border sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center gap-3">
-        <h1 className="text-lg font-serif tracking-tight text-primary">Found in Translation</h1>
-      </div>
-      <div className="flex gap-1">
-        {onClearHistory && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClearHistory}
-            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
-        {onSettingsClick && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onSettingsClick}
-            className="h-8 w-8 text-muted-foreground"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
+    <header className="px-5 py-4 flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-xl">
+      <h1 className="text-xl font-serif tracking-tight text-foreground">
+        Found in Translation
+      </h1>
+      {onSettingsClick && (
+        <button
+          onClick={onSettingsClick}
+          className="p-2 -mr-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+        >
+          <Settings className="h-[18px] w-[18px]" />
+        </button>
+      )}
     </header>
   );
 };

@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { Message } from '@/types';
-import { Star, Volume2, Bot } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Star, Volume2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChatBubbleProps {
@@ -24,89 +23,88 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   if (isUser) {
     return (
       <div className="flex flex-col items-end animate-fade-up mb-3">
-        <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3 relative">
+        <div className="max-w-[80%] bg-indigo-500 text-white rounded-2xl rounded-br-sm px-4 py-2.5">
           {message.attachment && (
-            <div className="mb-2 -mx-2 -mt-1">
+            <div className="mb-2 -mx-1 -mt-0.5">
               <img
                 src={message.attachment}
                 alt="Attachment"
-                className="w-full h-auto rounded-lg max-h-48 object-cover"
+                className="w-full h-auto rounded-xl max-h-48 object-cover"
               />
             </div>
           )}
-          <p className="text-sm font-medium">{message.text}</p>
+          <p className="text-sm leading-relaxed">{message.text}</p>
+        </div>
+        <div className="flex items-center gap-1.5 mt-1 mr-1">
           {onToggleFavorite && (
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
               onClick={() => onToggleFavorite(message.id)}
               className={cn(
-                'absolute -top-1 -right-1 h-6 w-6',
+                'p-0.5 transition-colors',
                 message.isFavorite
-                  ? 'text-yellow-500'
-                  : 'text-primary-foreground/30 hover:text-primary-foreground/60'
+                  ? 'text-amber-400'
+                  : 'text-muted-foreground/20 hover:text-muted-foreground/50'
               )}
             >
               <Star className={cn('h-3 w-3', message.isFavorite && 'fill-current')} />
-            </Button>
+            </button>
           )}
+          <span className="text-[10px] text-muted-foreground/40">
+            {message.timestamp}
+          </span>
         </div>
-        <span className="text-[10px] text-muted-foreground mt-1 mr-1">
-          {message.timestamp}
-        </span>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col items-start animate-fade-up mb-3">
-      <div className="flex items-center gap-2 mb-1">
-        <div className="h-6 w-6 rounded-full bg-secondary border border-border flex items-center justify-center">
-          <Bot className="h-3 w-3 text-muted-foreground" />
-        </div>
-        <span className="text-xs text-muted-foreground">Assistant</span>
-      </div>
-      <div className="max-w-[80%] bg-card border border-border rounded-2xl rounded-tl-md px-4 py-3 relative">
-        <div className="absolute top-2 right-2 flex gap-1">
-          {onToggleFavorite && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onToggleFavorite(message.id)}
-              className={cn(
-                'h-6 w-6',
-                message.isFavorite
-                  ? 'text-yellow-500'
-                  : 'text-muted-foreground/30 hover:text-muted-foreground'
-              )}
-            >
-              <Star className={cn('h-3 w-3', message.isFavorite && 'fill-current')} />
-            </Button>
-          )}
-          {onPlayAudio && message.translation && targetLangCode && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onPlayAudio(message.translation!, targetLangCode)}
-              className="h-6 w-6 text-muted-foreground/50 hover:text-primary"
-            >
-              <Volume2 className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-
+      <div className="max-w-[85%] bg-secondary/60 rounded-2xl rounded-tl-sm px-4 py-2.5">
         {message.translation && (
-          <div className="pr-14 space-y-1 mb-2">
-            <p className="text-sm font-semibold">{message.translation}</p>
+          <div className="space-y-0.5 mb-2">
+            <p className="text-sm font-medium leading-relaxed text-foreground">
+              {message.translation}
+            </p>
             {message.pronunciation && (
-              <p className="text-xs text-muted-foreground">{message.pronunciation}</p>
+              <p className="text-xs text-muted-foreground/70 italic">
+                {message.pronunciation}
+              </p>
             )}
           </div>
         )}
 
-        {message.translation && <div className="h-px bg-border mb-2" />}
+        {message.translation && (
+          <div className="h-px bg-border/40 my-2" />
+        )}
 
-        <p className="text-sm text-muted-foreground">{message.text}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">{message.text}</p>
+      </div>
+
+      <div className="flex items-center gap-1.5 mt-1 ml-1">
+        {onToggleFavorite && (
+          <button
+            onClick={() => onToggleFavorite(message.id)}
+            className={cn(
+              'p-0.5 transition-colors',
+              message.isFavorite
+                ? 'text-amber-400'
+                : 'text-muted-foreground/20 hover:text-muted-foreground/50'
+            )}
+          >
+            <Star className={cn('h-3 w-3', message.isFavorite && 'fill-current')} />
+          </button>
+        )}
+        {onPlayAudio && message.translation && targetLangCode && (
+          <button
+            onClick={() => onPlayAudio(message.translation!, targetLangCode)}
+            className="p-0.5 text-muted-foreground/30 hover:text-indigo-400 transition-colors"
+          >
+            <Volume2 className="h-3 w-3" />
+          </button>
+        )}
+        <span className="text-[10px] text-muted-foreground/40">
+          {message.timestamp}
+        </span>
       </div>
     </div>
   );
