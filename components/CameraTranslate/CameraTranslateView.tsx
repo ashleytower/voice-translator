@@ -84,9 +84,14 @@ export function CameraTranslateView({
 
     setCameraState('translating');
 
-    const translationResult = await translateCameraImage(base64, toLang.name);
-    setResult(translationResult);
-    setCameraState('result');
+    try {
+      const translationResult = await translateCameraImage(base64, toLang.name);
+      setResult(translationResult);
+      setCameraState('result');
+    } catch {
+      setErrorMessage('Translation failed. Tap the shutter to try again.');
+      setCameraState('error');
+    }
   }, [cameraState, toLang.name]);
 
   const handleRetry = useCallback(() => {
