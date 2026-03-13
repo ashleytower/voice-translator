@@ -4,8 +4,7 @@ import { CameraTranslationResult } from '@/types';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getAI = (): any => {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
-  // Called without new so vi.fn() mocks work in tests (arrow function implementations)
-  return GoogleGenAI({ apiKey } as never);
+  return new GoogleGenAI({ apiKey });
 };
 
 const FALLBACK: CameraTranslationResult = {
