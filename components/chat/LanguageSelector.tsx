@@ -37,7 +37,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
 
         <button
           onClick={onSwap}
-          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full text-muted-foreground hover:text-indigo-400 hover:bg-indigo-500/10 transition-all duration-200 active:scale-90"
+          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200 active:scale-90"
         >
           <ArrowLeftRight className="h-4 w-4" />
         </button>

@@ -391,30 +391,10 @@ export default function TranslatorPage() {
         onToChange={setToLang}
       />
 
-      {/* Scrollable content area */}
+      {/* Scrollable chat messages */}
       <div className="flex-1 overflow-y-auto no-scrollbar">
-        {/* Orb - centered hero */}
-        <div className="flex items-center justify-center py-8">
-          <Orb
-            state={orbState}
-            volume={micVolume}
-            onClick={handleOrbClick}
-            size={180}
-          />
-        </div>
-
-        {/* Live transcript preview */}
-        {currentTranscript && (
-          <div className="px-6 pb-3">
-            <p className="text-sm text-center text-muted-foreground/70 italic">
-              {currentTranscript}
-            </p>
-          </div>
-        )}
-
-        {/* Chat messages */}
-        {hasMessages && (
-          <div className="px-4 pb-4 space-y-1">
+        {hasMessages ? (
+          <div className="px-4 pt-2 pb-4 space-y-1">
             {messages.map((message) => (
               <ChatBubble
                 key={message.id}
@@ -439,16 +419,41 @@ export default function TranslatorPage() {
 
             <div ref={messagesEndRef} />
           </div>
+        ) : (
+          /* Empty state hint */
+          <div className="flex flex-col items-center justify-center h-full gap-2 px-8 pb-8 text-center">
+            <p className="text-sm text-muted-foreground/50">Tap the orb to speak, or type below</p>
+          </div>
         )}
       </div>
 
-      <InputArea
-        onSend={handleSend}
-        isLoading={isLoading}
-        isLive={isConnected}
-        onToggleLive={handleOrbClick}
-        onStartCall={() => setShowCallSheet(true)}
-      />
+      {/* Live transcript preview */}
+      {currentTranscript && (
+        <div className="px-6 py-1.5">
+          <p className="text-xs text-center text-muted-foreground/60 italic truncate">
+            {currentTranscript}
+          </p>
+        </div>
+      )}
+
+      {/* Bottom dock: orb + input */}
+      <div className="flex flex-col items-center gap-2 px-4 pb-3 pt-2 bg-background/80 backdrop-blur-xl border-t border-border/30">
+        <Orb
+          state={orbState}
+          volume={micVolume}
+          onClick={handleOrbClick}
+          size={120}
+        />
+        <div className="w-full">
+          <InputArea
+            onSend={handleSend}
+            isLoading={isLoading}
+            isLive={isConnected}
+            onToggleLive={handleOrbClick}
+            onStartCall={() => setShowCallSheet(true)}
+          />
+        </div>
+      </div>
 
       <CallSheet
         open={showCallSheet}

@@ -18,13 +18,13 @@ const NavButton = ({ icon, label, isActive, onClick }: NavButtonProps) => (
     className={cn(
       'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200',
       isActive
-        ? 'text-indigo-400'
+        ? 'text-primary'
         : 'text-muted-foreground hover:text-foreground'
     )}
   >
     <div className={cn(
       'flex items-center justify-center w-10 h-7 rounded-full transition-colors duration-200',
-      isActive && 'bg-indigo-500/15'
+      isActive && 'bg-primary/15'
     )}>
       {icon}
     </div>

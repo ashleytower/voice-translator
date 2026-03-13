@@ -75,7 +75,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
   const canSend = (input.trim() || attachment) && !isLoading;
 
   return (
-    <div className="px-4 pb-4 pt-2 bg-background/80 backdrop-blur-xl">
+    <div className="w-full">
       {/* Image Preview */}
       {attachment && (
         <div className="mb-3 relative inline-block">
@@ -108,7 +108,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
         <button
           onClick={onStartCall}
           disabled={isLive}
-          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors disabled:opacity-30"
+          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30"
           aria-label="Make a phone call"
         >
           <Phone className="h-[18px] w-[18px]" />
@@ -145,7 +145,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
           className={cn(
             'h-9 w-9 shrink-0 flex items-center justify-center rounded-xl transition-all duration-200',
             canSend
-              ? 'bg-indigo-500 text-white hover:bg-indigo-400'
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
               : 'text-muted-foreground/30'
           )}
         >

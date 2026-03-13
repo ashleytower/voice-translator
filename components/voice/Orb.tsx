@@ -21,153 +21,132 @@ const stateConfig: Record<OrbState, { label: string; sublabel?: string }> = {
   call: { label: 'On call', sublabel: 'Tap to end' },
 };
 
+// Colors chosen to feel warm, human, and travel-forward — not "AI product"
+const orbColors: Record<OrbState, { core: string; glow: string; label: string }> = {
+  idle: {
+    core: 'radial-gradient(circle at 35% 30%, #f8d5a3, #e8956d 40%, #c96a3a 75%, #9e4a20)',
+    glow: 'rgba(210, 120, 60, 0.35)',
+    label: 'text-orange-300/70',
+  },
+  listening: {
+    core: 'radial-gradient(circle at 35% 30%, #a8e6cf, #3dbf8a 40%, #1a9668 75%, #0d7050)',
+    glow: 'rgba(30, 180, 120, 0.4)',
+    label: 'text-emerald-400',
+  },
+  processing: {
+    core: 'radial-gradient(circle at 35% 30%, #fef08a, #f5c842 40%, #d4960a 75%, #a86c00)',
+    glow: 'rgba(220, 160, 20, 0.4)',
+    label: 'text-amber-300',
+  },
+  speaking: {
+    core: 'radial-gradient(circle at 35% 30%, #bfdbfe, #60a5fa 40%, #2563eb 75%, #1e40af)',
+    glow: 'rgba(60, 130, 235, 0.4)',
+    label: 'text-blue-300',
+  },
+  call: {
+    core: 'radial-gradient(circle at 35% 30%, #fca5a5, #f87171 40%, #dc2626 75%, #991b1b)',
+    glow: 'rgba(220, 50, 50, 0.4)',
+    label: 'text-red-400',
+  },
+};
+
 export const Orb: React.FC<OrbProps> = ({
   state = 'idle',
   volume = 0,
   onClick,
-  size = 200,
+  size = 160,
   className,
 }) => {
   const { label, sublabel } = stateConfig[state];
+  const colors = orbColors[state];
 
-  // Scale the orb slightly based on mic volume
-  const volumeScale = state === 'listening' ? 1 + volume * 0.12 : 1;
-  // Ripple opacity based on volume
-  const rippleIntensity = state === 'listening' ? 0.15 + volume * 0.4 : 0;
+  const volumeScale = state === 'listening' ? 1 + volume * 0.1 : 1;
 
   return (
-    <div className={cn('flex flex-col items-center gap-5', className)}>
+    <div className={cn('flex flex-col items-center gap-3', className)}>
+      {/* Status text above orb */}
+      <div className="flex flex-col items-center gap-0.5 h-8">
+        <span className={cn('text-xs font-medium tracking-widest uppercase transition-colors duration-300', colors.label)}>
+          {label}
+        </span>
+        {sublabel && (
+          <span className="text-[10px] text-muted-foreground/50">{sublabel}</span>
+        )}
+      </div>
+
       {/* Orb container */}
       <button
         onClick={onClick}
-        className="relative flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-full"
+        className="relative flex items-center justify-center focus:outline-none rounded-full active:scale-95 transition-transform duration-150"
         style={{ width: size, height: size }}
         aria-label={label}
       >
-        {/* Outer ripple rings */}
-        <div
-          className={cn(
-            'absolute inset-0 rounded-full',
-            state === 'listening' && 'orb-ripple-1',
-            state === 'speaking' && 'orb-ripple-speak',
-            state === 'call' && 'orb-ripple-call',
-          )}
-          style={{
-            background: 'transparent',
-            border: state === 'idle' ? 'none' : '1px solid',
-            borderColor:
-              state === 'listening'
-                ? `rgba(99, 102, 241, ${rippleIntensity})`
-                : state === 'speaking'
-                  ? 'rgba(56, 189, 248, 0.2)'
-                  : state === 'call'
-                    ? 'rgba(251, 146, 60, 0.2)'
-                    : 'transparent',
-            transform: `scale(${state === 'idle' ? 1 : 1.4})`,
-          }}
-        />
-        <div
-          className={cn(
-            'absolute inset-0 rounded-full',
-            state === 'listening' && 'orb-ripple-2',
-            state === 'speaking' && 'orb-ripple-speak-2',
-          )}
-          style={{
-            background: 'transparent',
-            border: state !== 'idle' && state !== 'call' ? '1px solid' : 'none',
-            borderColor:
-              state === 'listening'
-                ? `rgba(139, 92, 246, ${rippleIntensity * 0.6})`
-                : state === 'speaking'
-                  ? 'rgba(56, 189, 248, 0.1)'
-                  : 'transparent',
-            transform: `scale(${state === 'idle' ? 1 : 1.7})`,
-          }}
-        />
-
-        {/* Glow layer */}
+        {/* Glow backdrop */}
         <div
           className={cn(
             'absolute rounded-full transition-all duration-700',
             state === 'idle' && 'orb-glow-idle',
             state === 'listening' && 'orb-glow-listening',
             state === 'processing' && 'orb-glow-processing',
-            state === 'speaking' && 'orb-glow-speaking',
+            state === 'speaking' && 'orb-glow-idle',
             state === 'call' && 'orb-glow-call',
           )}
           style={{
-            inset: '-20%',
-            filter: `blur(${size * 0.3}px)`,
-            opacity: state === 'idle' ? 0.3 : 0.5,
+            inset: '-30%',
+            background: `radial-gradient(circle, ${colors.glow}, transparent 70%)`,
+            filter: `blur(${size * 0.25}px)`,
           }}
         />
 
-        {/* Main orb body */}
+        {/* Ripple ring 1 */}
+        {state !== 'idle' && (
+          <div
+            className="absolute inset-0 rounded-full orb-ripple-1"
+            style={{
+              border: `1px solid ${colors.glow.replace('0.4', '0.3').replace('0.35', '0.3')}`,
+            }}
+          />
+        )}
+
+        {/* Ripple ring 2 */}
+        {(state === 'listening' || state === 'speaking') && (
+          <div
+            className="absolute inset-0 rounded-full orb-ripple-2"
+            style={{
+              border: `1px solid ${colors.glow.replace('0.4', '0.15').replace('0.35', '0.15')}`,
+            }}
+          />
+        )}
+
+        {/* Main orb sphere */}
         <div
           className={cn(
-            'relative rounded-full transition-transform duration-300 ease-out',
+            'relative rounded-full transition-all duration-300',
             state === 'idle' && 'orb-breathe',
             state === 'processing' && 'orb-spin',
           )}
           style={{
-            width: size * 0.65,
-            height: size * 0.65,
+            width: size * 0.68,
+            height: size * 0.68,
             transform: `scale(${volumeScale})`,
-            background:
-              state === 'idle'
-                ? 'radial-gradient(circle at 35% 35%, #818cf8, #6366f1 40%, #4f46e5 70%, #3730a3)'
-                : state === 'listening'
-                  ? 'radial-gradient(circle at 35% 35%, #a78bfa, #7c3aed 40%, #6d28d9 70%, #5b21b6)'
-                  : state === 'processing'
-                    ? 'radial-gradient(circle at 35% 35%, #fbbf24, #f59e0b 40%, #d97706 70%, #b45309)'
-                    : state === 'speaking'
-                      ? 'radial-gradient(circle at 35% 35%, #67e8f9, #22d3ee 40%, #06b6d4 70%, #0891b2)'
-                      : 'radial-gradient(circle at 35% 35%, #fdba74, #fb923c 40%, #f97316 70%, #ea580c)',
-            boxShadow:
-              state === 'idle'
-                ? '0 0 40px rgba(99, 102, 241, 0.3), inset 0 -8px 20px rgba(0,0,0,0.2)'
-                : state === 'listening'
-                  ? '0 0 60px rgba(139, 92, 246, 0.4), inset 0 -8px 20px rgba(0,0,0,0.2)'
-                  : state === 'processing'
-                    ? '0 0 50px rgba(245, 158, 11, 0.4), inset 0 -8px 20px rgba(0,0,0,0.2)'
-                    : state === 'speaking'
-                      ? '0 0 50px rgba(34, 211, 238, 0.4), inset 0 -8px 20px rgba(0,0,0,0.2)'
-                      : '0 0 50px rgba(251, 146, 60, 0.4), inset 0 -8px 20px rgba(0,0,0,0.2)',
+            background: colors.core,
+            boxShadow: `0 0 ${size * 0.3}px ${colors.glow}, inset 0 -${size * 0.06}px ${size * 0.12}px rgba(0,0,0,0.25)`,
           }}
         >
-          {/* Inner highlight */}
+          {/* Specular highlight */}
           <div
             className="absolute rounded-full"
             style={{
-              top: '12%',
-              left: '18%',
-              width: '35%',
-              height: '35%',
-              background: 'radial-gradient(circle, rgba(255,255,255,0.3), transparent)',
-              filter: 'blur(8px)',
+              top: '10%',
+              left: '16%',
+              width: '32%',
+              height: '28%',
+              background: 'radial-gradient(circle, rgba(255,255,255,0.35), transparent)',
+              filter: 'blur(6px)',
             }}
           />
         </div>
       </button>
-
-      {/* Status text */}
-      <div className="flex flex-col items-center gap-1">
-        <span
-          className={cn(
-            'text-sm font-medium tracking-wide transition-colors duration-300',
-            state === 'idle' && 'text-muted-foreground',
-            state === 'listening' && 'text-violet-400',
-            state === 'processing' && 'text-amber-400',
-            state === 'speaking' && 'text-cyan-400',
-            state === 'call' && 'text-orange-400',
-          )}
-        >
-          {label}
-        </span>
-        {sublabel && (
-          <span className="text-xs text-muted-foreground/60">{sublabel}</span>
-        )}
-      </div>
     </div>
   );
 };

@@ -23,7 +23,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   if (isUser) {
     return (
       <div className="flex flex-col items-end animate-fade-up mb-3">
-        <div className="max-w-[80%] bg-indigo-500 text-white rounded-2xl rounded-br-sm px-4 py-2.5">
+        <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-2.5">
           {message.attachment && (
             <div className="mb-2 -mx-1 -mt-0.5">
               <img
