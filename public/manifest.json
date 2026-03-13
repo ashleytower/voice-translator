@@ -1,7 +1,7 @@
 {
-  "name": "Voice Translator",
-  "short_name": "Translate",
-  "description": "Real-time universal voice translator with visual recognition",
+  "name": "Found in Translation",
+  "short_name": "FiT",
+  "description": "AI-powered voice translator for travelers",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d0d0f",

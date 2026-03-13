@@ -19,8 +19,7 @@ export const Header: React.FC<HeaderProps> = ({ onClearHistory, onSettingsClick 
           </span>
         </div>
         <div>
-          <h1 className="text-sm font-semibold">Fluent</h1>
-          <span className="text-xs text-muted-foreground">Voice Translator</span>
+          <h1 className="text-sm font-semibold">Found in Translation</h1>
         </div>
       </div>
       <div className="flex gap-1">

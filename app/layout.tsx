@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Fluent',
-  description: 'Real-time universal voice translator with visual recognition',
+  title: 'Found in Translation',
+  description: 'AI-powered voice translator for travelers',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Fluent',
+    title: 'Found in Translation',
   },
   icons: {
     icon: [
