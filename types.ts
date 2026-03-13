@@ -71,6 +71,27 @@ export interface CameraTranslationResult {
   segments: CameraTranslationSegment[];
 }
 
+export interface DishDietaryFlags {
+  vegetarian: boolean;
+  vegan: boolean;
+  glutenFree: boolean;
+  nutFree: boolean;
+  dairyFree: boolean;
+}
+
+export interface DishAnalysis {
+  dishName: string;
+  localName: string;          // original script e.g. "豚カツ"
+  description: string;
+  ingredients: string[];
+  dietaryFlags: DishDietaryFlags;
+  cuisineType: string;
+  spiceLevel: 'mild' | 'medium' | 'hot' | 'unknown';
+  confidence: number;
+}
+
+export type CameraMode = 'translate' | 'dish';
+
 export interface AppSettings {
   autoPlay: boolean;
   hapticFeedback: boolean;
