@@ -43,14 +43,17 @@ export async function POST(request: NextRequest) {
   // Only include name context if provided (for reservations etc.)
   const nameContext = userName ? `\nIf they need a name, use: ${userName}.` : '';
 
-  const systemPrompt = `You are on a live phone call with a business RIGHT NOW. You are the caller.
+  const systemPrompt = `You are making a phone call to a business RIGHT NOW. Speak only in ${targetLanguage}.
 
-Your request: ${taskDescription}
-Language: ${targetLanguage}${nameContext}
+Your task: ${taskDescription}${nameContext}
 
-Say hello in ${targetLanguage} and ask your question. Be natural and brief, 1-2 sentences per turn. Respond to what the other person says — have a real conversation.
-
-If they ask something you can't answer, say "one moment" in ${targetLanguage} and call check_with_user. If you reach voicemail, leave a short message after the beep.`;
+RULES:
+- Your FIRST message must greet AND ask your question in one sentence. Example: "Bonjour, est-ce qu'il reste des billets pour le concert?"
+- Keep every reply to 1-2 sentences in ${targetLanguage}.
+- LISTEN to what they say and respond naturally. If they say yes, say thank you and ask follow-up details (time, price, etc.). If they say no, ask about alternatives.
+- Do NOT call check_with_user unless the business asks you a specific question you truly cannot answer (like choosing a date, time, or option that wasn't in your task).
+- If you reach voicemail, leave a short message after the beep.
+- Never narrate your actions. Never speak in English. Never break character.`;
 
   // Transient assistant — full config inline, no assistantId + overrides
   const assistant = {
