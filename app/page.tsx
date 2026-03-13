@@ -17,7 +17,7 @@ import { CurrencyConverterView } from '@/components/currency/CurrencyConverterVi
 import { SettingsView } from '@/components/settings/SettingsView';
 import { FavoritesView } from '@/components/favorites/FavoritesView';
 import { CameraTranslateView } from '@/components/CameraTranslate/CameraTranslateView';
-import type { CameraTranslationResult } from '@/types';
+import type { CameraTranslationResult, DishAnalysis } from '@/types';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useVapiCall } from '@/hooks/useVapiCall';
 import { CallSheet } from '@/components/call/CallSheet';
@@ -336,6 +336,20 @@ export default function TranslatorPage() {
     setViewMode('chat');
   }, []);
 
+  const handleSaveDish = useCallback((dish: DishAnalysis) => {
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const contextMsg: Message = {
+      id: `dish-${Date.now()}`,
+      role: 'assistant',
+      text: `${dish.dishName}${dish.localName ? ` (${dish.localName})` : ''} — ${dish.description}. Cuisine: ${dish.cuisineType}. Ingredients: ${dish.ingredients.join(', ')}.`,
+      timestamp: now,
+    };
+
+    setMessages((prev) => [...prev, contextMsg]);
+    setViewMode('chat');
+  }, []);
+
   // Build chat context for call
   const chatContext = callPreFill?.task
     ?? messages.filter((m) => m.role === 'user').slice(-3).map((m) => m.text).join(' | ');
@@ -534,6 +548,7 @@ export default function TranslatorPage() {
             toLang={toLang}
             onClose={() => setViewMode('chat')}
             onSaveTranslation={handleSaveCamera}
+            onSaveDish={handleSaveDish}
           />
         );
       default:
