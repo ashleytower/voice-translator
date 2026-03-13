@@ -215,13 +215,6 @@ export default function FluentPage() {
     }
   }, [callTranscript, callStatus, toLang.name, fromLang.name]);
 
-  // Auto-minimize call sheet when call connects so user sees chat
-  useEffect(() => {
-    if (callStatus === 'in-progress' && showCallSheet) {
-      setShowCallSheet(false);
-    }
-  }, [callStatus, showCallSheet]);
-
   // Reset relay tracker when call ends
   useEffect(() => {
     if (callStatus === 'idle') {
