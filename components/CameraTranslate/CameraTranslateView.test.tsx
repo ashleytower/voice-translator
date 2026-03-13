@@ -8,7 +8,12 @@ vi.mock('@/lib/gemini-camera-translate', () => ({
   translateCameraImage: vi.fn(),
 }));
 
+vi.mock('@/lib/gemini-dish-analyze', () => ({
+  analyzeDish: vi.fn(),
+}));
+
 import { translateCameraImage } from '@/lib/gemini-camera-translate';
+import { analyzeDish } from '@/lib/gemini-dish-analyze';
 
 // Mock getUserMedia
 const mockGetUserMedia = vi.fn();
@@ -183,5 +188,73 @@ describe('CameraTranslateView', () => {
     await waitFor(() => {
       expect(screen.getByText(/camera access denied/i)).toBeInTheDocument();
     });
+  });
+
+  it('renders mode toggle with Translate and Dish options', () => {
+    render(
+      <CameraTranslateView
+        toLang={toLang}
+        onClose={vi.fn()}
+        onSaveTranslation={vi.fn()}
+        onSaveDish={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: /translate/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /dish/i })).toBeInTheDocument();
+  });
+
+  it('calls analyzeDish (not translateCameraImage) when mode is dish', async () => {
+    (analyzeDish as ReturnType<typeof vi.fn>).mockResolvedValue({
+      dishName: 'Ramen', localName: 'ラーメン', description: 'noodle soup',
+      ingredients: ['noodles'], dietaryFlags: { vegetarian: false, vegan: false, glutenFree: false, nutFree: false, dairyFree: false },
+      cuisineType: 'Japanese', spiceLevel: 'mild', confidence: 0.9,
+    });
+
+    render(
+      <CameraTranslateView
+        toLang={toLang}
+        onClose={vi.fn()}
+        onSaveTranslation={vi.fn()}
+        onSaveDish={vi.fn()}
+      />
+    );
+
+    // Switch to dish mode
+    fireEvent.click(screen.getByRole('button', { name: /dish/i }));
+
+    await waitFor(() => expect(mockGetUserMedia).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /capture/i }));
+
+    await waitFor(() => {
+      expect(analyzeDish).toHaveBeenCalled();
+      expect(translateCameraImage).not.toHaveBeenCalled();
+    });
+  });
+
+  it('calls onSaveDish when save is clicked in dish mode', async () => {
+    const mockDish = {
+      dishName: 'Ramen', localName: 'ラーメン', description: 'soup',
+      ingredients: ['noodles'],
+      dietaryFlags: { vegetarian: false, vegan: false, glutenFree: false, nutFree: false, dairyFree: false },
+      cuisineType: 'Japanese', spiceLevel: 'mild' as const, confidence: 0.9,
+    };
+    (analyzeDish as ReturnType<typeof vi.fn>).mockResolvedValue(mockDish);
+
+    const onSaveDish = vi.fn();
+    render(
+      <CameraTranslateView
+        toLang={toLang}
+        onClose={vi.fn()}
+        onSaveTranslation={vi.fn()}
+        onSaveDish={onSaveDish}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /dish/i }));
+    await waitFor(() => expect(mockGetUserMedia).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /capture/i }));
+    await waitFor(() => screen.getByText('Ramen'));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    expect(onSaveDish).toHaveBeenCalledWith(mockDish);
   });
 });

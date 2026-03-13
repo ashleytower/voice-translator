@@ -4,12 +4,15 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Camera, Save, Volume2, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { translateCameraImage } from '@/lib/gemini-camera-translate';
-import type { Language, CameraTranslationResult } from '@/types';
+import { analyzeDish } from '@/lib/gemini-dish-analyze';
+import type { Language, CameraTranslationResult, CameraMode, DishAnalysis } from '@/types';
+import { DishCard } from '@/components/chat/DishCard';
 
 interface CameraTranslateViewProps {
   toLang: Language;
   onClose: () => void;
   onSaveTranslation: (result: CameraTranslationResult) => void;
+  onSaveDish?: (dish: DishAnalysis) => void;
 }
 
 type CameraState = 'starting' | 'ready' | 'capturing' | 'translating' | 'result' | 'error';
@@ -18,6 +21,7 @@ export function CameraTranslateView({
   toLang,
   onClose,
   onSaveTranslation,
+  onSaveDish,
 }: CameraTranslateViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -26,6 +30,8 @@ export function CameraTranslateView({
   const [cameraState, setCameraState] = useState<CameraState>('starting');
   const [errorMessage, setErrorMessage] = useState('');
   const [result, setResult] = useState<CameraTranslationResult | null>(null);
+  const [cameraMode, setCameraMode] = useState<CameraMode>('translate');
+  const [dishResult, setDishResult] = useState<DishAnalysis | null>(null);
 
   // Start camera on mount
   useEffect(() => {
@@ -85,14 +91,19 @@ export function CameraTranslateView({
     setCameraState('translating');
 
     try {
-      const translationResult = await translateCameraImage(base64, toLang.name);
-      setResult(translationResult);
+      if (cameraMode === 'dish') {
+        const dishRes = await analyzeDish(base64, toLang.name);
+        setDishResult(dishRes);
+      } else {
+        const translationResult = await translateCameraImage(base64, toLang.name);
+        setResult(translationResult);
+      }
       setCameraState('result');
     } catch {
       setErrorMessage('Translation failed. Tap the shutter to try again.');
       setCameraState('error');
     }
-  }, [cameraState, toLang.name]);
+  }, [cameraState, cameraMode, toLang.name]);
 
   const handleRetry = useCallback(() => {
     setResult(null);
@@ -109,8 +120,12 @@ export function CameraTranslateView({
   }, [result, toLang.code]);
 
   const handleSave = useCallback(() => {
-    if (result) onSaveTranslation(result);
-  }, [result, onSaveTranslation]);
+    if (cameraMode === 'dish' && dishResult) {
+      onSaveDish?.(dishResult);
+    } else if (result) {
+      onSaveTranslation(result);
+    }
+  }, [cameraMode, dishResult, result, onSaveDish, onSaveTranslation]);
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -208,6 +223,41 @@ export function CameraTranslateView({
             )}
           </div>
         )}
+
+        {/* Dish result */}
+        {cameraState === 'result' && dishResult && cameraMode === 'dish' && (
+          <div className="px-4 pt-3 pb-2">
+            <DishCard dish={dishResult} onChatAboutThis={(dish) => { onSaveDish?.(dish); }} />
+            <div className="flex justify-end mt-2">
+              <button
+                aria-label="save"
+                onClick={handleSave}
+                className="h-8 px-3 flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+              >
+                <Save className="h-3 w-3" />
+                Save
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mode toggle */}
+        <div className="flex items-center justify-center gap-1 mb-4">
+          {(['translate', 'dish'] as CameraMode[]).map((m) => (
+            <button
+              key={m}
+              aria-label={m}
+              onClick={() => { setCameraMode(m); setResult(null); setDishResult(null); setCameraState('ready'); }}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors capitalize ${
+                cameraMode === m
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}
+            >
+              {m === 'translate' ? 'Translate' : 'Dish'}
+            </button>
+          ))}
+        </div>
 
         {/* Shutter button */}
         <div className="flex items-center justify-center py-6">
