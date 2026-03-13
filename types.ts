@@ -57,6 +57,20 @@ export interface ARScan {
   detectedObjects?: DetectedObject[];
 }
 
+export interface CameraTranslationSegment {
+  region: string;
+  original: string;
+  translated: string;
+}
+
+export interface CameraTranslationResult {
+  extractedText: string;
+  translatedText: string;
+  detectedLanguage: string;
+  confidence: number;
+  segments: CameraTranslationSegment[];
+}
+
 export interface AppSettings {
   autoPlay: boolean;
   hapticFeedback: boolean;
@@ -66,7 +80,7 @@ export interface AppSettings {
   homeCurrency: string;
 }
 
-export type ViewMode = 'chat' | 'currency' | 'ar' | 'settings' | 'favs';
+export type ViewMode = 'chat' | 'camera' | 'currency' | 'settings' | 'favs';
 
 export interface CallRequest {
   phoneNumber: string;
