@@ -328,8 +328,8 @@ export default function TranslatorPage() {
     const msg: Message = {
       id: Date.now().toString(),
       role: 'assistant',
-      text: result.extractedText,
-      translation: result.translatedText,
+      text: result.translatedText,
+      translation: result.extractedText,
       timestamp: now,
     };
     setMessages((prev) => [...prev, msg]);
