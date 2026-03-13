@@ -65,7 +65,7 @@ RULES:
     },
     voice: {
       provider: '11labs',
-      voiceId: 'ErXwobaYiN019PkySvjV',
+      voiceId: 'EXAVITQu4vr4xnSDxMaL',
       model: 'eleven_multilingual_v2',
     },
     transcriber: {
