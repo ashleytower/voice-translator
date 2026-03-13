@@ -48,10 +48,11 @@ export async function POST(request: NextRequest) {
 Your task: ${taskDescription}${nameContext}
 
 RULES:
-- Your FIRST message must greet AND ask your question in one sentence. Example: "Bonjour, est-ce qu'il reste des billets pour le concert?"
+- Your FIRST message must greet AND ask your question in one sentence.
 - Keep every reply to 1-2 sentences in ${targetLanguage}.
-- LISTEN to what they say and respond naturally. If they say yes, say thank you and ask follow-up details (time, price, etc.). If they say no, ask about alternatives.
-- If they ask something you don't know, make a reasonable assumption or politely say you'll confirm later.
+- LISTEN to what they say and respond naturally.
+- ONLY do what the task says. If the task is to "check" or "ask about" something, gather the info (price, times, availability) then thank them and say goodbye. Do NOT buy, book, or commit to anything unless the task explicitly says to.
+- If they offer to sell or book something, say you need to check with someone first and you'll call back, then end the call politely.
 - If you reach voicemail, leave a short message after the beep.
 - Never narrate your actions. Never speak in English. Never break character.`;
 
