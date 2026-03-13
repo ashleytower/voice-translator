@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const VAPI_API_KEY = process.env.VAPI_API_KEY;
 const VAPI_PHONE_NUMBER_ID = process.env.VAPI_PHONE_NUMBER_ID;
-const VAPI_ASSISTANT_ID = process.env.VAPI_ASSISTANT_ID;
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -13,7 +12,7 @@ function validateCallId(callId: string | null): callId is string {
 }
 
 export async function POST(request: NextRequest) {
-  if (!VAPI_API_KEY || !VAPI_PHONE_NUMBER_ID || !VAPI_ASSISTANT_ID) {
+  if (!VAPI_API_KEY || !VAPI_PHONE_NUMBER_ID) {
     return NextResponse.json(
       { error: 'VAPI not configured' },
       { status: 500 }
@@ -27,15 +26,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { phoneNumber, taskDescription, targetLanguage, userName, partySize, date, time, specialRequests } = body as {
+  const { phoneNumber, taskDescription, targetLanguage, userName } = body as {
     phoneNumber?: string;
     taskDescription?: string;
     targetLanguage?: string;
     userName?: string;
-    partySize?: number;
-    date?: string;
-    time?: string;
-    specialRequests?: string;
   };
 
   if (!phoneNumber || !taskDescription || !targetLanguage) {
@@ -45,45 +40,43 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const name = userName || 'a traveler';
+  // Only include name context if provided (for reservations etc.)
+  const nameContext = userName ? `\nIf they need a name, use: ${userName}.` : '';
 
-  const systemPrompt = `You are on a live phone call RIGHT NOW. You called a business. The phone is ringing or someone just picked up.
+  const systemPrompt = `You are on a live phone call with a business RIGHT NOW. You are the caller.
 
-Say hello in ${targetLanguage} and ask: ${taskDescription}
-Your name is ${name}.
+Your request: ${taskDescription}
+Language: ${targetLanguage}${nameContext}
 
-Speak ONLY in ${targetLanguage}. Be brief and natural, like a real person making a phone call. 1-2 sentences max per turn.
+Say hello in ${targetLanguage} and ask your question. Be natural and brief, 1-2 sentences per turn. Respond to what the other person says — have a real conversation.
 
-If they ask you something you don't know the answer to, say "one moment please" in ${targetLanguage} and call the check_with_user tool. Never decide on your own.
+If they ask something you can't answer, say "one moment" in ${targetLanguage} and call check_with_user. If you reach voicemail, leave a short message after the beep.`;
 
-If you reach voicemail, leave a short message after the beep with your name and request.
-
-Never say "I'm ready" or "I'm listening" or narrate what you're doing. You are a person on a phone call, not a chatbot.`;
-
-  const assistantOverrides = {
+  // Transient assistant — full config inline, no assistantId + overrides
+  const assistant = {
     model: {
-      provider: 'anthropic' as const,
+      provider: 'anthropic',
       model: 'claude-haiku-4-5-20251001',
-      messages: [{ role: 'system' as const, content: systemPrompt }],
+      messages: [{ role: 'system', content: systemPrompt }],
       tools: [
         {
-          type: 'function' as const,
+          type: 'function',
           async: false,
           function: {
             name: 'check_with_user',
-            description: 'Pause and check with the real person for their decision. Use this IMMEDIATELY when the business asks a question, offers an alternative, or needs any decision.',
+            description: 'Ask the real user for their decision. Use when the business asks a question you cannot answer.',
             parameters: {
-              type: 'object' as const,
+              type: 'object',
               required: ['question'],
               properties: {
                 question: {
-                  type: 'string' as const,
-                  description: 'The question or choice to present to the user. Always write this in English so the user can read it.',
+                  type: 'string',
+                  description: 'The question to ask the user, in English.',
                 },
                 options: {
-                  type: 'array' as const,
-                  items: { type: 'string' as const },
-                  description: 'Optional list of choices in English.',
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Optional choices in English.',
                 },
               },
             },
@@ -91,7 +84,18 @@ Never say "I'm ready" or "I'm listening" or narrate what you're doing. You are a
         },
       ],
     },
-    firstMessageMode: 'assistant-speaks-first-with-model-generated-message' as const,
+    voice: {
+      provider: '11labs',
+      voiceId: 'ErXwobaYiN019PkySvjV',
+      model: 'eleven_multilingual_v2',
+    },
+    transcriber: {
+      provider: 'deepgram',
+      model: 'nova-3',
+    },
+    firstMessageMode: 'assistant-speaks-first-with-model-generated-message',
+    backgroundSound: 'off',
+    backgroundDenoisingEnabled: true,
   };
 
   let response: Response;
@@ -103,8 +107,7 @@ Never say "I'm ready" or "I'm listening" or narrate what you're doing. You are a
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        assistantId: VAPI_ASSISTANT_ID,
-        assistantOverrides,
+        assistant,
         phoneNumberId: VAPI_PHONE_NUMBER_ID,
         customer: {
           number: phoneNumber,
