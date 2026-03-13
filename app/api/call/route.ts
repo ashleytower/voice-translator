@@ -56,8 +56,8 @@ If they ask something you can't answer, say "one moment" in ${targetLanguage} an
   const assistant = {
     serverUrl: 'https://translator-t2.vercel.app/api/vapi/webhook',
     model: {
-      provider: 'anthropic',
-      model: 'claude-3-7-sonnet-20250219',
+      provider: 'openai',
+      model: 'gpt-4o',
       messages: [{ role: 'system', content: systemPrompt }],
       tools: [
         {
