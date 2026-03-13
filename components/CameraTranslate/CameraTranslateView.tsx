@@ -105,7 +105,7 @@ export function CameraTranslateView({
       setErrorMessage('Translation failed. Tap the shutter to try again.');
       setCameraState('error');
     }
-  }, [cameraState, cameraMode, toLang.name]);
+  }, [cameraState, cameraMode, toLang.name, fromLang]);
 
   const handleRetry = useCallback(() => {
     setResult(null);

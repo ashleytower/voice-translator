@@ -85,7 +85,14 @@ Return ONLY valid JSON matching this exact structure — no markdown, no extra t
 
     if (!response.text) return FALLBACK;
 
-    return JSON.parse(response.text) as CameraTranslationResult;
+    const parsed = JSON.parse(response.text);
+    return {
+      extractedText: parsed.extractedText ?? '',
+      translatedText: parsed.translatedText ?? 'Translation unavailable',
+      detectedLanguage: parsed.detectedLanguage ?? 'Unknown',
+      confidence: parsed.confidence ?? 0,
+      segments: Array.isArray(parsed.segments) ? parsed.segments : [],
+    };
   } catch (error) {
     console.error('Camera translate error:', error);
     return FALLBACK;
