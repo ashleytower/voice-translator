@@ -93,6 +93,7 @@ If they ask something you can't answer, say "one moment" in ${targetLanguage} an
     transcriber: {
       provider: 'deepgram',
       model: 'nova-3',
+      language: 'multi',
     },
     firstMessageMode: 'assistant-speaks-first-with-model-generated-message',
     backgroundSound: 'off',
