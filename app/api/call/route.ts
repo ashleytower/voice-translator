@@ -54,9 +54,10 @@ If they ask something you can't answer, say "one moment" in ${targetLanguage} an
 
   // Transient assistant — full config inline, no assistantId + overrides
   const assistant = {
+    serverUrl: 'https://translator-t2.vercel.app/api/vapi/webhook',
     model: {
       provider: 'anthropic',
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-3-7-sonnet-20250219',
       messages: [{ role: 'system', content: systemPrompt }],
       tools: [
         {
