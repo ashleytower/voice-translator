@@ -51,7 +51,7 @@ RULES:
 - Your FIRST message must greet AND ask your question in one sentence. Example: "Bonjour, est-ce qu'il reste des billets pour le concert?"
 - Keep every reply to 1-2 sentences in ${targetLanguage}.
 - LISTEN to what they say and respond naturally. If they say yes, say thank you and ask follow-up details (time, price, etc.). If they say no, ask about alternatives.
-- Do NOT call check_with_user unless the business asks you a specific question you truly cannot answer (like choosing a date, time, or option that wasn't in your task).
+- If they ask something you don't know, make a reasonable assumption or politely say you'll confirm later.
 - If you reach voicemail, leave a short message after the beep.
 - Never narrate your actions. Never speak in English. Never break character.`;
 
@@ -62,31 +62,6 @@ RULES:
       provider: 'openai',
       model: 'gpt-4o',
       messages: [{ role: 'system', content: systemPrompt }],
-      tools: [
-        {
-          type: 'function',
-          async: false,
-          function: {
-            name: 'check_with_user',
-            description: 'Ask the real user for their decision. Use when the business asks a question you cannot answer.',
-            parameters: {
-              type: 'object',
-              required: ['question'],
-              properties: {
-                question: {
-                  type: 'string',
-                  description: 'The question to ask the user, in English.',
-                },
-                options: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Optional choices in English.',
-                },
-              },
-            },
-          },
-        },
-      ],
     },
     voice: {
       provider: '11labs',

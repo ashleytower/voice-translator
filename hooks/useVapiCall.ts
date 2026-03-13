@@ -149,6 +149,19 @@ export function useVapiCall(): UseVapiCallReturn {
         setStatus(mappedStatus);
       }
 
+      // Use VAPI call messages as fallback transcript if webhook transcript is empty
+      if (mappedStatus === 'in-progress' || mappedStatus === 'ended') {
+        const msgs = (
+          data.messages ??
+          (data.artifact as Record<string, unknown> | undefined)?.messages ??
+          []
+        ) as unknown[];
+        const parsed = parseVapiMessages(msgs);
+        if (parsed.length > 0) {
+          setTranscript((prev) => parsed.length > prev.length ? parsed : prev);
+        }
+      }
+
       if (mappedStatus === 'ended') {
         const msgs = (data.messages ?? (data.artifact as Record<string, unknown> | undefined)?.messages ?? []) as unknown[];
         const parsedMessages = parseVapiMessages(msgs);
