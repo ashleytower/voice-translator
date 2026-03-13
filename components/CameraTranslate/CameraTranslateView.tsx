@@ -107,6 +107,7 @@ export function CameraTranslateView({
 
   const handleRetry = useCallback(() => {
     setResult(null);
+    setDishResult(null);
     setCameraState('ready');
   }, []);
 
