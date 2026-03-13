@@ -23,8 +23,7 @@ export async function analyzeDish(
   targetLanguage: string
 ): Promise<DishAnalysis> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ai = (GoogleGenAI as any)({ apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '' });
+    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '' });
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@google/genai', () => ({
-  GoogleGenAI: vi.fn().mockImplementation(() => ({
-    models: { generateContent: vi.fn() },
-  })),
+  GoogleGenAI: vi.fn().mockImplementation(function () {
+    return { models: { generateContent: vi.fn() } };
+  }),
   Type: {
     OBJECT: 'object',
     STRING: 'string',
@@ -22,9 +22,9 @@ describe('analyzeDish', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGenerateContent = vi.fn();
-    (GoogleGenAI as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-      models: { generateContent: mockGenerateContent },
-    }));
+    (GoogleGenAI as ReturnType<typeof vi.fn>).mockImplementation(function () {
+      return { models: { generateContent: mockGenerateContent } };
+    });
   });
 
   it('returns a DishAnalysis on success', async () => {
