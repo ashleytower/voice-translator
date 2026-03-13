@@ -104,8 +104,10 @@ export const InputArea: React.FC<InputAreaProps> = ({
       )}
 
       <div className={cn(
-        'flex items-end gap-2 rounded-xl border border-input bg-background p-2',
-        isLive && 'border-destructive bg-destructive/5'
+        'flex items-end gap-2 rounded-xl border bg-card p-2 transition-colors',
+        isLive
+          ? 'border-destructive bg-destructive/5'
+          : 'border-border hover:border-primary/30'
       )}>
         <input
           type="file"
@@ -120,7 +122,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
           size="icon"
           onClick={onStartCall}
           disabled={isLive}
-          className="h-9 w-9 shrink-0 text-muted-foreground"
+          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
           aria-label="Make a phone call"
         >
           <Phone className="h-5 w-5" />
@@ -131,7 +133,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
           size="icon"
           onClick={handleFileClick}
           disabled={isLive}
-          className="h-9 w-9 shrink-0 text-muted-foreground"
+          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
         >
           <ImagePlus className="h-5 w-5" />
         </Button>
@@ -164,7 +166,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
             'h-9 w-9 shrink-0 rounded-lg',
             isLive
               ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse-soft'
-              : 'bg-primary hover:bg-primary/90'
+              : 'bg-primary hover:bg-primary/90 text-primary-foreground'
           )}
         >
           {input.length > 0 || attachment ? (

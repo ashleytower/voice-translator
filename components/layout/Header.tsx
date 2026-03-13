@@ -12,15 +12,8 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onClearHistory, onSettingsClick }) => {
   return (
     <header className="px-4 py-3 flex items-center justify-between border-b border-border sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-          <span className="material-symbols-outlined text-primary-foreground text-sm">
-            translate
-          </span>
-        </div>
-        <div>
-          <h1 className="text-sm font-semibold">Found in Translation</h1>
-        </div>
+      <div className="flex items-center gap-3">
+        <h1 className="text-lg font-serif tracking-tight text-primary">Found in Translation</h1>
       </div>
       <div className="flex gap-1">
         {onClearHistory && (

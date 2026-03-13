@@ -16,16 +16,16 @@ const NavButton = ({ icon, label, isActive, onClick }: NavButtonProps) => (
   <button
     onClick={onClick}
     className={cn(
-      'flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors',
+      'relative flex flex-col items-center gap-1 px-3 py-2 transition-colors',
       isActive
-        ? 'text-foreground'
+        ? 'text-primary'
         : 'text-muted-foreground hover:text-foreground'
     )}
   >
-    <div className={cn(
-      'p-2 rounded-lg transition-colors',
-      isActive && 'bg-secondary'
-    )}>
+    {isActive && (
+      <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
+    )}
+    <div className="flex items-center justify-center">
       {icon}
     </div>
     <span className="text-[10px] font-medium">{label}</span>
@@ -41,25 +41,25 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
   return (
     <nav className="flex justify-around items-center px-4 py-2 border-t border-border bg-background">
       <NavButton
-        icon={<MessageSquare className="h-5 w-5" />}
+        icon={<MessageSquare className="h-[18px] w-[18px]" />}
         label="Chat"
         isActive={activeTab === 'chat'}
         onClick={() => onTabChange('chat')}
       />
       <NavButton
-        icon={<Star className="h-5 w-5" />}
+        icon={<Star className="h-[18px] w-[18px]" />}
         label="Saved"
         isActive={activeTab === 'favs'}
         onClick={() => onTabChange('favs')}
       />
       <NavButton
-        icon={<Repeat className="h-5 w-5" />}
+        icon={<Repeat className="h-[18px] w-[18px]" />}
         label="Convert"
         isActive={activeTab === 'currency'}
         onClick={() => onTabChange('currency')}
       />
       <NavButton
-        icon={<Settings className="h-5 w-5" />}
+        icon={<Settings className="h-[18px] w-[18px]" />}
         label="Settings"
         isActive={activeTab === 'settings'}
         onClick={() => onTabChange('settings')}

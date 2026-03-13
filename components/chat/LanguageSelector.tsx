@@ -5,7 +5,7 @@ import { Language } from '@/types';
 import { LANGUAGES } from '@/lib/constants';
 import { LanguagePicker } from './LanguagePicker';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftRight, ChevronDown } from 'lucide-react';
+import { ArrowLeftRight } from 'lucide-react';
 
 interface LanguageSelectorProps {
   fromLang: Language;
@@ -27,36 +27,30 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
 
   return (
     <>
-      <div className="px-4 py-3 flex items-center gap-2 border-b border-border">
+      <div className="px-4 py-2.5 flex items-center gap-2 border-b border-border bg-background">
         <button
           onClick={() => setIsFromOpen(true)}
-          className="flex-1 flex items-center justify-between px-3 py-2 rounded-lg border border-input bg-background hover:bg-accent transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 rounded-full border border-border bg-secondary hover:border-primary/40 hover:bg-secondary/80 transition-colors"
         >
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{fromLang.flag}</span>
-            <span className="text-sm font-medium">{fromLang.name}</span>
-          </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <span className="text-base leading-none">{fromLang.flag}</span>
+          <span className="text-sm font-medium text-foreground">{fromLang.name}</span>
         </button>
 
         <Button
           variant="ghost"
           size="icon"
           onClick={onSwap}
-          className="h-9 w-9 shrink-0"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground hover:bg-secondary/60"
         >
-          <ArrowLeftRight className="h-4 w-4" />
+          <ArrowLeftRight className="h-3.5 w-3.5" />
         </Button>
 
         <button
           onClick={() => setIsToOpen(true)}
-          className="flex-1 flex items-center justify-between px-3 py-2 rounded-lg border border-input bg-background hover:bg-accent transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 rounded-full border border-border bg-secondary hover:border-primary/40 hover:bg-secondary/80 transition-colors"
         >
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{toLang.flag}</span>
-            <span className="text-sm font-medium">{toLang.name}</span>
-          </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <span className="text-base leading-none">{toLang.flag}</span>
+          <span className="text-sm font-medium text-foreground">{toLang.name}</span>
         </button>
       </div>
 

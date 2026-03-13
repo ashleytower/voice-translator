@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 @tailwind base;
@@ -14,9 +14,13 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   min-height: 100dvh;
   overflow-x: hidden;
+}
+
+.font-serif {
+  font-family: 'Instrument Serif', Georgia, serif;
 }
 
 @keyframes fade-up {
@@ -83,25 +87,25 @@ body {
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 220 15% 5%;
+    --foreground: 40 10% 95%;
+    --card: 220 13% 8%;
+    --card-foreground: 40 10% 95%;
+    --popover: 220 13% 8%;
+    --popover-foreground: 40 10% 95%;
+    --primary: 38 90% 55%;
+    --primary-foreground: 220 15% 5%;
+    --secondary: 220 12% 12%;
+    --secondary-foreground: 40 10% 90%;
+    --muted: 220 12% 15%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 38 80% 50%;
+    --accent-foreground: 220 15% 5%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 220 12% 14%;
+    --input: 220 12% 14%;
+    --ring: 38 90% 55%;
   }
 }
 

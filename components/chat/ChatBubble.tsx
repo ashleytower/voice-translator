@@ -23,7 +23,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   if (isUser) {
     return (
-      <div className="flex flex-col items-end animate-fade-up">
+      <div className="flex flex-col items-end animate-fade-up mb-3">
         <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3 relative">
           {message.attachment && (
             <div className="mb-2 -mx-2 -mt-1">
@@ -34,7 +34,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
               />
             </div>
           )}
-          <p className="text-sm">{message.text}</p>
+          <p className="text-sm font-medium">{message.text}</p>
           {onToggleFavorite && (
             <Button
               variant="ghost"
@@ -59,14 +59,14 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   }
 
   return (
-    <div className="flex flex-col items-start animate-fade-up">
+    <div className="flex flex-col items-start animate-fade-up mb-3">
       <div className="flex items-center gap-2 mb-1">
-        <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center">
+        <div className="h-6 w-6 rounded-full bg-secondary border border-border flex items-center justify-center">
           <Bot className="h-3 w-3 text-muted-foreground" />
         </div>
         <span className="text-xs text-muted-foreground">Assistant</span>
       </div>
-      <div className="max-w-[80%] bg-secondary rounded-2xl rounded-tl-md px-4 py-3 relative">
+      <div className="max-w-[80%] bg-card border border-border rounded-2xl rounded-tl-md px-4 py-3 relative">
         <div className="absolute top-2 right-2 flex gap-1">
           {onToggleFavorite && (
             <Button
@@ -88,7 +88,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
               variant="ghost"
               size="icon"
               onClick={() => onPlayAudio(message.translation!, targetLangCode)}
-              className="h-6 w-6 text-muted-foreground/50 hover:text-muted-foreground"
+              className="h-6 w-6 text-muted-foreground/50 hover:text-primary"
             >
               <Volume2 className="h-3 w-3" />
             </Button>
@@ -97,7 +97,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 
         {message.translation && (
           <div className="pr-14 space-y-1 mb-2">
-            <p className="text-sm font-medium">{message.translation}</p>
+            <p className="text-sm font-semibold">{message.translation}</p>
             {message.pronunciation && (
               <p className="text-xs text-muted-foreground">{message.pronunciation}</p>
             )}
