@@ -300,6 +300,7 @@ export function CameraTranslateView({
               homeSymbol={homeInfo.symbol}
               foreignSymbol={HOME_CURRENCIES.find(c => c.code === priceResult.currency)?.symbol || priceResult.currency}
               onCheckDeal={handleCheckDeal}
+              onClearDeal={() => setDealResult(null)}
               dealResult={dealResult}
               isCheckingDeal={isCheckingDeal}
             />

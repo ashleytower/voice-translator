@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Pencil, Search, ArrowDown, TrendingDown, TrendingUp, Loader2 } from 'lucide-react';
+import { Check, Pencil, Search, ArrowDown, TrendingDown, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PriceAnalysis } from '@/types';
 
@@ -17,6 +17,7 @@ interface PriceCardProps {
   homeSymbol: string;
   foreignSymbol: string;
   onCheckDeal: (productName: string) => void;
+  onClearDeal?: () => void;
   dealResult?: DealResult | null;
   isCheckingDeal?: boolean;
 }
@@ -55,6 +56,7 @@ export function PriceCard({
   homeSymbol,
   foreignSymbol,
   onCheckDeal,
+  onClearDeal,
   dealResult,
   isCheckingDeal = false,
 }: PriceCardProps) {
@@ -66,6 +68,7 @@ export function PriceCard({
   const isPositiveDeal = dealResult?.verdict === 'great_deal' || dealResult?.verdict === 'good_deal';
   const displayName = editName || price.productName;
   const hasName = displayName && displayName.trim().length > 0;
+  const nameChanged = editName.trim() !== price.productName.trim();
 
   useEffect(() => {
     if (isEditing) {
@@ -77,8 +80,14 @@ export function PriceCard({
   const handleNameSubmit = () => {
     setIsEditing(false);
     if (editName.trim()) {
+      onClearDeal?.();
       onCheckDeal(editName.trim());
     }
+  };
+
+  const handleRecheck = () => {
+    onClearDeal?.();
+    onCheckDeal(displayName);
   };
 
   return (
@@ -86,15 +95,23 @@ export function PriceCard({
       {/* Header with editable product name */}
       <div className="flex items-start justify-between gap-2">
         {isEditing ? (
-          <input
-            ref={inputRef}
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleNameSubmit(); }}
-            onBlur={() => setIsEditing(false)}
-            placeholder="What is this item?"
-            className="flex-1 bg-background/80 rounded-lg px-2 py-1 text-base font-semibold border border-primary/50 focus:outline-none"
-          />
+          <div className="flex-1 flex items-center gap-1.5">
+            <input
+              ref={inputRef}
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleNameSubmit(); }}
+              placeholder="What is this item?"
+              className="flex-1 bg-background/80 rounded-lg px-2 py-1 text-base font-semibold border border-primary/50 focus:outline-none"
+            />
+            <button
+              onClick={handleNameSubmit}
+              className="h-8 px-3 flex items-center gap-1 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors shrink-0"
+            >
+              <Check className="h-3.5 w-3.5" />
+              Update
+            </button>
+          </div>
         ) : (
           <button
             onClick={() => setIsEditing(true)}
@@ -106,7 +123,7 @@ export function PriceCard({
             <Pencil className="h-3 w-3 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
           </button>
         )}
-        {price.storeName && (
+        {!isEditing && price.storeName && (
           <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium shrink-0">
             {price.storeName}
           </span>
@@ -160,8 +177,8 @@ export function PriceCard({
         </div>
       )}
 
-      {/* Action button */}
-      {!dealResult && (
+      {/* Action buttons */}
+      {!dealResult && !isEditing && (
         <button
           aria-label="check deal"
           onClick={() => onCheckDeal(displayName || '')}
@@ -180,6 +197,18 @@ export function PriceCard({
             <Search className="h-4 w-4" />
           )}
           {isCheckingDeal ? 'Checking...' : hasName ? 'Check Deal' : 'Name the item first'}
+        </button>
+      )}
+
+      {/* Re-check after verdict with corrected name */}
+      {dealResult && !isEditing && (
+        <button
+          onClick={handleRecheck}
+          disabled={isCheckingDeal}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors border border-border/30"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Re-check deal
         </button>
       )}
     </div>
