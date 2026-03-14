@@ -354,16 +354,22 @@ export default function TranslatorPage() {
 
   const handleSavePrice = useCallback((price: PriceAnalysis, convertedAmount: number, homeCurr: string) => {
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const foreignAmt = typeof price.price === 'number' ? price.price.toFixed(2) : String(price.price ?? '?');
+    const homeAmt = typeof convertedAmount === 'number' && convertedAmount > 0 ? convertedAmount.toFixed(2) : '?';
 
     const contextMsg: Message = {
       id: `price-${Date.now()}`,
       role: 'assistant',
-      text: `I scanned a price tag: ${price.productName}${price.storeName ? ` at ${price.storeName}` : ''} — ${price.currency} ${price.price.toFixed(2)}, which is about ${homeCurr} ${convertedAmount.toFixed(2)} in your home currency. Want to know if this is a good deal, or need help asking about it in ${toLang.name}?`,
+      text: `I scanned a price tag: ${price.productName || 'item'}${price.storeName ? ` at ${price.storeName}` : ''} — ${price.currency || ''} ${foreignAmt}, which is about ${homeCurr} ${homeAmt} in your home currency. Want to know if this is a good deal, or need help asking about it in ${toLang.name}?`,
       timestamp: now,
     };
 
     setMessages((prev) => [...prev, contextMsg]);
     setViewMode('chat');
+    // Ensure scroll to new message after view switch
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   }, [toLang.name]);
 
   // Build chat context for call
