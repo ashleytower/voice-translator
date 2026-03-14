@@ -581,7 +581,7 @@ export default function TranslatorPage() {
   };
 
   return (
-    <main className="min-h-dvh flex flex-col bg-background text-foreground dark">
+    <main className="h-dvh flex flex-col overflow-hidden bg-background text-foreground dark">
       {renderCurrentView()}
       <BottomNav activeTab={viewMode} onTabChange={setViewMode} />
     </main>
