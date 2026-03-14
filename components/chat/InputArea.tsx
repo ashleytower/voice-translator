@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
-import { DollarSign, ImagePlus, Phone, Send, X } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { DollarSign, ImagePlus, Phone, Send, X, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { HOME_CURRENCIES } from '@/lib/currency-constants';
 
 interface InputAreaProps {
   onSend: (text: string, attachment?: string) => void;
@@ -10,6 +12,8 @@ interface InputAreaProps {
   isLive?: boolean;
   onToggleLive?: () => void;
   onStartCall?: () => void;
+  homeCurrency?: string;
+  foreignCurrency?: string;
 }
 
 export const InputArea: React.FC<InputAreaProps> = ({
@@ -17,11 +21,36 @@ export const InputArea: React.FC<InputAreaProps> = ({
   isLoading,
   isLive,
   onStartCall,
+  homeCurrency = 'CAD',
+  foreignCurrency = 'USD',
 }) => {
   const [input, setInput] = useState('');
   const [attachment, setAttachment] = useState<string | null>(null);
+  const [showConverter, setShowConverter] = useState(false);
+  const [convertAmount, setConvertAmount] = useState('');
+  const [convertFrom, setConvertFrom] = useState(foreignCurrency);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const convertInputRef = useRef<HTMLInputElement>(null);
+
+  const { convert } = useExchangeRates();
+  const homeInfo = HOME_CURRENCIES.find(c => c.code === homeCurrency) || HOME_CURRENCIES[0];
+  const fromInfo = HOME_CURRENCIES.find(c => c.code === convertFrom);
+
+  // Update foreign currency when prop changes
+  useEffect(() => {
+    setConvertFrom(foreignCurrency);
+  }, [foreignCurrency]);
+
+  // Auto-focus the converter input when opened
+  useEffect(() => {
+    if (showConverter) {
+      setTimeout(() => convertInputRef.current?.focus(), 50);
+    }
+  }, [showConverter]);
+
+  const numericAmount = parseFloat(convertAmount) || 0;
+  const convertedValue = numericAmount > 0 ? convert(numericAmount, convertFrom, homeCurrency) : 0;
 
   const handleSend = () => {
     if ((input.trim() || attachment) && !isLoading) {
@@ -93,6 +122,54 @@ export const InputArea: React.FC<InputAreaProps> = ({
         </div>
       )}
 
+      {/* Inline Quick Converter */}
+      {showConverter && (
+        <div className="mb-2 rounded-2xl bg-secondary/80 backdrop-blur-sm border border-border/50 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground">Quick Convert</span>
+            <button
+              onClick={() => { setShowConverter(false); setConvertAmount(''); }}
+              className="h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              ref={convertInputRef}
+              type="number"
+              inputMode="decimal"
+              value={convertAmount}
+              onChange={(e) => setConvertAmount(e.target.value)}
+              placeholder="0.00"
+              className="flex-1 bg-background/80 rounded-xl px-3 py-2 text-lg font-semibold border border-border/50 focus:border-primary/50 focus:outline-none transition-colors"
+            />
+            <select
+              value={convertFrom}
+              onChange={(e) => setConvertFrom(e.target.value)}
+              className="bg-background/80 rounded-xl px-2 py-2 text-sm font-medium border border-border/50 focus:border-primary/50 focus:outline-none transition-colors"
+            >
+              {HOME_CURRENCIES.map(c => (
+                <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
+              ))}
+            </select>
+          </div>
+
+          {numericAmount > 0 && (
+            <div className="flex flex-col items-center gap-1 py-1">
+              <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-lg font-bold text-primary">
+                {homeInfo.symbol}{convertedValue.toFixed(2)} {homeCurrency}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                1 {convertFrom} = {homeInfo.symbol}{convert(1, convertFrom, homeCurrency).toFixed(4)} {homeCurrency}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className={cn(
         'flex items-end gap-1.5 rounded-2xl bg-secondary/50 p-1.5 transition-colors',
         isLive && 'ring-1 ring-red-500/30 bg-red-500/5'
@@ -123,12 +200,14 @@ export const InputArea: React.FC<InputAreaProps> = ({
         </button>
 
         <button
-          onClick={() => {
-            setInput('Convert ');
-            textareaRef.current?.focus();
-          }}
+          onClick={() => setShowConverter(!showConverter)}
           disabled={isLive || isLoading}
-          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-30"
+          className={cn(
+            'h-9 w-9 shrink-0 flex items-center justify-center rounded-xl transition-colors disabled:opacity-30',
+            showConverter
+              ? 'text-primary bg-primary/10'
+              : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+          )}
           aria-label="Quick convert price"
         >
           <DollarSign className="h-[18px] w-[18px]" />

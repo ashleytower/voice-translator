@@ -18,6 +18,7 @@ import { SettingsView } from '@/components/settings/SettingsView';
 import { FavoritesView } from '@/components/favorites/FavoritesView';
 import { CameraTranslateView } from '@/components/CameraTranslate/CameraTranslateView';
 import type { CameraTranslationResult, DishAnalysis, PriceAnalysis } from '@/types';
+import { LANG_TO_CURRENCY } from '@/lib/currency-constants';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useVapiCall } from '@/hooks/useVapiCall';
 import { CallSheet } from '@/components/call/CallSheet';
@@ -496,6 +497,8 @@ export default function TranslatorPage() {
             isLive={isConnected}
             onToggleLive={handleOrbClick}
             onStartCall={() => setShowCallSheet(true)}
+            homeCurrency={settings.homeCurrency}
+            foreignCurrency={LANG_TO_CURRENCY[toLang.code]?.code ?? 'USD'}
           />
         </div>
       </div>
