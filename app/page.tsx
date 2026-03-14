@@ -17,7 +17,7 @@ import { CurrencyConverterView } from '@/components/currency/CurrencyConverterVi
 import { SettingsView } from '@/components/settings/SettingsView';
 import { FavoritesView } from '@/components/favorites/FavoritesView';
 import { CameraTranslateView } from '@/components/CameraTranslate/CameraTranslateView';
-import type { CameraTranslationResult, DishAnalysis, PriceAnalysis } from '@/types';
+import type { CameraTranslationResult, DishAnalysis } from '@/types';
 import { LANG_TO_CURRENCY } from '@/lib/currency-constants';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useVapiCall } from '@/hooks/useVapiCall';
@@ -352,25 +352,7 @@ export default function TranslatorPage() {
     setViewMode('chat');
   }, [toLang.name]);
 
-  const handleSavePrice = useCallback((price: PriceAnalysis, convertedAmount: number, homeCurr: string) => {
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const foreignAmt = typeof price.price === 'number' ? price.price.toFixed(2) : String(price.price ?? '?');
-    const homeAmt = typeof convertedAmount === 'number' && convertedAmount > 0 ? convertedAmount.toFixed(2) : '?';
 
-    const contextMsg: Message = {
-      id: `price-${Date.now()}`,
-      role: 'assistant',
-      text: `I scanned a price tag: ${price.productName || 'item'}${price.storeName ? ` at ${price.storeName}` : ''} — ${price.currency || ''} ${foreignAmt}, which is about ${homeCurr} ${homeAmt} in your home currency. Want to know if this is a good deal, or need help asking about it in ${toLang.name}?`,
-      timestamp: now,
-    };
-
-    setMessages((prev) => [...prev, contextMsg]);
-    setViewMode('chat');
-    // Ensure scroll to new message after view switch
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  }, [toLang.name]);
 
   // Build chat context for call
   const chatContext = callPreFill?.task
@@ -577,7 +559,6 @@ export default function TranslatorPage() {
             onClose={() => setViewMode('chat')}
             onSaveTranslation={handleSaveCamera}
             onSaveDish={handleSaveDish}
-            onSavePrice={handleSavePrice}
           />
         );
       default:

@@ -1,5 +1,5 @@
-import React from 'react';
-import { MessageCircle, Search, ArrowDown, TrendingDown, TrendingUp, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Pencil, Search, ArrowDown, TrendingDown, TrendingUp, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PriceAnalysis } from '@/types';
 
@@ -17,7 +17,6 @@ interface PriceCardProps {
   homeSymbol: string;
   foreignSymbol: string;
   onCheckDeal: (productName: string) => void;
-  onChatAboutThis: (price: PriceAnalysis) => void;
   dealResult?: DealResult | null;
   isCheckingDeal?: boolean;
 }
@@ -56,21 +55,62 @@ export function PriceCard({
   homeSymbol,
   foreignSymbol,
   onCheckDeal,
-  onChatAboutThis,
   dealResult,
   isCheckingDeal = false,
 }: PriceCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(price.productName);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const verdict = dealResult ? VERDICT_STYLES[dealResult.verdict] : null;
   const isPositiveDeal = dealResult?.verdict === 'great_deal' || dealResult?.verdict === 'good_deal';
+  const displayName = editName || price.productName;
+  const hasName = displayName && displayName.trim().length > 0;
+
+  useEffect(() => {
+    if (isEditing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [isEditing]);
+
+  const handleNameSubmit = () => {
+    setIsEditing(false);
+    if (editName.trim()) {
+      onCheckDeal(editName.trim());
+    }
+  };
 
   return (
     <div className="rounded-2xl bg-secondary/50 border border-border/30 p-4 space-y-3">
-      {/* Header */}
+      {/* Header with editable product name */}
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-semibold text-base leading-tight">{price.productName}</h3>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium shrink-0">
-          {price.storeName}
-        </span>
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleNameSubmit(); }}
+            onBlur={() => setIsEditing(false)}
+            placeholder="What is this item?"
+            className="flex-1 bg-background/80 rounded-lg px-2 py-1 text-base font-semibold border border-primary/50 focus:outline-none"
+          />
+        ) : (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-1.5 text-left group"
+          >
+            <h3 className="font-semibold text-base leading-tight group-hover:text-primary transition-colors">
+              {hasName ? displayName : 'Tap to describe item'}
+            </h3>
+            <Pencil className="h-3 w-3 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
+          </button>
+        )}
+        {price.storeName && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium shrink-0">
+            {price.storeName}
+          </span>
+        )}
       </div>
 
       {/* Price conversion */}
@@ -120,39 +160,28 @@ export function PriceCard({
         </div>
       )}
 
-      {/* Action buttons */}
-      <div className="flex gap-2">
-        {!dealResult && (
-          <button
-            aria-label="check deal"
-            onClick={() => onCheckDeal(price.productName)}
-            disabled={isCheckingDeal}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors',
-              'border border-border/50 text-foreground hover:bg-secondary/80',
-              isCheckingDeal && 'opacity-60 cursor-not-allowed'
-            )}
-          >
-            {isCheckingDeal ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Search className="h-4 w-4" />
-            )}
-            {isCheckingDeal ? 'Checking...' : 'Check Deal'}
-          </button>
-        )}
+      {/* Action button */}
+      {!dealResult && (
         <button
-          aria-label="chat about this"
-          onClick={() => onChatAboutThis(price)}
+          aria-label="check deal"
+          onClick={() => onCheckDeal(displayName || '')}
+          disabled={isCheckingDeal || !hasName}
           className={cn(
-            'flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors',
-            dealResult ? 'w-full' : 'flex-1'
+            'w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors',
+            hasName
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+              : 'border border-border/50 text-muted-foreground',
+            (isCheckingDeal || !hasName) && 'opacity-60 cursor-not-allowed'
           )}
         >
-          <MessageCircle className="h-4 w-4" />
-          Chat about this
+          {isCheckingDeal ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Search className="h-4 w-4" />
+          )}
+          {isCheckingDeal ? 'Checking...' : hasName ? 'Check Deal' : 'Name the item first'}
         </button>
-      </div>
+      )}
     </div>
   );
 }

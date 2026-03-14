@@ -26,7 +26,6 @@ interface CameraTranslateViewProps {
   onClose: () => void;
   onSaveTranslation: (result: CameraTranslationResult) => void;
   onSaveDish?: (dish: DishAnalysis) => void;
-  onSavePrice?: (price: PriceAnalysis, convertedAmount: number, homeCurrency: string) => void;
 }
 
 type CameraState = 'starting' | 'ready' | 'capturing' | 'translating' | 'result' | 'error';
@@ -38,7 +37,6 @@ export function CameraTranslateView({
   onClose,
   onSaveTranslation,
   onSaveDish,
-  onSavePrice,
 }: CameraTranslateViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -151,15 +149,12 @@ export function CameraTranslateView({
   }, [result, toLang.code]);
 
   const handleSave = useCallback(() => {
-    if (cameraMode === 'price' && priceResult) {
-      const converted = convert(priceResult.price, priceResult.currency, homeCurrency);
-      onSavePrice?.(priceResult, converted, homeCurrency);
-    } else if (cameraMode === 'dish' && dishResult) {
+    if (cameraMode === 'dish' && dishResult) {
       onSaveDish?.(dishResult);
     } else if (result) {
       onSaveTranslation(result);
     }
-  }, [cameraMode, priceResult, dishResult, result, onSavePrice, onSaveDish, onSaveTranslation, convert, homeCurrency]);
+  }, [cameraMode, dishResult, result, onSaveDish, onSaveTranslation]);
 
   const handleCheckDeal = useCallback(async (productName: string) => {
     if (!priceResult) return;
@@ -305,10 +300,6 @@ export function CameraTranslateView({
               homeSymbol={homeInfo.symbol}
               foreignSymbol={HOME_CURRENCIES.find(c => c.code === priceResult.currency)?.symbol || priceResult.currency}
               onCheckDeal={handleCheckDeal}
-              onChatAboutThis={(price) => {
-                const converted = convert(price.price, price.currency, homeCurrency);
-                onSavePrice?.(price, converted, homeCurrency);
-              }}
               dealResult={dealResult}
               isCheckingDeal={isCheckingDeal}
             />
