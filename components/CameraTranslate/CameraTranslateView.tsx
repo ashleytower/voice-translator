@@ -55,6 +55,7 @@ export function CameraTranslateView({
 
   const { convert } = useExchangeRates();
   const homeInfo = HOME_CURRENCIES.find(c => c.code === homeCurrency) || HOME_CURRENCIES[0];
+  const autoSentRef = useRef(false);
 
   // Start camera on mount
   useEffect(() => {
@@ -97,6 +98,19 @@ export function CameraTranslateView({
     };
   }, []);
 
+  // Auto-inject price result to chat after brief display
+  useEffect(() => {
+    if (cameraMode !== 'price' || !priceResult || cameraState !== 'result' || autoSentRef.current) return;
+    const timer = setTimeout(() => {
+      if (!autoSentRef.current) {
+        autoSentRef.current = true;
+        const converted = convert(priceResult.price, priceResult.currency, homeCurrency);
+        onSavePrice?.(priceResult, converted, homeCurrency);
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [cameraMode, priceResult, cameraState, convert, homeCurrency, onSavePrice]);
+
   const handleCapture = useCallback(async () => {
     if (cameraState !== 'ready' || !videoRef.current || !canvasRef.current) return;
 
@@ -136,6 +150,7 @@ export function CameraTranslateView({
     setDishResult(null);
     setPriceResult(null);
     setDealResult(null);
+    autoSentRef.current = false;
     setCameraState('ready');
   }, []);
 
@@ -319,7 +334,7 @@ export function CameraTranslateView({
             <button
               key={m}
               aria-label={m}
-              onClick={() => { setCameraMode(m); setResult(null); setDishResult(null); setPriceResult(null); setDealResult(null); setCameraState('ready'); }}
+              onClick={() => { setCameraMode(m); setResult(null); setDishResult(null); setPriceResult(null); setDealResult(null); autoSentRef.current = false; setCameraState('ready'); }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors capitalize ${
                 cameraMode === m
                   ? 'bg-primary text-primary-foreground'

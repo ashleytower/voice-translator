@@ -278,7 +278,7 @@ describe('CameraTranslateView', () => {
     await waitFor(() => expect(mockGetUserMedia).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: /capture/i }));
     await waitFor(() => screen.getByText('Ramen'));
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    fireEvent.click(screen.getByText('Chat about this'));
     expect(onSaveDish).toHaveBeenCalledWith(mockDish);
   });
 });

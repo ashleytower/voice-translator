@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { ImagePlus, Phone, Send, X } from 'lucide-react';
+import { DollarSign, ImagePlus, Phone, Send, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InputAreaProps {
@@ -120,6 +120,18 @@ export const InputArea: React.FC<InputAreaProps> = ({
           className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-30"
         >
           <ImagePlus className="h-[18px] w-[18px]" />
+        </button>
+
+        <button
+          onClick={() => {
+            setInput('Convert ');
+            textareaRef.current?.focus();
+          }}
+          disabled={isLive || isLoading}
+          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-30"
+          aria-label="Quick convert price"
+        >
+          <DollarSign className="h-[18px] w-[18px]" />
         </button>
 
         <textarea
