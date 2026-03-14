@@ -48,7 +48,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
   if (activeTab === 'camera') return null;
 
   return (
-    <nav className="h-16 pb-safe flex items-center justify-around bg-[#1C1C1E]/80 backdrop-blur-xl border-t border-white/[0.06]">
+    <nav className="h-16 flex items-center justify-around bg-[#1C1C1E]/80 backdrop-blur-xl border-t border-white/[0.06] safe-area-bottom">
       {TABS.map((tab) => {
         const isActive = activeTab === tab.viewMode;
         return (

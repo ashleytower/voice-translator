@@ -122,7 +122,7 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-border">
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-border safe-area-top">
         <Button variant="ghost" size="icon" onClick={onBack} className="h-11 w-11" aria-label="Back">
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -272,7 +272,7 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
       {/* Home Currency Picker */}
       {showHomePicker && (
         <div className="fixed inset-0 z-50 bg-background flex flex-col">
-          <div className="px-4 py-3 flex items-center gap-3 border-b border-border">
+          <div className="px-4 py-3 flex items-center gap-3 border-b border-border safe-area-top">
             <Button variant="ghost" size="icon" onClick={() => setShowHomePicker(false)} className="h-11 w-11" aria-label="Back">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -330,13 +330,13 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
               </div>
             </div>
             {/* Instructions */}
-            <div className="absolute top-4 inset-x-0 flex justify-center">
+            <div className="absolute inset-x-0 flex justify-center safe-top-offset">
               <div className="bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full">
                 <span className="text-sm font-medium">Point at price tag</span>
               </div>
             </div>
           </div>
-          <div className="p-4 bg-background border-t border-border flex gap-3">
+          <div className="p-4 bg-background border-t border-border flex gap-3 safe-area-bottom">
             <Button
               variant="outline"
               className="flex-1"

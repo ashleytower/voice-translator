@@ -9,7 +9,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
   return (
-    <header className="px-5 py-3 flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-xl">
+    <header className="px-5 py-3 flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-xl safe-area-top">
       <h1 className="text-xl font-serif tracking-tight text-foreground">
         Found in Translation
       </h1>

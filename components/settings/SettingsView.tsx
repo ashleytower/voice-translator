@@ -96,9 +96,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   if (showCurrencyPicker) {
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
-        <div className="px-4 py-3 flex items-center gap-3 border-b border-border">
-          <Button variant="ghost" size="icon" onClick={() => setShowCurrencyPicker(false)} className="h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
+        <div className="px-4 py-3 flex items-center gap-3 border-b border-border safe-area-top">
+          <Button variant="ghost" size="icon" onClick={() => setShowCurrencyPicker(false)} className="h-11 w-11" aria-label="Back">
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold">Home Currency</h1>
         </div>
@@ -132,9 +132,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-border">
-        <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
-          <ArrowLeft className="h-4 w-4" />
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-border safe-area-top">
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-11 w-11" aria-label="Back">
+          <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
           <h1 className="text-lg font-semibold">Settings</h1>

@@ -236,13 +236,13 @@ export function CameraTranslateView({
         <button
           aria-label="close"
           onClick={onClose}
-          className="absolute top-4 left-4 h-11 w-11 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-sm"
+          className="absolute left-4 h-11 w-11 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-sm safe-top-offset"
         >
           <X className="h-5 w-5" />
         </button>
 
         {/* Language / currency badge */}
-        <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm">
+        <div className="absolute right-4 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm safe-top-offset">
           <span className="text-white text-xs font-medium">
             {cameraMode === 'price' ? `→ ${homeInfo.symbol} ${homeCurrency}` : `→ ${toLang.flag} ${toLang.name}`}
           </span>
@@ -250,7 +250,7 @@ export function CameraTranslateView({
       </div>
 
       {/* Bottom dock */}
-      <div className="bg-black/60 backdrop-blur-xl">
+      <div className="bg-black/60 backdrop-blur-xl safe-area-bottom">
         {/* Translation result sheet */}
         {cameraState === 'result' && result && (
           <div className="px-5 pt-4 pb-2 space-y-3">
