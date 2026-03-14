@@ -35,7 +35,7 @@ describe('BottomNav', () => {
   it('marks Translate as active when activeTab is "translate"', () => {
     render(<BottomNav activeTab="translate" onTabChange={vi.fn()} />);
     const tab = screen.getByText('Translate').closest('button');
-    expect(tab?.querySelector('.tab-pill')).toBeInTheDocument();
+    expect(tab?.className).toContain('text-[#64B5F6]');
   });
 
   it('does not render Settings tab', () => {
