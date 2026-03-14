@@ -123,21 +123,21 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
       <div className="px-4 py-3 flex items-center gap-3 border-b border-border">
-        <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
-          <ArrowLeft className="h-4 w-4" />
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-11 w-11" aria-label="Back">
+          <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold">Currency Converter</h1>
-          <p className="text-xs text-muted-foreground">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-lg font-semibold truncate">Currency Converter</h1>
+          <p className="text-xs text-muted-foreground truncate">
             {foreignCurrency.name} to {home.name}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            className="gap-2"
+            className="gap-2 h-11"
           >
             <Upload className="h-4 w-4" />
             Upload
@@ -145,7 +145,7 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
           <Button
             size="sm"
             onClick={handleCameraClick}
-            className="gap-2"
+            className="gap-2 h-11"
           >
             <Camera className="h-4 w-4" />
             Scan
@@ -169,9 +169,10 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
               variant="destructive"
               size="icon"
               onClick={clearImage}
-              className="absolute top-2 right-2 h-6 w-6"
+              className="absolute top-2 right-2 h-11 w-11"
+              aria-label="Remove image"
             >
-              <X className="h-3 w-3" />
+              <X className="h-4 w-4" />
             </Button>
             <div className="absolute bottom-2 left-2 px-2 py-1 rounded bg-background/80 backdrop-blur-sm">
               <span className="text-xs text-muted-foreground">Enter amount from image below</span>
@@ -183,19 +184,19 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
       {/* Main content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* From Currency */}
-        <div className="rounded-lg border border-border p-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">From</span>
-            <span className="text-xs text-primary">{foreignCurrency.name}</span>
+        <div className="rounded-lg border border-border p-4 space-y-2 overflow-hidden">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-muted-foreground shrink-0">From</span>
+            <span className="text-xs text-primary truncate">{foreignCurrency.name}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-muted-foreground">{foreignCurrency.symbol}</span>
+            <span className="text-2xl font-semibold text-muted-foreground shrink-0">{foreignCurrency.symbol}</span>
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
-              className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-3xl font-semibold text-right"
+              className="flex-1 min-w-0 bg-transparent border-none focus:ring-0 focus:outline-none text-2xl font-semibold text-right"
             />
           </div>
         </div>
@@ -208,20 +209,20 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
         </div>
 
         {/* To Home Currency */}
-        <div className="rounded-lg border-2 border-primary/50 bg-primary/5 p-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">To</span>
+        <div className="rounded-lg border-2 border-primary/50 bg-primary/5 p-4 space-y-2 overflow-hidden">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-muted-foreground shrink-0">To</span>
             <button
               onClick={() => setShowHomePicker(true)}
-              className="flex items-center gap-1 text-xs text-primary hover:underline"
+              className="flex items-center gap-1 text-xs text-primary hover:underline truncate min-w-0 h-11 -my-4"
             >
-              {home.name}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">{home.name}</span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-primary">{home.symbol}</span>
-            <div className="flex-1 text-3xl font-semibold text-primary text-right">
+            <span className="text-2xl font-semibold text-primary shrink-0">{home.symbol}</span>
+            <div className="flex-1 min-w-0 text-2xl font-semibold text-primary text-right truncate">
               {ratesLoading ? '...' : converted}
             </div>
           </div>
@@ -245,8 +246,8 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
         </div>
 
         {/* Exchange Rate Info */}
-        <div className="rounded-lg border border-border p-3 flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+        <div className="rounded-lg border border-border p-3 flex items-center gap-3 overflow-hidden">
+          <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0">
             {ratesLoading ? (
               <RefreshCw className="h-4 w-4 text-muted-foreground animate-spin" />
             ) : (
@@ -272,8 +273,8 @@ export const CurrencyConverterView: React.FC<CurrencyConverterViewProps> = ({
       {showHomePicker && (
         <div className="fixed inset-0 z-50 bg-background flex flex-col">
           <div className="px-4 py-3 flex items-center gap-3 border-b border-border">
-            <Button variant="ghost" size="icon" onClick={() => setShowHomePicker(false)} className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
+            <Button variant="ghost" size="icon" onClick={() => setShowHomePicker(false)} className="h-11 w-11" aria-label="Back">
+              <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-lg font-semibold">Home Currency</h1>
           </div>

@@ -236,7 +236,7 @@ export function CameraTranslateView({
         <button
           aria-label="close"
           onClick={onClose}
-          className="absolute top-4 left-4 h-10 w-10 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-sm"
+          className="absolute top-4 left-4 h-11 w-11 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-sm"
         >
           <X className="h-5 w-5" />
         </button>
