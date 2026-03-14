@@ -7,7 +7,7 @@ import { translateAndChat, quickTranslate } from '@/lib/gemini-service';
 import { useVoiceTranslator } from '@/hooks/useVoiceTranslator';
 import { CartesiaClient } from '@/lib/cartesia-client';
 
-import { ArrowLeftRight } from 'lucide-react';
+
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ChatBubble } from '@/components/chat/ChatBubble';
@@ -473,22 +473,11 @@ export default function TranslatorPage() {
 
       {/* Bottom dock: orb + input */}
       <div className="flex flex-col items-center gap-2 px-4 pb-3 pt-2 bg-background/80 backdrop-blur-xl border-t border-border/30">
-        <div className="flex items-center justify-center gap-3 py-1">
-          <span className="text-base font-semibold text-foreground">{fromLang.name}</span>
-          <button
-            onClick={handleSwapLanguages}
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-secondary/60"
-            aria-label="Swap languages"
-          >
-            <ArrowLeftRight className="h-4 w-4 text-[#64B5F6]" />
-          </button>
-          <span className="text-base font-semibold text-foreground">{toLang.name}</span>
-        </div>
         <Orb
           state={orbState}
           volume={micVolume}
           onClick={handleOrbClick}
-          size={160}
+          size={120}
         />
         <div className="w-full">
           <InputArea
