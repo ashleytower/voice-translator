@@ -109,7 +109,7 @@ export interface AppSettings {
   homeCurrency: string;
 }
 
-export type ViewMode = 'chat' | 'camera' | 'currency' | 'settings' | 'favs';
+export type ViewMode = 'translate' | 'camera' | 'convert' | 'settings' | 'phrases';
 
 export interface CallRequest {
   phoneNumber: string;

@@ -7,6 +7,7 @@ import { translateAndChat, quickTranslate } from '@/lib/gemini-service';
 import { useVoiceTranslator } from '@/hooks/useVoiceTranslator';
 import { CartesiaClient } from '@/lib/cartesia-client';
 
+import { ArrowLeftRight } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ChatBubble } from '@/components/chat/ChatBubble';
@@ -15,7 +16,7 @@ import { LanguageSelector } from '@/components/chat/LanguageSelector';
 import { Orb, OrbState } from '@/components/voice/Orb';
 import { CurrencyConverterView } from '@/components/currency/CurrencyConverterView';
 import { SettingsView } from '@/components/settings/SettingsView';
-import { FavoritesView } from '@/components/favorites/FavoritesView';
+import { PhrasesView } from '@/components/phrases/PhrasesView';
 import { CameraTranslateView } from '@/components/CameraTranslate/CameraTranslateView';
 import type { CameraTranslationResult, DishAnalysis } from '@/types';
 import { LANG_TO_CURRENCY } from '@/lib/currency-constants';
@@ -51,7 +52,7 @@ export default function TranslatorPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [fromLang, setFromLang] = useState<Language>(LANGUAGES[0]);
   const [toLang, setToLang] = useState<Language>(LANGUAGES[1]);
-  const [viewMode, setViewMode] = useState<ViewMode>('chat');
+  const [viewMode, setViewMode] = useState<ViewMode>('translate');
   const [isLoading, setIsLoading] = useState(false);
   const [showCallSheet, setShowCallSheet] = useState(false);
   const [callPreFill, setCallPreFill] = useState<{ task: string; phone: string } | null>(null);
@@ -335,7 +336,7 @@ export default function TranslatorPage() {
       timestamp: now,
     };
     setMessages((prev) => [...prev, msg]);
-    setViewMode('chat');
+    setViewMode('translate');
   }, []);
 
   const handleSaveDish = useCallback((dish: DishAnalysis) => {
@@ -349,7 +350,7 @@ export default function TranslatorPage() {
     };
 
     setMessages((prev) => [...prev, contextMsg]);
-    setViewMode('chat');
+    setViewMode('translate');
   }, [toLang.name]);
 
 
@@ -413,9 +414,9 @@ export default function TranslatorPage() {
 
   const hasMessages = messages.length > 0;
 
-  const renderChatView = () => (
+  const renderTranslateView = () => (
     <div className="flex flex-col flex-1 overflow-hidden">
-      <Header onClearHistory={handleClearHistory} onSettingsClick={handleSettingsClick} />
+      <Header onSettingsClick={handleSettingsClick} />
 
       <LanguageSelector
         fromLang={fromLang}
@@ -464,7 +465,7 @@ export default function TranslatorPage() {
       {/* Live transcript preview */}
       {currentTranscript && (
         <div className="px-6 py-1.5">
-          <p className="text-xs text-center text-muted-foreground/60 italic truncate">
+          <p className="text-[15px] text-center text-[rgba(235,235,245,0.8)] truncate">
             {currentTranscript}
           </p>
         </div>
@@ -472,11 +473,22 @@ export default function TranslatorPage() {
 
       {/* Bottom dock: orb + input */}
       <div className="flex flex-col items-center gap-2 px-4 pb-3 pt-2 bg-background/80 backdrop-blur-xl border-t border-border/30">
+        <div className="flex items-center justify-center gap-3 py-1">
+          <span className="text-base font-semibold text-foreground">{fromLang.name}</span>
+          <button
+            onClick={handleSwapLanguages}
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-secondary/60"
+            aria-label="Swap languages"
+          >
+            <ArrowLeftRight className="h-4 w-4 text-[#64B5F6]" />
+          </button>
+          <span className="text-base font-semibold text-foreground">{toLang.name}</span>
+        </div>
         <Orb
           state={orbState}
           volume={micVolume}
           onClick={handleOrbClick}
-          size={120}
+          size={160}
         />
         <div className="w-full">
           <InputArea
@@ -511,22 +523,24 @@ export default function TranslatorPage() {
     </div>
   );
 
-  const renderFavoritesView = () => (
-    <FavoritesView
-      messages={messages}
-      onToggleMessageFavorite={handleToggleFavorite}
-      onPlayAudio={handlePlayAudio}
-      onBack={() => setViewMode('chat')}
-      targetLangCode={toLang.code}
-    />
+  const renderPhrasesView = () => (
+    <div className="flex flex-col flex-1 overflow-hidden bg-background">
+      <Header onSettingsClick={handleSettingsClick} />
+      <PhrasesView
+        messages={messages}
+        onToggleFavorite={handleToggleFavorite}
+        onPlayAudio={handlePlayAudio}
+        targetLangCode={toLang.code}
+      />
+    </div>
   );
 
-  const renderCurrencyView = () => (
+  const renderConvertView = () => (
     <CurrencyConverterView
       currentLanguage={toLang}
       homeCurrency={settings.homeCurrency}
       onChangeHomeCurrency={(code) => updateSetting('homeCurrency', code)}
-      onBack={() => setViewMode('chat')}
+      onBack={() => setViewMode('translate')}
     />
   );
 
@@ -536,18 +550,18 @@ export default function TranslatorPage() {
       onToggle={toggleSetting}
       onUpdateSetting={updateSetting}
       onReset={resetSettings}
-      onBack={() => setViewMode('chat')}
+      onBack={() => setViewMode('translate')}
     />
   );
 
   const renderCurrentView = () => {
     switch (viewMode) {
-      case 'chat':
-        return renderChatView();
-      case 'favs':
-        return renderFavoritesView();
-      case 'currency':
-        return renderCurrencyView();
+      case 'translate':
+        return renderTranslateView();
+      case 'phrases':
+        return renderPhrasesView();
+      case 'convert':
+        return renderConvertView();
       case 'settings':
         return renderSettingsView();
       case 'camera':
@@ -556,13 +570,13 @@ export default function TranslatorPage() {
             toLang={toLang}
             fromLang={fromLang}
             homeCurrency={settings.homeCurrency}
-            onClose={() => setViewMode('chat')}
+            onClose={() => setViewMode('translate')}
             onSaveTranslation={handleSaveCamera}
             onSaveDish={handleSaveDish}
           />
         );
       default:
-        return renderChatView();
+        return renderTranslateView();
     }
   };
 

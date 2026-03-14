@@ -7,6 +7,7 @@ import { translateCameraImage } from '@/lib/gemini-camera-translate';
 import { analyzeDish } from '@/lib/gemini-dish-analyze';
 import { analyzePrice } from '@/lib/gemini-price-analyze';
 import type { Language, CameraTranslationResult, CameraMode, DishAnalysis, PriceAnalysis } from '@/types';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { DishCard } from '@/components/chat/DishCard';
 import { PriceCard } from '@/components/chat/PriceCard';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
@@ -218,8 +219,14 @@ export function CameraTranslateView({
         {/* Corner guides */}
         {cameraState === 'ready' && (
           <>
-            <div className="absolute top-1/3 left-8 right-8 bottom-1/3 border-2 border-white/20 rounded-lg pointer-events-none" />
-            <p className="absolute bottom-36 inset-x-0 text-center text-white/60 text-xs">
+            <div className="absolute top-1/3 left-8 right-8 bottom-1/3 pointer-events-none">
+              {/* Corner accents */}
+              <div className="absolute top-0 left-0 w-6 h-6 border-t-[3px] border-l-[3px] border-white/90 rounded-tl-[10px]" />
+              <div className="absolute top-0 right-0 w-6 h-6 border-t-[3px] border-r-[3px] border-white/90 rounded-tr-[10px]" />
+              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-[3px] border-l-[3px] border-white/90 rounded-bl-[10px]" />
+              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-[3px] border-r-[3px] border-white/90 rounded-br-[10px]" />
+            </div>
+            <p className="absolute bottom-36 inset-x-0 text-center text-white/70 text-xs">
               {cameraMode === 'price' ? 'Point at a price tag or label' : 'Point at a menu, sign, or notice'}
             </p>
           </>
@@ -243,7 +250,7 @@ export function CameraTranslateView({
       </div>
 
       {/* Bottom dock */}
-      <div className="bg-background/95 backdrop-blur-xl">
+      <div className="bg-black/60 backdrop-blur-xl">
         {/* Translation result sheet */}
         {cameraState === 'result' && result && (
           <div className="px-5 pt-4 pb-2 space-y-3">
@@ -291,39 +298,41 @@ export function CameraTranslateView({
         )}
 
         {/* Price result */}
-        {cameraState === 'result' && priceResult && cameraMode === 'price' && (
-          <div className="px-4 pt-3 pb-4">
-            <PriceCard
-              price={priceResult}
-              convertedAmount={convert(priceResult.price, priceResult.currency, homeCurrency)}
-              homeCurrency={homeCurrency}
-              homeSymbol={homeInfo.symbol}
-              foreignSymbol={HOME_CURRENCIES.find(c => c.code === priceResult.currency)?.symbol || priceResult.currency}
-              onCheckDeal={handleCheckDeal}
-              onClearDeal={() => setDealResult(null)}
-              dealResult={dealResult}
-              isCheckingDeal={isCheckingDeal}
-            />
-          </div>
-        )}
+        {cameraState === 'result' && priceResult && cameraMode === 'price' && (() => {
+          const exchangeRate = priceResult ? convert(1, priceResult.currency, homeCurrency) : undefined;
+          return (
+            <div className="px-4 pt-3 pb-4">
+              <PriceCard
+                price={priceResult}
+                convertedAmount={convert(priceResult.price, priceResult.currency, homeCurrency)}
+                homeCurrency={homeCurrency}
+                homeSymbol={homeInfo.symbol}
+                foreignSymbol={HOME_CURRENCIES.find(c => c.code === priceResult.currency)?.symbol || priceResult.currency}
+                onCheckDeal={handleCheckDeal}
+                onClearDeal={() => setDealResult(null)}
+                dealResult={dealResult}
+                isCheckingDeal={isCheckingDeal}
+                exchangeRate={exchangeRate}
+              />
+            </div>
+          );
+        })()}
 
         {/* Mode toggle */}
-        <div className="flex items-center justify-center gap-1 mb-4">
-          {(['translate', 'dish', 'price'] as CameraMode[]).map((m) => (
-            <button
-              key={m}
-              aria-label={m}
-              onClick={() => { setCameraMode(m); setResult(null); setDishResult(null); setPriceResult(null); setDealResult(null); setCameraState('ready'); }}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors capitalize ${
-                cameraMode === m
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              }`}
-            >
-              {m === 'translate' ? 'Translate' : m === 'dish' ? 'Dish' : 'Price'}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          segments={['Translate', 'Dish', 'Price']}
+          activeIndex={['translate', 'dish', 'price'].indexOf(cameraMode)}
+          onChange={(i) => {
+            const modes: CameraMode[] = ['translate', 'dish', 'price'];
+            setCameraMode(modes[i]);
+            setResult(null);
+            setDishResult(null);
+            setPriceResult(null);
+            setDealResult(null);
+            setCameraState('ready');
+          }}
+          className="mx-4 mb-3"
+        />
 
         {/* Shutter button */}
         <div className="flex items-center justify-center py-6">
@@ -332,13 +341,13 @@ export function CameraTranslateView({
             onClick={handleCapture}
             disabled={cameraState !== 'ready'}
             className={cn(
-              'h-16 w-16 rounded-full border-4 transition-all duration-150 active:scale-90',
+              'h-[72px] w-[72px] rounded-full border-4 transition-all duration-150 active:scale-90',
               cameraState === 'ready'
                 ? 'border-white bg-white/20 hover:bg-white/30'
                 : 'border-white/30 bg-white/5 cursor-not-allowed'
             )}
           >
-            <Camera className="h-6 w-6 text-white mx-auto" />
+            <Camera className="h-7 w-7 text-white mx-auto" />
           </button>
         </div>
       </div>

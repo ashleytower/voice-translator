@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Check, Pencil, Search, ArrowDown, TrendingDown, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
+import { Check, Pencil, Search, ArrowDown, TrendingDown, TrendingUp, Loader2, RefreshCw, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PriceAnalysis } from '@/types';
 
@@ -20,6 +20,8 @@ interface PriceCardProps {
   onClearDeal?: () => void;
   dealResult?: DealResult | null;
   isCheckingDeal?: boolean;
+  exchangeRate?: number;
+  onSave?: () => void;
 }
 
 const VERDICT_STYLES: Record<DealResult['verdict'], { bg: string; text: string; label: string }> = {
@@ -59,6 +61,8 @@ export function PriceCard({
   onClearDeal,
   dealResult,
   isCheckingDeal = false,
+  exchangeRate,
+  onSave,
 }: PriceCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(price.productName);
@@ -135,7 +139,14 @@ export function PriceCard({
         <span className="text-lg font-bold text-foreground">
           {formatPrice(price.price, foreignSymbol, price.currency)}
         </span>
-        <ArrowDown className="h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col items-center gap-0.5">
+          <ArrowDown className="h-4 w-4 text-muted-foreground" />
+          {exchangeRate != null && (
+            <span className="text-[12px] text-[rgba(235,235,245,0.3)] tabular-nums">
+              1 {price.currency} = {exchangeRate.toFixed(3)} {homeCurrency}
+            </span>
+          )}
+        </div>
         <span className="text-lg font-bold text-primary">
           {formatPrice(convertedAmount, homeSymbol, homeCurrency)}
         </span>
@@ -209,6 +220,16 @@ export function PriceCard({
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Re-check deal
+        </button>
+      )}
+
+      {onSave && !isEditing && (
+        <button
+          onClick={onSave}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border border-white/[0.06] text-[rgba(235,235,245,0.6)] hover:text-white hover:bg-[#2C2C2E] transition-colors mt-2"
+        >
+          <Save className="h-4 w-4" />
+          Save to chat
         </button>
       )}
     </div>

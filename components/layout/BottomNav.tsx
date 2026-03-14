@@ -2,35 +2,42 @@
 
 import React from 'react';
 import { ViewMode } from '@/types';
-import { MessageSquare, Star, ScanLine, Settings } from 'lucide-react';
+import { Mic, ScanLine, ArrowLeftRight, BookmarkCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface NavButtonProps {
-  icon: React.ReactNode;
+interface NavTab {
+  viewMode: ViewMode;
   label: string;
-  isActive?: boolean;
-  onClick: () => void;
+  icon: React.ReactNode;
+  activeIcon: React.ReactNode;
 }
 
-const NavButton = ({ icon, label, isActive, onClick }: NavButtonProps) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200',
-      isActive
-        ? 'text-primary'
-        : 'text-muted-foreground hover:text-foreground'
-    )}
-  >
-    <div className={cn(
-      'flex items-center justify-center w-10 h-7 rounded-full transition-colors duration-200',
-      isActive && 'bg-primary/15'
-    )}>
-      {icon}
-    </div>
-    <span className="text-[10px] font-medium">{label}</span>
-  </button>
-);
+const TABS: NavTab[] = [
+  {
+    viewMode: 'translate',
+    label: 'Translate',
+    icon: <Mic className="h-6 w-6" strokeWidth={1.5} />,
+    activeIcon: <Mic className="h-6 w-6" strokeWidth={2} />,
+  },
+  {
+    viewMode: 'camera',
+    label: 'Scan',
+    icon: <ScanLine className="h-6 w-6" strokeWidth={1.5} />,
+    activeIcon: <ScanLine className="h-6 w-6" strokeWidth={2} />,
+  },
+  {
+    viewMode: 'convert',
+    label: 'Convert',
+    icon: <ArrowLeftRight className="h-6 w-6" strokeWidth={1.5} />,
+    activeIcon: <ArrowLeftRight className="h-6 w-6" strokeWidth={2} />,
+  },
+  {
+    viewMode: 'phrases',
+    label: 'Phrases',
+    icon: <BookmarkCheck className="h-6 w-6" strokeWidth={1.5} />,
+    activeIcon: <BookmarkCheck className="h-6 w-6" strokeWidth={2} />,
+  },
+];
 
 interface BottomNavProps {
   activeTab: ViewMode;
@@ -38,32 +45,36 @@ interface BottomNavProps {
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
+  if (activeTab === 'camera') return null;
+
   return (
-    <nav className="flex justify-around items-center px-2 py-1.5 bg-background/80 backdrop-blur-xl border-t border-border/50">
-      <NavButton
-        icon={<MessageSquare className="h-[18px] w-[18px]" />}
-        label="Chat"
-        isActive={activeTab === 'chat'}
-        onClick={() => onTabChange('chat')}
-      />
-      <NavButton
-        icon={<Star className="h-[18px] w-[18px]" />}
-        label="Saved"
-        isActive={activeTab === 'favs'}
-        onClick={() => onTabChange('favs')}
-      />
-      <NavButton
-        icon={<ScanLine className="h-[18px] w-[18px]" />}
-        label="Scan"
-        isActive={activeTab === 'camera'}
-        onClick={() => onTabChange('camera')}
-      />
-      <NavButton
-        icon={<Settings className="h-[18px] w-[18px]" />}
-        label="Settings"
-        isActive={activeTab === 'settings'}
-        onClick={() => onTabChange('settings')}
-      />
+    <nav className="h-16 pb-safe flex items-center justify-around bg-[#1C1C1E]/80 backdrop-blur-xl border-t border-white/[0.06]">
+      {TABS.map((tab) => {
+        const isActive = activeTab === tab.viewMode;
+        return (
+          <button
+            key={tab.viewMode}
+            onClick={() => onTabChange(tab.viewMode)}
+            className={cn(
+              'flex flex-col items-center gap-1 min-w-16 min-h-12 px-3 py-2 transition-colors',
+              isActive ? 'text-[#64B5F6]' : 'text-[rgba(235,235,245,0.6)] active:text-white'
+            )}
+          >
+            <div className="relative flex items-center justify-center">
+              {isActive && (
+                <div className="tab-pill absolute w-16 h-8 rounded-2xl bg-[rgba(100,181,246,0.12)]" />
+              )}
+              <span className="relative z-10">{isActive ? tab.activeIcon : tab.icon}</span>
+            </div>
+            <span className={cn(
+              'text-[11px] tracking-wide',
+              isActive ? 'font-semibold' : 'font-medium'
+            )}>
+              {tab.label}
+            </span>
+          </button>
+        );
+      })}
     </nav>
   );
 };

@@ -35,18 +35,19 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
           )}
           <p className="text-sm leading-relaxed">{message.text}</p>
         </div>
-        <div className="flex items-center gap-1.5 mt-1 mr-1">
+        <div className="flex items-center gap-0.5 mt-1 mr-1">
           {onToggleFavorite && (
             <button
               onClick={() => onToggleFavorite(message.id)}
               className={cn(
-                'p-0.5 transition-colors',
+                'w-11 h-11 flex items-center justify-center transition-colors',
                 message.isFavorite
                   ? 'text-amber-400'
                   : 'text-muted-foreground/20 hover:text-muted-foreground/50'
               )}
+              aria-label={message.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             >
-              <Star className={cn('h-3 w-3', message.isFavorite && 'fill-current')} />
+              <Star className={cn('h-3.5 w-3.5', message.isFavorite && 'fill-current')} />
             </button>
           )}
           <span className="text-[10px] text-muted-foreground/40">
@@ -80,26 +81,28 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
         <p className="text-sm text-muted-foreground leading-relaxed">{message.text}</p>
       </div>
 
-      <div className="flex items-center gap-1.5 mt-1 ml-1">
+      <div className="flex items-center gap-0.5 mt-1 ml-1">
         {onToggleFavorite && (
           <button
             onClick={() => onToggleFavorite(message.id)}
             className={cn(
-              'p-0.5 transition-colors',
+              'w-11 h-11 flex items-center justify-center transition-colors',
               message.isFavorite
                 ? 'text-amber-400'
                 : 'text-muted-foreground/20 hover:text-muted-foreground/50'
             )}
+            aria-label={message.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           >
-            <Star className={cn('h-3 w-3', message.isFavorite && 'fill-current')} />
+            <Star className={cn('h-3.5 w-3.5', message.isFavorite && 'fill-current')} />
           </button>
         )}
         {onPlayAudio && message.translation && targetLangCode && (
           <button
             onClick={() => onPlayAudio(message.translation!, targetLangCode)}
-            className="p-0.5 text-muted-foreground/30 hover:text-indigo-400 transition-colors"
+            className="w-11 h-11 flex items-center justify-center text-muted-foreground/30 hover:text-indigo-400 transition-colors"
+            aria-label="Play audio translation"
           >
-            <Volume2 className="h-3 w-3" />
+            <Volume2 className="h-3.5 w-3.5" />
           </button>
         )}
         <span className="text-[10px] text-muted-foreground/40">

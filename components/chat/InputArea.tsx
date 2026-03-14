@@ -115,9 +115,12 @@ export const InputArea: React.FC<InputAreaProps> = ({
           />
           <button
             onClick={removeAttachment}
-            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center"
+            className="absolute -top-3 -right-3 w-11 h-11 rounded-full flex items-center justify-center"
+            aria-label="Remove attachment"
           >
-            <X className="h-3 w-3" />
+            <span className="h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center">
+              <X className="h-3 w-3" />
+            </span>
           </button>
         </div>
       )}
@@ -129,7 +132,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
             <span className="text-xs font-medium text-muted-foreground">Quick Convert</span>
             <button
               onClick={() => { setShowConverter(false); setConvertAmount(''); }}
-              className="h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              aria-label="Close converter"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -185,7 +189,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
         <button
           onClick={onStartCall}
           disabled={isLive}
-          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30"
+          className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30"
           aria-label="Make a phone call"
         >
           <Phone className="h-[18px] w-[18px]" />
@@ -194,7 +198,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
         <button
           onClick={handleFileClick}
           disabled={isLive}
-          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-30"
+          className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-30"
+          aria-label="Attach image"
         >
           <ImagePlus className="h-[18px] w-[18px]" />
         </button>
@@ -203,7 +208,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
           onClick={() => setShowConverter(!showConverter)}
           disabled={isLive || isLoading}
           className={cn(
-            'h-9 w-9 shrink-0 flex items-center justify-center rounded-xl transition-colors disabled:opacity-30',
+            'h-11 w-11 shrink-0 flex items-center justify-center rounded-xl transition-colors disabled:opacity-30',
             showConverter
               ? 'text-primary bg-primary/10'
               : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
@@ -234,11 +239,12 @@ export const InputArea: React.FC<InputAreaProps> = ({
           onClick={handleSend}
           disabled={!canSend}
           className={cn(
-            'h-9 w-9 shrink-0 flex items-center justify-center rounded-xl transition-all duration-200',
+            'h-11 w-11 shrink-0 flex items-center justify-center rounded-xl transition-all duration-200',
             canSend
               ? 'bg-primary text-primary-foreground hover:bg-primary/90'
               : 'text-muted-foreground/30'
           )}
+          aria-label="Send message"
         >
           <Send className="h-4 w-4" />
         </button>
