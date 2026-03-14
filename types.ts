@@ -90,7 +90,15 @@ export interface DishAnalysis {
   confidence: number;
 }
 
-export type CameraMode = 'translate' | 'dish';
+export interface PriceAnalysis {
+  productName: string;
+  storeName: string;
+  price: number;
+  currency: string;  // ISO currency code e.g. "USD", "JPY"
+  confidence: number;
+}
+
+export type CameraMode = 'translate' | 'dish' | 'price';
 
 export interface AppSettings {
   autoPlay: boolean;

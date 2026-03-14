@@ -17,7 +17,7 @@ import { CurrencyConverterView } from '@/components/currency/CurrencyConverterVi
 import { SettingsView } from '@/components/settings/SettingsView';
 import { FavoritesView } from '@/components/favorites/FavoritesView';
 import { CameraTranslateView } from '@/components/CameraTranslate/CameraTranslateView';
-import type { CameraTranslationResult, DishAnalysis } from '@/types';
+import type { CameraTranslationResult, DishAnalysis, PriceAnalysis } from '@/types';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useVapiCall } from '@/hooks/useVapiCall';
 import { CallSheet } from '@/components/call/CallSheet';
@@ -351,6 +351,20 @@ export default function TranslatorPage() {
     setViewMode('chat');
   }, [toLang.name]);
 
+  const handleSavePrice = useCallback((price: PriceAnalysis, convertedAmount: number, homeCurr: string) => {
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const contextMsg: Message = {
+      id: `price-${Date.now()}`,
+      role: 'assistant',
+      text: `I scanned a price tag: ${price.productName}${price.storeName ? ` at ${price.storeName}` : ''} — ${price.currency} ${price.price.toFixed(2)}, which is about ${homeCurr} ${convertedAmount.toFixed(2)} in your home currency. Want to know if this is a good deal, or need help asking about it in ${toLang.name}?`,
+      timestamp: now,
+    };
+
+    setMessages((prev) => [...prev, contextMsg]);
+    setViewMode('chat');
+  }, [toLang.name]);
+
   // Build chat context for call
   const chatContext = callPreFill?.task
     ?? messages.filter((m) => m.role === 'user').slice(-3).map((m) => m.text).join(' | ');
@@ -550,9 +564,11 @@ export default function TranslatorPage() {
           <CameraTranslateView
             toLang={toLang}
             fromLang={fromLang}
+            homeCurrency={settings.homeCurrency}
             onClose={() => setViewMode('chat')}
             onSaveTranslation={handleSaveCamera}
             onSaveDish={handleSaveDish}
+            onSavePrice={handleSavePrice}
           />
         );
       default:

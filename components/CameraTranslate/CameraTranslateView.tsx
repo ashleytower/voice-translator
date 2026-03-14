@@ -5,15 +5,28 @@ import { X, Camera, Save, Volume2, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { translateCameraImage } from '@/lib/gemini-camera-translate';
 import { analyzeDish } from '@/lib/gemini-dish-analyze';
-import type { Language, CameraTranslationResult, CameraMode, DishAnalysis } from '@/types';
+import { analyzePrice } from '@/lib/gemini-price-analyze';
+import type { Language, CameraTranslationResult, CameraMode, DishAnalysis, PriceAnalysis } from '@/types';
 import { DishCard } from '@/components/chat/DishCard';
+import { PriceCard } from '@/components/chat/PriceCard';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { HOME_CURRENCIES } from '@/lib/currency-constants';
+
+interface DealResult {
+  verdict: 'great_deal' | 'good_deal' | 'fair' | 'skip';
+  homePrice: string;
+  savings: string;
+  explanation: string;
+}
 
 interface CameraTranslateViewProps {
   toLang: Language;
   fromLang?: Language;
+  homeCurrency: string;
   onClose: () => void;
   onSaveTranslation: (result: CameraTranslationResult) => void;
   onSaveDish?: (dish: DishAnalysis) => void;
+  onSavePrice?: (price: PriceAnalysis, convertedAmount: number, homeCurrency: string) => void;
 }
 
 type CameraState = 'starting' | 'ready' | 'capturing' | 'translating' | 'result' | 'error';
@@ -21,9 +34,11 @@ type CameraState = 'starting' | 'ready' | 'capturing' | 'translating' | 'result'
 export function CameraTranslateView({
   toLang,
   fromLang,
+  homeCurrency,
   onClose,
   onSaveTranslation,
   onSaveDish,
+  onSavePrice,
 }: CameraTranslateViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -34,6 +49,12 @@ export function CameraTranslateView({
   const [result, setResult] = useState<CameraTranslationResult | null>(null);
   const [cameraMode, setCameraMode] = useState<CameraMode>('translate');
   const [dishResult, setDishResult] = useState<DishAnalysis | null>(null);
+  const [priceResult, setPriceResult] = useState<PriceAnalysis | null>(null);
+  const [dealResult, setDealResult] = useState<DealResult | null>(null);
+  const [isCheckingDeal, setIsCheckingDeal] = useState(false);
+
+  const { convert } = useExchangeRates();
+  const homeInfo = HOME_CURRENCIES.find(c => c.code === homeCurrency) || HOME_CURRENCIES[0];
 
   // Start camera on mount
   useEffect(() => {
@@ -93,7 +114,10 @@ export function CameraTranslateView({
     setCameraState('translating');
 
     try {
-      if (cameraMode === 'dish') {
+      if (cameraMode === 'price') {
+        const priceRes = await analyzePrice(base64);
+        setPriceResult(priceRes);
+      } else if (cameraMode === 'dish') {
         const dishRes = await analyzeDish(base64, fromLang?.name ?? 'English');
         setDishResult(dishRes);
       } else {
@@ -102,7 +126,7 @@ export function CameraTranslateView({
       }
       setCameraState('result');
     } catch {
-      setErrorMessage('Translation failed. Tap the shutter to try again.');
+      setErrorMessage('Analysis failed. Tap the shutter to try again.');
       setCameraState('error');
     }
   }, [cameraState, cameraMode, toLang.name, fromLang]);
@@ -110,6 +134,8 @@ export function CameraTranslateView({
   const handleRetry = useCallback(() => {
     setResult(null);
     setDishResult(null);
+    setPriceResult(null);
+    setDealResult(null);
     setCameraState('ready');
   }, []);
 
@@ -123,12 +149,41 @@ export function CameraTranslateView({
   }, [result, toLang.code]);
 
   const handleSave = useCallback(() => {
-    if (cameraMode === 'dish' && dishResult) {
+    if (cameraMode === 'price' && priceResult) {
+      const converted = convert(priceResult.price, priceResult.currency, homeCurrency);
+      onSavePrice?.(priceResult, converted, homeCurrency);
+    } else if (cameraMode === 'dish' && dishResult) {
       onSaveDish?.(dishResult);
     } else if (result) {
       onSaveTranslation(result);
     }
-  }, [cameraMode, dishResult, result, onSaveDish, onSaveTranslation]);
+  }, [cameraMode, priceResult, dishResult, result, onSavePrice, onSaveDish, onSaveTranslation, convert, homeCurrency]);
+
+  const handleCheckDeal = useCallback(async (productName: string) => {
+    if (!priceResult) return;
+    setIsCheckingDeal(true);
+    try {
+      const converted = convert(priceResult.price, priceResult.currency, homeCurrency);
+      const res = await fetch('/api/price-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName,
+          storeName: priceResult.storeName,
+          foreignPrice: priceResult.price,
+          foreignCurrency: priceResult.currency,
+          convertedPrice: converted,
+          homeCurrency,
+        }),
+      });
+      const data = await res.json();
+      setDealResult(data);
+    } catch (error) {
+      console.error('Deal check failed:', error);
+    } finally {
+      setIsCheckingDeal(false);
+    }
+  }, [priceResult, convert, homeCurrency]);
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -149,7 +204,9 @@ export function CameraTranslateView({
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <p className="text-white text-sm font-medium">Translating...</p>
+              <p className="text-white text-sm font-medium">
+                {cameraMode === 'price' ? 'Scanning price...' : 'Translating...'}
+              </p>
             </div>
           </div>
         )}
@@ -166,7 +223,7 @@ export function CameraTranslateView({
           <>
             <div className="absolute top-1/3 left-8 right-8 bottom-1/3 border-2 border-white/20 rounded-lg pointer-events-none" />
             <p className="absolute bottom-36 inset-x-0 text-center text-white/60 text-xs">
-              Point at a menu, sign, or notice
+              {cameraMode === 'price' ? 'Point at a price tag or label' : 'Point at a menu, sign, or notice'}
             </p>
           </>
         )}
@@ -180,9 +237,11 @@ export function CameraTranslateView({
           <X className="h-5 w-5" />
         </button>
 
-        {/* Language badge */}
+        {/* Language / currency badge */}
         <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm">
-          <span className="text-white text-xs font-medium">→ {toLang.flag} {toLang.name}</span>
+          <span className="text-white text-xs font-medium">
+            {cameraMode === 'price' ? `→ ${homeInfo.symbol} ${homeCurrency}` : `→ ${toLang.flag} ${toLang.name}`}
+          </span>
         </div>
       </div>
 
@@ -234,20 +293,40 @@ export function CameraTranslateView({
           </div>
         )}
 
+        {/* Price result */}
+        {cameraState === 'result' && priceResult && cameraMode === 'price' && (
+          <div className="px-4 pt-3 pb-4">
+            <PriceCard
+              price={priceResult}
+              convertedAmount={convert(priceResult.price, priceResult.currency, homeCurrency)}
+              homeCurrency={homeCurrency}
+              homeSymbol={homeInfo.symbol}
+              foreignSymbol={HOME_CURRENCIES.find(c => c.code === priceResult.currency)?.symbol || priceResult.currency}
+              onCheckDeal={handleCheckDeal}
+              onChatAboutThis={(price) => {
+                const converted = convert(price.price, price.currency, homeCurrency);
+                onSavePrice?.(price, converted, homeCurrency);
+              }}
+              dealResult={dealResult}
+              isCheckingDeal={isCheckingDeal}
+            />
+          </div>
+        )}
+
         {/* Mode toggle */}
         <div className="flex items-center justify-center gap-1 mb-4">
-          {(['translate', 'dish'] as CameraMode[]).map((m) => (
+          {(['translate', 'dish', 'price'] as CameraMode[]).map((m) => (
             <button
               key={m}
               aria-label={m}
-              onClick={() => { setCameraMode(m); setResult(null); setDishResult(null); setCameraState('ready'); }}
+              onClick={() => { setCameraMode(m); setResult(null); setDishResult(null); setPriceResult(null); setDealResult(null); setCameraState('ready'); }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors capitalize ${
                 cameraMode === m
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               }`}
             >
-              {m === 'translate' ? 'Translate' : 'Dish'}
+              {m === 'translate' ? 'Translate' : m === 'dish' ? 'Dish' : 'Price'}
             </button>
           ))}
         </div>

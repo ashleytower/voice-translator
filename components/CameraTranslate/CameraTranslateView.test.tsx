@@ -12,6 +12,19 @@ vi.mock('@/lib/gemini-dish-analyze', () => ({
   analyzeDish: vi.fn(),
 }));
 
+vi.mock('@/lib/gemini-price-analyze', () => ({
+  analyzePrice: vi.fn(),
+}));
+
+vi.mock('@/hooks/useExchangeRates', () => ({
+  useExchangeRates: () => ({ convert: vi.fn().mockReturnValue(68), rates: {}, isLoading: false, lastUpdated: null }),
+}));
+
+vi.mock('@/lib/currency-constants', () => ({
+  HOME_CURRENCIES: [{ code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }],
+  LANG_TO_CURRENCY: {},
+}));
+
 import { translateCameraImage } from '@/lib/gemini-camera-translate';
 import { analyzeDish } from '@/lib/gemini-dish-analyze';
 
@@ -52,6 +65,7 @@ describe('CameraTranslateView', () => {
     render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={vi.fn()}
         onSaveTranslation={vi.fn()}
       />
@@ -64,6 +78,7 @@ describe('CameraTranslateView', () => {
     render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={vi.fn()}
         onSaveTranslation={vi.fn()}
       />
@@ -80,6 +95,7 @@ describe('CameraTranslateView', () => {
     render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={onClose}
         onSaveTranslation={vi.fn()}
       />
@@ -92,6 +108,7 @@ describe('CameraTranslateView', () => {
     const { unmount } = render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={vi.fn()}
         onSaveTranslation={vi.fn()}
       />
@@ -109,6 +126,7 @@ describe('CameraTranslateView', () => {
     render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={vi.fn()}
         onSaveTranslation={vi.fn()}
       />
@@ -133,6 +151,7 @@ describe('CameraTranslateView', () => {
     render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={vi.fn()}
         onSaveTranslation={vi.fn()}
       />
@@ -161,6 +180,7 @@ describe('CameraTranslateView', () => {
     render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={vi.fn()}
         onSaveTranslation={onSave}
       />
@@ -180,6 +200,7 @@ describe('CameraTranslateView', () => {
     render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={vi.fn()}
         onSaveTranslation={vi.fn()}
       />
@@ -194,6 +215,7 @@ describe('CameraTranslateView', () => {
     render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={vi.fn()}
         onSaveTranslation={vi.fn()}
         onSaveDish={vi.fn()}
@@ -213,6 +235,7 @@ describe('CameraTranslateView', () => {
     render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={vi.fn()}
         onSaveTranslation={vi.fn()}
         onSaveDish={vi.fn()}
@@ -244,6 +267,7 @@ describe('CameraTranslateView', () => {
     render(
       <CameraTranslateView
         toLang={toLang}
+        homeCurrency="CAD"
         onClose={vi.fn()}
         onSaveTranslation={vi.fn()}
         onSaveDish={onSaveDish}
