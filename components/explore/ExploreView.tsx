@@ -12,7 +12,7 @@ import { PlaceCard } from './PlaceCard';
 const CATEGORY_META: Record<PlaceCategory, { label: string; color: string; emoji: string }> = {
   restaurant: { label: 'Restaurants', color: '#e85d4a', emoji: '\u{1F374}' },
   train_station: { label: 'Stations', color: '#4A90D9', emoji: '\u{1F686}' },
-  convenience_store: { label: 'Konbini', color: '#48bb78', emoji: '\u{1F3EA}' },
+  convenience_store: { label: 'Convenience', color: '#48bb78', emoji: '\u{1F3EA}' },
   pharmacy: { label: 'Pharmacy', color: '#9f7aea', emoji: '\u{1F48A}' },
   atm: { label: 'ATMs', color: '#ecc94b', emoji: '\u{1F4B5}' },
 };
@@ -66,6 +66,7 @@ export function ExploreView({
 
   const meta = category ? CATEGORY_META[category] : null;
   const center = { lat, lng };
+  const safePlaces = places ?? [];
 
   return (
     <div
@@ -115,14 +116,13 @@ export function ExploreView({
             defaultZoom={15}
             gestureHandling="greedy"
             disableDefaultUI
-            colorScheme="DARK"
             styles={DARK_MAP_STYLES}
           >
             {/* User location blue dot */}
             <UserLocationDot lat={lat} lng={lng} />
 
             {/* Place markers */}
-            {places.map((place) => (
+            {safePlaces.map((place) => (
               <Marker
                 key={place.id}
                 position={{ lat: place.lat, lng: place.lng }}
@@ -141,9 +141,9 @@ export function ExploreView({
         {meta && (
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="text-[15px] font-bold text-white">{meta.label}</h2>
-            {!loading && places.length > 0 && (
+            {!loading && safePlaces.length > 0 && (
               <span className="text-xs text-white/50">
-                {places.length} nearby
+                {safePlaces.length} nearby
               </span>
             )}
           </div>
@@ -163,16 +163,16 @@ export function ExploreView({
         )}
 
         {/* Empty state */}
-        {!loading && places.length === 0 && (
+        {!loading && safePlaces.length === 0 && (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-sm text-white/40">No places found nearby</p>
           </div>
         )}
 
         {/* Place cards */}
-        {!loading && places.length > 0 && (
+        {!loading && safePlaces.length > 0 && (
           <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
-            {places.map((place) => (
+            {safePlaces.map((place) => (
               <PlaceCard key={place.id} place={place} categoryColor={meta?.color ?? '#666'} />
             ))}
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-const TOKYO_STATION = { latitude: 35.6812, longitude: 139.7671 };
+// No hardcoded fallback -- null coordinates indicate geolocation unavailable
 
 interface GeolocationState {
   latitude: number | null;
@@ -22,8 +22,8 @@ export function useGeolocation(): GeolocationState {
   useEffect(() => {
     if (!navigator.geolocation) {
       setState({
-        latitude: TOKYO_STATION.latitude,
-        longitude: TOKYO_STATION.longitude,
+        latitude: null,
+        longitude: null,
         error: 'Geolocation is not supported by this browser',
         loading: false,
       });
@@ -58,8 +58,8 @@ export function useGeolocation(): GeolocationState {
       }
 
       setState({
-        latitude: TOKYO_STATION.latitude,
-        longitude: TOKYO_STATION.longitude,
+        latitude: null,
+        longitude: null,
         error: message,
         loading: false,
       });

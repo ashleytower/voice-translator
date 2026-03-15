@@ -51,7 +51,7 @@ export function useNearbyPlaces(
         }
 
         const data = await response.json();
-        const fetchedPlaces: NearbyPlace[] = data.places;
+        const fetchedPlaces: NearbyPlace[] = Array.isArray(data) ? data : data.places ?? [];
 
         // Store in cache
         cacheRef.current.set(cat, fetchedPlaces);

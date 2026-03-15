@@ -2,8 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGeolocation } from '../useGeolocation';
 
-const TOKYO_STATION = { latitude: 35.6812, longitude: 139.7671 };
-
 describe('useGeolocation', () => {
   let watchPositionMock: ReturnType<typeof vi.fn>;
   let clearWatchMock: ReturnType<typeof vi.fn>;
@@ -63,7 +61,7 @@ describe('useGeolocation', () => {
     );
   });
 
-  it('falls back to Tokyo Station on permission denied', async () => {
+  it('returns null coordinates on permission denied', async () => {
     watchPositionMock.mockImplementation((_success, error) => {
       error({
         code: 1,
@@ -79,13 +77,13 @@ describe('useGeolocation', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.latitude).toBe(TOKYO_STATION.latitude);
-    expect(result.current.longitude).toBe(TOKYO_STATION.longitude);
+    expect(result.current.latitude).toBeNull();
+    expect(result.current.longitude).toBeNull();
     expect(result.current.error).toBeTruthy();
     expect(result.current.error).toContain('denied');
   });
 
-  it('falls back to Tokyo Station when geolocation API unavailable', async () => {
+  it('returns null coordinates when geolocation API unavailable', async () => {
     // Remove geolocation API entirely
     Object.defineProperty(navigator, 'geolocation', {
       value: undefined,
@@ -99,8 +97,8 @@ describe('useGeolocation', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.latitude).toBe(TOKYO_STATION.latitude);
-    expect(result.current.longitude).toBe(TOKYO_STATION.longitude);
+    expect(result.current.latitude).toBeNull();
+    expect(result.current.longitude).toBeNull();
     expect(result.current.error).toBeTruthy();
     expect(result.current.error).toContain('not supported');
   });

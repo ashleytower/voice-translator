@@ -28,7 +28,7 @@ describe('FabSpeedDial', () => {
 
     expect(screen.getByText('Restaurants')).toBeInTheDocument();
     expect(screen.getByText('Stations')).toBeInTheDocument();
-    expect(screen.getByText('Konbini')).toBeInTheDocument();
+    expect(screen.getByText('Convenience')).toBeInTheDocument();
     expect(screen.getByText('Pharmacy')).toBeInTheDocument();
     expect(screen.getByText('ATMs')).toBeInTheDocument();
   });
@@ -43,7 +43,7 @@ describe('FabSpeedDial', () => {
     const expectedCategories: Array<{ label: string; category: PlaceCategory }> = [
       { label: 'Restaurants', category: 'restaurant' },
       { label: 'Stations', category: 'train_station' },
-      { label: 'Konbini', category: 'convenience_store' },
+      { label: 'Convenience', category: 'convenience_store' },
       { label: 'Pharmacy', category: 'pharmacy' },
       { label: 'ATMs', category: 'atm' },
     ];

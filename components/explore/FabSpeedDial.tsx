@@ -16,7 +16,7 @@ const CATEGORIES: Array<{
 }> = [
   { category: 'restaurant', label: 'Restaurants', emoji: '\u{1F374}', color: '#e85d4a' },
   { category: 'train_station', label: 'Stations', emoji: '\u{1F686}', color: '#4A90D9' },
-  { category: 'convenience_store', label: 'Konbini', emoji: '\u{1F3EA}', color: '#48bb78' },
+  { category: 'convenience_store', label: 'Convenience', emoji: '\u{1F3EA}', color: '#48bb78' },
   { category: 'pharmacy', label: 'Pharmacy', emoji: '\u{1F48A}', color: '#9f7aea' },
   { category: 'atm', label: 'ATMs', emoji: '\u{1F4B5}', color: '#ecc94b' },
 ];
@@ -57,7 +57,7 @@ export function FabSpeedDial({ onCategorySelect, visible }: FabSpeedDialProps) {
       )}
 
       {/* FAB container */}
-      <div className="fixed z-50" style={{ bottom: 90, right: 16 }}>
+      <div className="fixed z-50" style={{ bottom: 120, right: 16 }}>
         {/* Category items */}
         {isOpen && (
           <div className="flex flex-col-reverse items-end gap-3 mb-3">
