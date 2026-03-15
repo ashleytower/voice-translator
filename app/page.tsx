@@ -117,7 +117,7 @@ export default function TranslatorPage() {
 
   const { settings, updateSetting, toggleSetting, resetSettings } = useAppSettings();
 
-  const { latitude, longitude } = useGeolocation();
+  const { latitude, longitude, error: geoError, loading: geoLoading } = useGeolocation();
   const { places: nearbyPlaces, loading: placesLoading } = useNearbyPlaces(latitude, longitude, exploreCategory);
 
   const {
@@ -580,10 +580,12 @@ export default function TranslatorPage() {
       <ExploreView
         visible={exploreCategory !== null}
         category={exploreCategory}
-        lat={latitude ?? 35.6812}
-        lng={longitude ?? 139.7671}
+        lat={latitude}
+        lng={longitude}
         places={nearbyPlaces}
         loading={placesLoading}
+        geoLoading={geoLoading}
+        geoError={geoError}
         onBack={handleExploreBack}
       />
       <BottomNav

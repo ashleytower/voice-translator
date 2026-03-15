@@ -38,10 +38,12 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
 interface ExploreViewProps {
   visible: boolean;
   category: PlaceCategory | null;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
   places: NearbyPlace[];
   loading: boolean;
+  geoLoading?: boolean;
+  geoError?: string | null;
   onBack: () => void;
 }
 
@@ -56,6 +58,8 @@ export function ExploreView({
   lng,
   places,
   loading,
+  geoLoading,
+  geoError,
   onBack,
 }: ExploreViewProps) {
   const handleBack = useCallback(() => {
@@ -65,7 +69,8 @@ export function ExploreView({
   if (!visible) return null;
 
   const meta = category ? CATEGORY_META[category] : null;
-  const center = { lat, lng };
+  const hasLocation = lat !== null && lng !== null;
+  const center = hasLocation ? { lat, lng } : { lat: 0, lng: 0 };
   const safePlaces = places ?? [];
 
   return (
@@ -108,76 +113,101 @@ export function ExploreView({
         )}
       </div>
 
-      {/* ---- Map (top 55%) ---- */}
-      <div className="relative" style={{ height: '55%' }}>
-        <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY!}>
-          <Map
-            defaultCenter={center}
-            defaultZoom={15}
-            gestureHandling="greedy"
-            disableDefaultUI
-            styles={DARK_MAP_STYLES}
-          >
-            {/* User location blue dot */}
-            <UserLocationDot lat={lat} lng={lng} />
+      {/* ---- Location required state ---- */}
+      {!hasLocation && !geoLoading && (
+        <div className="flex-1 flex flex-col items-center justify-center px-8 gap-4">
+          <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-3xl">
+            {'\u{1F4CD}'}
+          </div>
+          <p className="text-base font-semibold text-white text-center">Location access needed</p>
+          <p className="text-sm text-white/50 text-center leading-relaxed">
+            {geoError || 'Enable location services to discover places near you.'}
+          </p>
+        </div>
+      )}
 
-            {/* Place markers */}
-            {safePlaces.map((place) => (
-              <Marker
-                key={place.id}
-                position={{ lat: place.lat, lng: place.lng }}
-              />
-            ))}
-          </Map>
-        </APIProvider>
-      </div>
+      {/* ---- Geolocation loading state ---- */}
+      {!hasLocation && geoLoading && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3">
+          <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white/70 animate-spin" />
+          <p className="text-sm text-white/50">Finding your location...</p>
+        </div>
+      )}
+
+      {/* ---- Map (top 55%) ---- */}
+      {hasLocation && (
+        <div className="relative" style={{ height: '55%' }}>
+          <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY!}>
+            <Map
+              defaultCenter={center}
+              defaultZoom={15}
+              gestureHandling="greedy"
+              disableDefaultUI
+              styles={DARK_MAP_STYLES}
+            >
+              {/* User location blue dot */}
+              <UserLocationDot lat={lat!} lng={lng!} />
+
+              {/* Place markers */}
+              {safePlaces.map((place) => (
+                <Marker
+                  key={place.id}
+                  position={{ lat: place.lat, lng: place.lng }}
+                />
+              ))}
+            </Map>
+          </APIProvider>
+        </div>
+      )}
 
       {/* ---- Card carousel (bottom 45%) ---- */}
-      <div
-        className="flex-1 flex flex-col px-4 pt-4 pb-6"
-        style={{ height: '45%' }}
-      >
-        {/* Header */}
-        {meta && (
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-[15px] font-bold text-white">{meta.label}</h2>
-            {!loading && safePlaces.length > 0 && (
-              <span className="text-xs text-white/50">
-                {safePlaces.length} nearby
-              </span>
-            )}
-          </div>
-        )}
+      {hasLocation && (
+        <div
+          className="flex-1 flex flex-col px-4 pt-4 pb-6"
+          style={{ height: '45%' }}
+        >
+          {/* Header */}
+          {meta && (
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-[15px] font-bold text-white">{meta.label}</h2>
+              {!loading && safePlaces.length > 0 && (
+                <span className="text-xs text-white/50">
+                  {safePlaces.length} nearby
+                </span>
+              )}
+            </div>
+          )}
 
-        {/* Loading skeletons */}
-        {loading && (
-          <div className="flex gap-3 overflow-x-auto">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                data-testid="skeleton-card"
-                className="min-w-[260px] h-36 rounded-2xl bg-white/10 animate-pulse shrink-0"
-              />
-            ))}
-          </div>
-        )}
+          {/* Loading skeletons */}
+          {loading && (
+            <div className="flex gap-3 overflow-x-auto">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  data-testid="skeleton-card"
+                  className="min-w-[260px] h-36 rounded-2xl bg-white/10 animate-pulse shrink-0"
+                />
+              ))}
+            </div>
+          )}
 
-        {/* Empty state */}
-        {!loading && safePlaces.length === 0 && (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-sm text-white/40">No places found nearby</p>
-          </div>
-        )}
+          {/* Empty state */}
+          {!loading && safePlaces.length === 0 && (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-sm text-white/40">No places found nearby</p>
+            </div>
+          )}
 
-        {/* Place cards */}
-        {!loading && safePlaces.length > 0 && (
-          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
-            {safePlaces.map((place) => (
-              <PlaceCard key={place.id} place={place} categoryColor={meta?.color ?? '#666'} />
-            ))}
-          </div>
-        )}
-      </div>
+          {/* Place cards */}
+          {!loading && safePlaces.length > 0 && (
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
+              {safePlaces.map((place) => (
+                <PlaceCard key={place.id} place={place} categoryColor={meta?.color ?? '#666'} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Slide-up keyframe */}
       <style
