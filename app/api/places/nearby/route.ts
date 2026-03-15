@@ -30,7 +30,7 @@ interface GooglePlace {
 }
 
 function buildPhotoUrl(photoName: string, serverKey: string): string {
-  return `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=400&skipHttpRedirect=false&key=${serverKey}`;
+  return `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=400&key=${serverKey}`;
 }
 
 function mapPlace(place: GooglePlace, serverKey: string): NearbyPlace {

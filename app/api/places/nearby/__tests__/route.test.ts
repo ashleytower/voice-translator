@@ -94,7 +94,7 @@ describe('GET /api/places/nearby', () => {
       ratingCount: 1200,
       isOpen: true,
       phone: '03-1234-5678',
-      photoUrl: `https://places.googleapis.com/v1/places/ChIJ_abc123/photos/photo-ref-1/media?maxWidthPx=400&skipHttpRedirect=false&key=${FAKE_SERVER_KEY}`,
+      photoUrl: `https://places.googleapis.com/v1/places/ChIJ_abc123/photos/photo-ref-1/media?maxWidthPx=400&key=${FAKE_SERVER_KEY}`,
       type: 'restaurant',
       priceLevel: 'PRICE_LEVEL_MODERATE',
     });
@@ -197,7 +197,7 @@ describe('GET /api/places/nearby', () => {
     const body = await res.json();
 
     expect(body[0].photoUrl).toBe(
-      `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=400&skipHttpRedirect=false&key=${FAKE_SERVER_KEY}`
+      `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=400&key=${FAKE_SERVER_KEY}`
     );
   });
 
