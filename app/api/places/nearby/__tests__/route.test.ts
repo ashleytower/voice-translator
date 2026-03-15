@@ -57,7 +57,7 @@ describe('GET /api/places/nearby', () => {
   beforeEach(() => {
     vi.stubEnv('GOOGLE_MAPS_SERVER_KEY', FAKE_SERVER_KEY);
     fetchMock = vi.fn();
-    global.fetch = fetchMock;
+    global.fetch = fetchMock as unknown as typeof global.fetch;
   });
 
   afterEach(() => {
