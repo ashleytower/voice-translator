@@ -13,7 +13,7 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { InputArea } from '@/components/chat/InputArea';
 import { LanguageSelector } from '@/components/chat/LanguageSelector';
-import { Orb, OrbState } from '@/components/voice/Orb';
+import type { OrbState } from '@/components/voice/Orb';
 import { CurrencyConverterView } from '@/components/currency/CurrencyConverterView';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { PhrasesView } from '@/components/phrases/PhrasesView';
@@ -471,14 +471,8 @@ export default function TranslatorPage() {
         </div>
       )}
 
-      {/* Bottom dock: orb + input */}
+      {/* Bottom dock: input */}
       <div className="flex flex-col items-center gap-2 px-4 pb-3 pt-2 bg-background/80 backdrop-blur-xl border-t border-border/30">
-        <Orb
-          state={orbState}
-          volume={micVolume}
-          onClick={handleOrbClick}
-          size={120}
-        />
         <div className="w-full">
           <InputArea
             onSend={handleSend}
@@ -572,7 +566,13 @@ export default function TranslatorPage() {
   return (
     <main className="h-dvh flex flex-col overflow-hidden bg-background text-foreground dark">
       {renderCurrentView()}
-      <BottomNav activeTab={viewMode} onTabChange={setViewMode} />
+      <BottomNav
+        activeTab={viewMode}
+        onTabChange={setViewMode}
+        orbState={orbState}
+        micVolume={micVolume}
+        onOrbClick={handleOrbClick}
+      />
     </main>
   );
 }
