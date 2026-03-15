@@ -109,7 +109,24 @@ export interface AppSettings {
   homeCurrency: string;
 }
 
-export type ViewMode = 'translate' | 'camera' | 'convert' | 'settings' | 'phrases';
+export type ViewMode = 'translate' | 'camera' | 'convert' | 'settings' | 'phrases' | 'explore';
+
+export type PlaceCategory = 'restaurant' | 'train_station' | 'convenience_store' | 'pharmacy' | 'atm';
+
+export interface NearbyPlace {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  rating: number | null;
+  ratingCount: number;
+  isOpen: boolean | null;
+  phone: string | null;
+  photoUrl: string | null;
+  type: string;
+  priceLevel: string | null;
+}
 
 export interface CallRequest {
   phoneNumber: string;

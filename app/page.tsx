@@ -23,6 +23,11 @@ import { LANG_TO_CURRENCY } from '@/lib/currency-constants';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useVapiCall } from '@/hooks/useVapiCall';
 import { CallSheet } from '@/components/call/CallSheet';
+import { FabSpeedDial } from '@/components/explore/FabSpeedDial';
+import { ExploreView } from '@/components/explore/ExploreView';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
+import type { PlaceCategory } from '@/types';
 
 const STORAGE_KEY = 'fluent-messages';
 const LANG_STORAGE_KEY = 'fluent-languages';
@@ -56,6 +61,7 @@ export default function TranslatorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showCallSheet, setShowCallSheet] = useState(false);
   const [callPreFill, setCallPreFill] = useState<{ task: string; phone: string } | null>(null);
+  const [exploreCategory, setExploreCategory] = useState<PlaceCategory | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastRelayedLenRef = useRef(0);
@@ -110,6 +116,9 @@ export default function TranslatorPage() {
   });
 
   const { settings, updateSetting, toggleSetting, resetSettings } = useAppSettings();
+
+  const { latitude, longitude } = useGeolocation();
+  const { places: nearbyPlaces, loading: placesLoading } = useNearbyPlaces(latitude, longitude, exploreCategory);
 
   const {
     status: callStatus,
@@ -353,7 +362,9 @@ export default function TranslatorPage() {
     setViewMode('translate');
   }, [toLang.name]);
 
-
+  const handleExploreBack = useCallback(() => {
+    setExploreCategory(null);
+  }, []);
 
   // Build chat context for call
   const chatContext = callPreFill?.task
@@ -566,12 +577,25 @@ export default function TranslatorPage() {
   return (
     <main className="h-dvh flex flex-col overflow-hidden bg-background text-foreground dark">
       {renderCurrentView()}
+      <ExploreView
+        visible={exploreCategory !== null}
+        category={exploreCategory}
+        lat={latitude ?? 35.6812}
+        lng={longitude ?? 139.7671}
+        places={nearbyPlaces}
+        loading={placesLoading}
+        onBack={handleExploreBack}
+      />
       <BottomNav
         activeTab={viewMode}
         onTabChange={setViewMode}
         orbState={orbState}
         micVolume={micVolume}
         onOrbClick={handleOrbClick}
+      />
+      <FabSpeedDial
+        onCategorySelect={setExploreCategory}
+        visible={viewMode !== 'camera' && exploreCategory === null}
       />
     </main>
   );
