@@ -29,11 +29,11 @@ interface GooglePlace {
   priceLevel?: string;
 }
 
-function buildPhotoUrl(photoName: string, serverKey: string): string {
-  return `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=400&key=${serverKey}`;
+function buildPhotoUrl(photoName: string): string {
+  return `/api/places/photo?ref=${encodeURIComponent(photoName)}&maxWidth=400`;
 }
 
-function mapPlace(place: GooglePlace, serverKey: string): NearbyPlace {
+function mapPlace(place: GooglePlace): NearbyPlace {
   const firstPhoto = place.photos?.[0]?.name ?? null;
 
   return {
@@ -46,7 +46,7 @@ function mapPlace(place: GooglePlace, serverKey: string): NearbyPlace {
     ratingCount: place.userRatingCount ?? 0,
     isOpen: place.currentOpeningHours?.openNow ?? null,
     phone: place.nationalPhoneNumber ?? null,
-    photoUrl: firstPhoto ? buildPhotoUrl(firstPhoto, serverKey) : null,
+    photoUrl: firstPhoto ? buildPhotoUrl(firstPhoto) : null,
     type: place.primaryType ?? '',
     priceLevel: place.priceLevel ?? null,
   };
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
   const data = await response.json();
   const places: GooglePlace[] = data.places ?? [];
-  const cleaned: NearbyPlace[] = places.map((p) => mapPlace(p, serverKey));
+  const cleaned: NearbyPlace[] = places.map((p) => mapPlace(p));
 
   return NextResponse.json(cleaned);
 }

@@ -94,7 +94,7 @@ describe('GET /api/places/nearby', () => {
       ratingCount: 1200,
       isOpen: true,
       phone: '03-1234-5678',
-      photoUrl: `https://places.googleapis.com/v1/places/ChIJ_abc123/photos/photo-ref-1/media?maxWidthPx=400&key=${FAKE_SERVER_KEY}`,
+      photoUrl: `/api/places/photo?ref=${encodeURIComponent('places/ChIJ_abc123/photos/photo-ref-1')}&maxWidth=400`,
       type: 'restaurant',
       priceLevel: 'PRICE_LEVEL_MODERATE',
     });
@@ -172,7 +172,7 @@ describe('GET /api/places/nearby', () => {
 
   // ── Photo URL construction ──
 
-  it('constructs photo URLs using the first photo reference', async () => {
+  it('constructs proxy photo URLs without exposing server key', async () => {
     const photoName = 'places/ChIJ_test/photos/special-ref-abc';
     fetchMock.mockResolvedValueOnce({
       ok: true,
@@ -196,9 +196,12 @@ describe('GET /api/places/nearby', () => {
     const res = await GET(makeRequest({ lat: '1', lng: '2', type: 'restaurant' }));
     const body = await res.json();
 
+    // Photo URL should use our proxy, not expose the Google server key
     expect(body[0].photoUrl).toBe(
-      `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=400&key=${FAKE_SERVER_KEY}`
+      `/api/places/photo?ref=${encodeURIComponent(photoName)}&maxWidth=400`
     );
+    // Must not contain the server key
+    expect(body[0].photoUrl).not.toContain(FAKE_SERVER_KEY);
   });
 
   // ── Validation: missing params ──
