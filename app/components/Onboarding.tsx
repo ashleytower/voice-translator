@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Mic, Camera, Languages, Coins } from 'lucide-react';
 
-const ONBOARDED_KEY = 'voice-translator-onboarded';
+const ONBOARDED_KEY = 'found-in-translation-onboarded';
 
 export default function Onboarding() {
   const [open, setOpen] = useState(false);

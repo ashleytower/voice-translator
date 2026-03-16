@@ -1,82 +1,40 @@
-# 日本語 Translator
+# Found in Translation
 
-Real-time English ↔ Japanese voice translator with currency converter. Built for your Japan trip.
+AI-powered voice translator for travelers. Speak in your language, hear it in theirs.
+
+**Live:** [foundintranslation.app](https://foundintranslation.app)
 
 ## Features
 
-- **Voice Translation**: Tap to speak, get instant translation via Gemini 2.5 Flash Native Audio
-- **Currency Converter**: Point camera at prices, converts JPY ↔ CAD automatically
-- **Mode Toggle**: Switch between Translate and Currency modes
-- **Direction Toggle**: EN→JP or JP→EN translation
-- **PWA**: Install on home screen, works offline (cached assets)
+- **Voice Translation**: Tap the orb to speak, get instant translation via Deepgram STT + Gemini + Cartesia TTS
+- **Listen Mode**: Toggle "Their turn" to record the other person and translate back to you
+- **Camera Translate**: Point camera at signs, menus, or text for instant translation
+- **Dish Analysis**: Identify dishes from photos with ingredients and dietary info
+- **Currency Converter**: Quick-convert foreign prices inline
+- **Phone Calls**: AI agent makes phone calls in the local language on your behalf
+- **Explore**: Find nearby restaurants, cafes, pharmacies, and transit with map view
+- **Saved Places**: Star locations on the map for quick reference
+- **Phrases**: Browse and replay your translation history
+- **PWA**: Install on home screen for native app experience
 
 ## Stack
 
 - Next.js 14 (App Router)
-- Gemini 2.5 Flash Native Audio API
-- Supabase Edge Functions (WebSocket proxy)
-- ExchangeRate-API (currency rates)
-
-## Deployment
-
-### 1. Deploy Supabase Edge Function
-
-```bash
-cd supabase/functions/gemini-live-proxy
-
-# Set your Gemini API key
-supabase secrets set GOOGLE_AI_API_KEY=your-key-here
-
-# Deploy
-supabase functions deploy gemini-live-proxy
-```
-
-### 2. Configure Environment
-
-```bash
-cp .env.example .env.local
-
-# Edit .env.local with your Supabase project URL
-NEXT_PUBLIC_PROXY_URL=wss://YOUR_PROJECT.supabase.co/functions/v1/gemini-live-proxy
-```
-
-### 3. Deploy to Vercel
-
-```bash
-npm install
-vercel deploy --prod
-```
-
-Or connect repo to Vercel dashboard for auto-deploy.
-
-### 4. Set Vercel Environment Variable
-
-In Vercel dashboard → Settings → Environment Variables:
-- `NEXT_PUBLIC_PROXY_URL` = your Supabase function URL
+- Deepgram (Speech-to-Text)
+- Gemini 2.5 Flash (Translation)
+- Cartesia (Text-to-Speech)
+- Google Maps Platform (Explore / Places)
+- VAPI (AI phone calls)
+- Tailwind CSS + Radix UI
 
 ## Local Development
 
 ```bash
+cp .env.example .env.local  # Fill in API keys
 npm install
 npm run dev
 ```
 
-Note: WebSocket proxy must be deployed for voice features to work locally.
+## Deployment
 
-## Usage
-
-1. **Translation Mode**: Tap mic, speak in English or Japanese, hear translation
-2. **Currency Mode**: Tap camera, point at price, tap screen to capture and convert
-
-## Architecture
-
-```
-Browser → Supabase Edge Function → Gemini 2.5 Flash Native Audio
-                ↓
-         Tool Calling (currency)
-                ↓
-         ExchangeRate-API
-```
-
-All audio processing happens in Gemini. The proxy handles auth and WebSocket bridging.
-# Deployment trigger
+Push to `main` branch for auto-deploy to Vercel.

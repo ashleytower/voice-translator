@@ -58,7 +58,7 @@ RULES:
 
   // Transient assistant — full config inline, no assistantId + overrides
   const assistant = {
-    serverUrl: 'https://translator-t2.vercel.app/api/vapi/webhook',
+    serverUrl: 'https://foundintranslation.app/api/vapi/webhook',
     model: {
       provider: 'openai',
       model: 'gpt-4o',
