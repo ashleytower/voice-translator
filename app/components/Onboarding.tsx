@@ -13,16 +13,22 @@ import { Mic, Camera, Languages, Coins } from 'lucide-react';
 
 const ONBOARDED_KEY = 'found-in-translation-onboarded';
 
-export default function Onboarding() {
+interface OnboardingProps {
+  skipIfAuthenticated?: boolean
+}
+
+export default function Onboarding({ skipIfAuthenticated }: OnboardingProps = {}) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (skipIfAuthenticated) return;
+
     // Check if user has completed onboarding
     const hasOnboarded = localStorage.getItem(ONBOARDED_KEY);
     if (!hasOnboarded) {
       setOpen(true);
     }
-  }, []);
+  }, [skipIfAuthenticated]);
 
   const handleGetStarted = () => {
     localStorage.setItem(ONBOARDED_KEY, 'true');

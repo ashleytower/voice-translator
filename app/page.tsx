@@ -4,10 +4,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Message, Language, ViewMode } from '@/types';
 import { LANGUAGES, INITIAL_MESSAGES } from '@/lib/constants';
 import { translateAndChat, quickTranslate } from '@/lib/gemini-service';
+import { assembleContext } from '@/lib/context';
 import { useVoiceTranslator } from '@/hooks/useVoiceTranslator';
 import { CartesiaClient } from '@/lib/cartesia-client';
 
 
+import { useSession } from '@/hooks/useSession';
+import ProfileOnboarding from '@/app/components/ProfileOnboarding';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -23,6 +26,7 @@ import { CameraTranslateView } from '@/components/CameraTranslate/CameraTranslat
 import type { CameraTranslationResult, DishAnalysis } from '@/types';
 import { LANG_TO_CURRENCY } from '@/lib/currency-constants';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { saveMemory } from '@/lib/memory';
 import { useVapiCall } from '@/hooks/useVapiCall';
 import { CallSheet } from '@/components/call/CallSheet';
 import { FabSpeedDial } from '@/components/explore/FabSpeedDial';
@@ -68,8 +72,20 @@ export default function TranslatorPage() {
   const [showExplore, setShowExplore] = useState(false);
   const [listenMode, setListenMode] = useState(false);
 
+  const { user, loading: authLoading, isOnboarded, refreshProfile } = useSession();
+
+  const travelerContextRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastRelayedLenRef = useRef(0);
+
+  // Fetch traveler context when user changes
+  useEffect(() => {
+    if (user) {
+      assembleContext(user.id).then(ctx => { travelerContextRef.current = ctx })
+    } else {
+      travelerContextRef.current = null
+    }
+  }, [user])
 
   const deepgramApiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || '';
   const cartesiaApiKey = process.env.NEXT_PUBLIC_CARTESIA_API_KEY || '';
@@ -135,6 +151,7 @@ export default function TranslatorPage() {
     cartesiaApiKey,
     fromLanguage: voiceFromLang.name,
     toLanguage: voiceToLang.name,
+    travelerContext: travelerContextRef.current ?? undefined,
     onTranslation: handleVoiceTranslation,
     onError: (error) => {
       console.error('Voice error:', error);
@@ -303,7 +320,8 @@ export default function TranslatorPage() {
         userMessage.text,
         fromLang.name,
         toLang.name,
-        attachment
+        attachment,
+        travelerContextRef.current ?? undefined
       );
 
       const assistantMessage: Message = {
@@ -351,9 +369,19 @@ export default function TranslatorPage() {
 
   // Toggle favorite
   const handleToggleFavorite = (id: string) => {
+    const target = messages.find((m) => m.id === id);
+    const becomingFavorite = target && !target.isFavorite;
+
     setMessages((prev) =>
       prev.map((msg) => (msg.id === id ? { ...msg, isFavorite: !msg.isFavorite } : msg))
     );
+
+    if (becomingFavorite && target) {
+      saveMemory('phrase', target.translation || target.text, {
+        source: 'favorite',
+        originalText: target.text,
+      });
+    }
   };
 
   // Clear history
@@ -374,6 +402,10 @@ export default function TranslatorPage() {
     };
     setMessages((prev) => [...prev, msg]);
     setViewMode('translate');
+
+    saveMemory('phrase', `${result.extractedText} → ${result.translatedText}`, {
+      source: 'camera',
+    });
   }, []);
 
   const handleSaveDish = useCallback((dish: DishAnalysis) => {
@@ -388,6 +420,11 @@ export default function TranslatorPage() {
 
     setMessages((prev) => [...prev, contextMsg]);
     setViewMode('translate');
+
+    saveMemory('dish', `${dish.dishName}${dish.localName ? ` (${dish.localName})` : ''} - ${dish.description}`, {
+      cuisine: dish.cuisineType,
+      ingredients: dish.ingredients,
+    });
   }, [toLang.name]);
 
   const handleExploreBack = useCallback(() => {
@@ -420,6 +457,11 @@ export default function TranslatorPage() {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
         setMessages((prev) => [...prev, summaryMessage]);
+
+        saveMemory('event', `Called: ${callResult.summary}`, {
+          source: 'phone_call',
+        });
+
         resetCall();
       }
     }
@@ -642,6 +684,9 @@ export default function TranslatorPage() {
 
   return (
     <main className="h-dvh flex flex-col overflow-hidden bg-background text-foreground dark">
+      {user && !authLoading && !isOnboarded && (
+        <ProfileOnboarding userId={user.id} onComplete={refreshProfile} />
+      )}
       {renderCurrentView()}
       <ExploreView
         visible={showExplore}

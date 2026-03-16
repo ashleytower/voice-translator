@@ -16,6 +16,7 @@ export interface VoiceTranslatorConfig {
   cartesiaApiKey: string;
   fromLanguage: string;
   toLanguage: string;
+  travelerContext?: string;
   onTranscript?: (text: string, isFinal: boolean) => void;
   onTranslation?: (original: string, translation: string, pronunciation?: string, response?: string) => void;
   onError?: (error: Error) => void;
@@ -63,7 +64,9 @@ export function useVoiceTranslator(config: VoiceTranslatorConfig): UseVoiceTrans
       const response = await translateAndChat(
         text,
         configRef.current.fromLanguage,
-        configRef.current.toLanguage
+        configRef.current.toLanguage,
+        undefined,
+        configRef.current.travelerContext
       );
 
       // Notify about translation (include the contextual response)

@@ -11,7 +11,8 @@ export const translateAndChat = async (
   text: string,
   fromLang: string,
   toLang: string,
-  imageBase64?: string
+  imageBase64?: string,
+  travelerContext?: string
 ): Promise<TranslationResponse> => {
   try {
     const ai = getAI();
@@ -25,9 +26,13 @@ export const translateAndChat = async (
       1. Translate the user's message (or describe/translate the text in the image) into ${toLang} naturally.
       2. Provide the pronunciation (romanization) for the translation if the target language uses a non-Latin script.
       3. Provide a short, helpful response in ${fromLang}.
-
-      User Message: "${text}"
     `;
+
+    if (travelerContext) {
+      promptText += `\n${travelerContext}\n`;
+    }
+
+    promptText += `\n      User Message: "${text}"\n    `;
 
     if (imageBase64) {
       promptText +=
