@@ -69,8 +69,24 @@ export class CartesiaClient {
   }
 
   async connect(): Promise<void> {
-    if (this._status === 'connected' || this._status === 'connecting') {
+    if (this._status === 'connected') {
       return;
+    }
+
+    // If already connecting, wait for that connection to complete
+    if (this._status === 'connecting') {
+      return new Promise((resolve, reject) => {
+        const onStatus = (status: unknown) => {
+          if (status === 'connected') {
+            this.off('statuschange', onStatus);
+            resolve();
+          } else if (status === 'error' || status === 'disconnected') {
+            this.off('statuschange', onStatus);
+            reject(new Error('Connection failed'));
+          }
+        };
+        this.on('statuschange', onStatus);
+      });
     }
 
     this._status = 'connecting';
@@ -81,59 +97,63 @@ export class CartesiaClient {
       this.audioContext = new AudioContext({ sampleRate: 24000 });
     }
 
-    const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${this.config.apiKey}&cartesia_version=2024-06-10`;
+    return new Promise((resolve, reject) => {
+      const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${this.config.apiKey}&cartesia_version=2024-06-10`;
 
-    this.socket = new WebSocket(wsUrl);
+      this.socket = new WebSocket(wsUrl);
 
-    this.socket.onopen = () => {
-      console.log('[Cartesia] Connected');
-      this._status = 'connected';
-      this.emit('statuschange', this._status);
-      this.emit('open');
-    };
+      this.socket.onopen = () => {
+        console.log('[Cartesia] Connected');
+        this._status = 'connected';
+        this.emit('statuschange', this._status);
+        this.emit('open');
+        resolve();
+      };
 
-    this.socket.onmessage = async (event) => {
-      try {
-        if (event.data instanceof Blob) {
-          // Binary audio data
-          const arrayBuffer = await event.data.arrayBuffer();
-          await this.handleAudioData(arrayBuffer);
-        } else {
-          // JSON message
-          const data = JSON.parse(event.data);
+      this.socket.onmessage = async (event) => {
+        try {
+          if (event.data instanceof Blob) {
+            // Binary audio data
+            const arrayBuffer = await event.data.arrayBuffer();
+            await this.handleAudioData(arrayBuffer);
+          } else {
+            // JSON message
+            const data = JSON.parse(event.data);
 
-          if (data.type === 'chunk') {
-            // Audio chunk - decode base64 audio
-            if (data.data) {
-              const audioBytes = this.base64ToArrayBuffer(data.data);
-              await this.handleAudioData(audioBytes);
+            if (data.type === 'chunk') {
+              // Audio chunk - decode base64 audio
+              if (data.data) {
+                const audioBytes = this.base64ToArrayBuffer(data.data);
+                await this.handleAudioData(audioBytes);
+              }
+            } else if (data.type === 'done') {
+              this.emit('synthesiscomplete');
+            } else if (data.error) {
+              console.error('[Cartesia] Error:', data.error);
+              this.emit('error', new Error(data.error));
             }
-          } else if (data.type === 'done') {
-            this.emit('synthesiscomplete');
-          } else if (data.error) {
-            console.error('[Cartesia] Error:', data.error);
-            this.emit('error', new Error(data.error));
           }
+        } catch (error) {
+          console.error('[Cartesia] Failed to handle message:', error);
         }
-      } catch (error) {
-        console.error('[Cartesia] Failed to handle message:', error);
-      }
-    };
+      };
 
-    this.socket.onerror = (error) => {
-      console.error('[Cartesia] WebSocket error:', error);
-      this._status = 'error';
-      this.emit('statuschange', this._status);
-      this.emit('error', error);
-    };
+      this.socket.onerror = (error) => {
+        console.error('[Cartesia] WebSocket error:', error);
+        this._status = 'error';
+        this.emit('statuschange', this._status);
+        this.emit('error', error);
+        reject(error);
+      };
 
-    this.socket.onclose = () => {
-      console.log('[Cartesia] Disconnected');
-      this._status = 'disconnected';
-      this.emit('statuschange', this._status);
-      this.emit('close');
-      this.socket = null;
-    };
+      this.socket.onclose = () => {
+        console.log('[Cartesia] Disconnected');
+        this._status = 'disconnected';
+        this.emit('statuschange', this._status);
+        this.emit('close');
+        this.socket = null;
+      };
+    });
   }
 
   private base64ToArrayBuffer(base64: string): ArrayBuffer {
@@ -199,6 +219,21 @@ export class CartesiaClient {
     if (this.socket?.readyState !== WebSocket.OPEN) {
       console.error('[Cartesia] Not connected');
       return;
+    }
+
+    // Resume audio context if browser suspended it
+    if (this.audioContext?.state === 'suspended') {
+      this.audioContext.resume();
+    }
+
+    // Stop any currently playing audio before starting new synthesis
+    if (this.isPlaying || this.audioQueue.length > 0) {
+      if (this.currentSource) {
+        this.currentSource.stop();
+        this.currentSource = null;
+      }
+      this.audioQueue = [];
+      this.isPlaying = false;
     }
 
     // Get voice for language or use default

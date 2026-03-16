@@ -8,12 +8,14 @@ import { useVoiceTranslator } from '@/hooks/useVoiceTranslator';
 import { CartesiaClient } from '@/lib/cartesia-client';
 
 
+import { cn } from '@/lib/utils';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { InputArea } from '@/components/chat/InputArea';
 import { LanguageSelector } from '@/components/chat/LanguageSelector';
 import type { OrbState } from '@/components/voice/Orb';
+import { Ear, Mic } from 'lucide-react';
 import { CurrencyConverterView } from '@/components/currency/CurrencyConverterView';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { PhrasesView } from '@/components/phrases/PhrasesView';
@@ -64,6 +66,7 @@ export default function TranslatorPage() {
   const [callPreFill, setCallPreFill] = useState<{ task: string; phone: string } | null>(null);
   const [exploreCategory, setExploreCategory] = useState<PlaceCategory | null>(null);
   const [showExplore, setShowExplore] = useState(false);
+  const [listenMode, setListenMode] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastRelayedLenRef = useRef(0);
@@ -74,27 +77,48 @@ export default function TranslatorPage() {
   // Handle translation results from voice
   const handleVoiceTranslation = useCallback(
     (original: string, translation: string, pronunciation?: string, response?: string) => {
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        role: 'user',
-        text: original,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        text: response || original,
-        translation,
-        pronunciation,
-        originalText: response || undefined,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
+      if (listenMode) {
+        // In listen mode, the other person spoke in the foreign language.
+        // Show their speech as an assistant message with translation.
+        const theirMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          text: original,
+          translation,
+          pronunciation,
+          timestamp: now,
+        };
+        setMessages((prev) => [...prev, theirMessage]);
+      } else {
+        // Normal mode: user spoke in their language
+        const userMessage: Message = {
+          id: Date.now().toString(),
+          role: 'user',
+          text: original,
+          timestamp: now,
+        };
 
-      setMessages((prev) => [...prev, userMessage, assistantMessage]);
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          text: response || original,
+          translation,
+          pronunciation,
+          originalText: response || undefined,
+          timestamp: now,
+        };
+
+        setMessages((prev) => [...prev, userMessage, assistantMessage]);
+      }
     },
-    []
+    [listenMode]
   );
+
+  // Swap languages for voice pipeline when in listen mode
+  const voiceFromLang = listenMode ? toLang : fromLang;
+  const voiceToLang = listenMode ? fromLang : toLang;
 
   const {
     status: voiceStatus,
@@ -109,8 +133,8 @@ export default function TranslatorPage() {
   } = useVoiceTranslator({
     deepgramApiKey,
     cartesiaApiKey,
-    fromLanguage: fromLang.name,
-    toLanguage: toLang.name,
+    fromLanguage: voiceFromLang.name,
+    toLanguage: voiceToLang.name,
     onTranslation: handleVoiceTranslation,
     onError: (error) => {
       console.error('Voice error:', error);
@@ -313,6 +337,7 @@ export default function TranslatorPage() {
       stopSpeaking();
     } else if (isConnected) {
       disconnectVoice();
+      setListenMode(false);
     } else {
       await connectVoice();
     }
@@ -493,6 +518,33 @@ export default function TranslatorPage() {
           <p className="text-[15px] text-center text-[rgba(235,235,245,0.8)] truncate">
             {currentTranscript}
           </p>
+        </div>
+      )}
+
+      {/* Listen mode toggle - visible when voice is connected */}
+      {isConnected && (
+        <div className="flex justify-center px-4 pt-1.5 pb-0.5">
+          <button
+            onClick={() => setListenMode((prev) => !prev)}
+            className={cn(
+              'flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200',
+              listenMode
+                ? 'bg-violet-500/20 text-violet-300 ring-1 ring-violet-500/40'
+                : 'bg-secondary/60 text-muted-foreground hover:text-foreground hover:bg-secondary'
+            )}
+          >
+            {listenMode ? (
+              <>
+                <Ear className="h-3.5 w-3.5" />
+                <span>Listening to them ({toLang.flag} {toLang.name})</span>
+              </>
+            ) : (
+              <>
+                <Mic className="h-3.5 w-3.5" />
+                <span>I speak ({fromLang.flag} {fromLang.name})</span>
+              </>
+            )}
+          </button>
         </div>
       )}
 
