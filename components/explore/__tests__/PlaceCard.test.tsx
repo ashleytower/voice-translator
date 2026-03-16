@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { PlaceCard } from '../PlaceCard';
 import type { NearbyPlace } from '@/types';
 
@@ -108,5 +108,49 @@ describe('PlaceCard', () => {
     const noRating: NearbyPlace = { ...basePlace, rating: null, ratingCount: 0 };
     render(<PlaceCard place={noRating} categoryColor="#FF6B35" />);
     expect(screen.queryByText(/★/)).not.toBeInTheDocument();
+  });
+
+  it('renders save button when onToggleSave is provided', () => {
+    render(<PlaceCard place={basePlace} categoryColor="#FF6B35" onToggleSave={() => {}} />);
+    expect(screen.getByLabelText('Save place')).toBeInTheDocument();
+  });
+
+  it('does not render save button when onToggleSave is not provided', () => {
+    render(<PlaceCard place={basePlace} categoryColor="#FF6B35" />);
+    expect(screen.queryByLabelText('Save place')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Remove saved place')).not.toBeInTheDocument();
+  });
+
+  it('shows filled star when isSaved is true', () => {
+    render(<PlaceCard place={basePlace} categoryColor="#FF6B35" isSaved={true} onToggleSave={() => {}} />);
+    const button = screen.getByLabelText('Remove saved place');
+    const path = button.querySelector('path');
+    expect(path).toHaveAttribute('fill', '#f5c842');
+  });
+
+  it('shows outline star when isSaved is false', () => {
+    render(<PlaceCard place={basePlace} categoryColor="#FF6B35" isSaved={false} onToggleSave={() => {}} />);
+    const button = screen.getByLabelText('Save place');
+    const path = button.querySelector('path');
+    expect(path).toHaveAttribute('fill', 'none');
+  });
+
+  it('calls onToggleSave when star button clicked', () => {
+    const handleToggle = vi.fn();
+    render(<PlaceCard place={basePlace} categoryColor="#FF6B35" onToggleSave={handleToggle} />);
+    fireEvent.click(screen.getByLabelText('Save place'));
+    expect(handleToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('has correct aria-label based on saved state', () => {
+    const { rerender } = render(
+      <PlaceCard place={basePlace} categoryColor="#FF6B35" isSaved={false} onToggleSave={() => {}} />
+    );
+    expect(screen.getByLabelText('Save place')).toBeInTheDocument();
+
+    rerender(
+      <PlaceCard place={basePlace} categoryColor="#FF6B35" isSaved={true} onToggleSave={() => {}} />
+    );
+    expect(screen.getByLabelText('Remove saved place')).toBeInTheDocument();
   });
 });

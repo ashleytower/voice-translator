@@ -13,9 +13,11 @@ const TYPE_EMOJI: Record<string, string> = {
 interface PlaceCardProps {
   place: NearbyPlace;
   categoryColor: string;
+  isSaved?: boolean;
+  onToggleSave?: () => void;
 }
 
-export function PlaceCard({ place, categoryColor }: PlaceCardProps) {
+export function PlaceCard({ place, categoryColor, isSaved, onToggleSave }: PlaceCardProps) {
   const emoji = TYPE_EMOJI[place.type] ?? '📍';
 
   return (
@@ -51,6 +53,28 @@ export function PlaceCard({ place, categoryColor }: PlaceCardProps) {
           background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%)',
         }}
       />
+
+      {/* Save/star button -- top left */}
+      {onToggleSave && (
+        <button
+          type="button"
+          onClick={onToggleSave}
+          aria-label={isSaved ? 'Remove saved place' : 'Save place'}
+          className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"
+              fill={isSaved ? '#f5c842' : 'none'}
+              stroke={isSaved ? '#f5c842' : 'rgba(255,255,255,0.5)'}
+              strokeWidth="2"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      )}
 
       {/* Open/Closed badge -- top right */}
       {place.isOpen !== null && (

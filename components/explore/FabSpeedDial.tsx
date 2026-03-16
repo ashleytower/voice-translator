@@ -5,6 +5,7 @@ import type { PlaceCategory } from '@/types';
 
 interface FabSpeedDialProps {
   onCategorySelect: (category: PlaceCategory) => void;
+  onSearchSelect?: () => void;
   visible: boolean;
 }
 
@@ -21,7 +22,7 @@ const CATEGORIES: Array<{
   { category: 'cafe', label: 'Coffee', emoji: '\u{2615}', color: '#c4a882' },
 ];
 
-export function FabSpeedDial({ onCategorySelect, visible }: FabSpeedDialProps) {
+export function FabSpeedDial({ onCategorySelect, onSearchSelect, visible }: FabSpeedDialProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleToggle = useCallback(() => {
@@ -39,6 +40,11 @@ export function FabSpeedDial({ onCategorySelect, visible }: FabSpeedDialProps) {
     },
     [onCategorySelect],
   );
+
+  const handleSearchClick = useCallback(() => {
+    onSearchSelect?.();
+    setIsOpen(false);
+  }, [onSearchSelect]);
 
   if (!visible) {
     return null;
@@ -84,6 +90,37 @@ export function FabSpeedDial({ onCategorySelect, visible }: FabSpeedDialProps) {
                 </div>
               </button>
             ))}
+
+            {/* Search button - rendered last so it appears at the top in flex-col-reverse */}
+            <button
+              className="flex items-center gap-2 group"
+              onClick={handleSearchClick}
+              style={{
+                animation: `fabItemIn 250ms cubic-bezier(0.34, 1.56, 0.64, 1) ${CATEGORIES.length * 50}ms both`,
+              }}
+            >
+              <span className="text-sm font-medium text-white bg-black/70 px-3 py-1.5 rounded-full whitespace-nowrap backdrop-blur-sm">
+                Search
+              </span>
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg shrink-0"
+                style={{ backgroundColor: '#6b7280' }}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M21 21l-4.35-4.35" />
+                </svg>
+              </div>
+            </button>
           </div>
         )}
 

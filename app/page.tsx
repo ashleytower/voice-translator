@@ -27,6 +27,7 @@ import { FabSpeedDial } from '@/components/explore/FabSpeedDial';
 import { ExploreView } from '@/components/explore/ExploreView';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import type { PlaceCategory } from '@/types';
 
 const STORAGE_KEY = 'fluent-messages';
@@ -62,6 +63,7 @@ export default function TranslatorPage() {
   const [showCallSheet, setShowCallSheet] = useState(false);
   const [callPreFill, setCallPreFill] = useState<{ task: string; phone: string } | null>(null);
   const [exploreCategory, setExploreCategory] = useState<PlaceCategory | null>(null);
+  const [showExplore, setShowExplore] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastRelayedLenRef = useRef(0);
@@ -119,6 +121,7 @@ export default function TranslatorPage() {
 
   const { latitude, longitude, error: geoError, loading: geoLoading } = useGeolocation();
   const { places: nearbyPlaces, loading: placesLoading } = useNearbyPlaces(latitude, longitude, exploreCategory);
+  const { savedPlaces, toggleSave, isSaved } = useSavedPlaces();
 
   const {
     status: callStatus,
@@ -364,6 +367,17 @@ export default function TranslatorPage() {
 
   const handleExploreBack = useCallback(() => {
     setExploreCategory(null);
+    setShowExplore(false);
+  }, []);
+
+  const handleCategorySelect = useCallback((category: PlaceCategory) => {
+    setExploreCategory(category);
+    setShowExplore(true);
+  }, []);
+
+  const handleSearchSelect = useCallback(() => {
+    setExploreCategory(null);
+    setShowExplore(true);
   }, []);
 
   // Build chat context for call
@@ -578,7 +592,7 @@ export default function TranslatorPage() {
     <main className="h-dvh flex flex-col overflow-hidden bg-background text-foreground dark">
       {renderCurrentView()}
       <ExploreView
-        visible={exploreCategory !== null}
+        visible={showExplore}
         category={exploreCategory}
         lat={latitude}
         lng={longitude}
@@ -586,6 +600,9 @@ export default function TranslatorPage() {
         loading={placesLoading}
         geoLoading={geoLoading}
         geoError={geoError}
+        savedPlaces={savedPlaces}
+        isSaved={isSaved}
+        onToggleSave={toggleSave}
         onBack={handleExploreBack}
       />
       <BottomNav
@@ -596,8 +613,9 @@ export default function TranslatorPage() {
         onOrbClick={handleOrbClick}
       />
       <FabSpeedDial
-        onCategorySelect={setExploreCategory}
-        visible={viewMode !== 'camera' && exploreCategory === null}
+        onCategorySelect={handleCategorySelect}
+        onSearchSelect={handleSearchSelect}
+        visible={viewMode !== 'camera' && !showExplore}
       />
     </main>
   );

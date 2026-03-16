@@ -80,4 +80,32 @@ describe('FabSpeedDial', () => {
     const button = screen.getByRole('button', { name: 'Explore nearby places' });
     expect(button).toHaveAttribute('aria-label', 'Explore nearby places');
   });
+
+  it('shows Search button when FAB is open', () => {
+    render(<FabSpeedDial {...defaultProps} />);
+    const fab = screen.getByRole('button', { name: /explore nearby places/i });
+    fireEvent.click(fab);
+
+    expect(screen.getByText('Search')).toBeInTheDocument();
+  });
+
+  it('calls onSearchSelect when Search clicked', () => {
+    const onSearchSelect = vi.fn();
+    render(<FabSpeedDial {...defaultProps} onSearchSelect={onSearchSelect} />);
+    const fab = screen.getByRole('button', { name: /explore nearby places/i });
+    fireEvent.click(fab);
+
+    fireEvent.click(screen.getByText('Search'));
+    expect(onSearchSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not crash when onSearchSelect is not provided', () => {
+    render(<FabSpeedDial onCategorySelect={vi.fn()} visible={true} />);
+    const fab = screen.getByRole('button', { name: /explore nearby places/i });
+    fireEvent.click(fab);
+
+    expect(() => {
+      fireEvent.click(screen.getByText('Search'));
+    }).not.toThrow();
+  });
 });

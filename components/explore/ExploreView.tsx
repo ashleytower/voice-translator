@@ -37,6 +37,8 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
 /*  Props                                                              */
 /* ------------------------------------------------------------------ */
 
+const SAVED_MARKER_ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" fill="%23f5c842" stroke="%23b8941f" stroke-width="1"/></svg>')}`;
+
 interface ExploreViewProps {
   visible: boolean;
   category: PlaceCategory | null;
@@ -46,6 +48,9 @@ interface ExploreViewProps {
   loading: boolean;
   geoLoading?: boolean;
   geoError?: string | null;
+  savedPlaces?: NearbyPlace[];
+  isSaved?: (placeId: string) => boolean;
+  onToggleSave?: (place: NearbyPlace) => void;
   onBack: () => void;
 }
 
@@ -62,8 +67,12 @@ export function ExploreView({
   loading,
   geoLoading,
   geoError,
+  savedPlaces = [],
+  isSaved,
+  onToggleSave,
   onBack,
 }: ExploreViewProps) {
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NearbyPlace[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -111,6 +120,13 @@ export function ExploreView({
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [searchQuery, lat, lng]);
+
+  // Auto-focus search input in search mode (no category selected)
+  useEffect(() => {
+    if (visible && category === null && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [visible, category]);
 
   if (!visible) return null;
 
@@ -163,6 +179,7 @@ export function ExploreView({
         {/* Search input */}
         <div className="flex-1 relative">
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Search places..."
             value={searchQuery}
@@ -232,6 +249,16 @@ export function ExploreView({
               {/* User location blue dot */}
               <UserLocationDot lat={lat!} lng={lng!} />
 
+              {/* Saved place star markers */}
+              {savedPlaces.map((place) => (
+                <Marker
+                  key={`saved-${place.id}`}
+                  position={{ lat: place.lat, lng: place.lng }}
+                  icon={SAVED_MARKER_ICON}
+                  title={`Saved: ${place.name}`}
+                />
+              ))}
+
               {/* Place markers */}
               {displayPlaces.map((place) => (
                 <Marker
@@ -288,7 +315,13 @@ export function ExploreView({
           {!displayLoading && displayPlaces.length > 0 && (
             <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
               {displayPlaces.map((place) => (
-                <PlaceCard key={place.id} place={place} categoryColor={isSearching ? '#666' : (meta?.color ?? '#666')} />
+                <PlaceCard
+                  key={place.id}
+                  place={place}
+                  categoryColor={isSearching ? '#666' : (meta?.color ?? '#666')}
+                  isSaved={isSaved?.(place.id)}
+                  onToggleSave={onToggleSave ? () => onToggleSave(place) : undefined}
+                />
               ))}
             </div>
           )}
