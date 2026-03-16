@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, Marker, InfoWindow } from '@vis.gl/react-google-maps';
 import type { NearbyPlace, PlaceCategory } from '@/types';
 import { PlaceCard } from './PlaceCard';
 
@@ -73,6 +73,7 @@ export function ExploreView({
   onBack,
 }: ExploreViewProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [selectedPlace, setSelectedPlace] = useState<NearbyPlace | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NearbyPlace[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -255,7 +256,8 @@ export function ExploreView({
                   key={`saved-${place.id}`}
                   position={{ lat: place.lat, lng: place.lng }}
                   icon={SAVED_MARKER_ICON}
-                  title={`Saved: ${place.name}`}
+                  title={place.name}
+                  onClick={() => setSelectedPlace(place)}
                 />
               ))}
 
@@ -264,8 +266,61 @@ export function ExploreView({
                 <Marker
                   key={place.id}
                   position={{ lat: place.lat, lng: place.lng }}
+                  title={place.name}
+                  onClick={() => setSelectedPlace(place)}
                 />
               ))}
+
+              {/* Info popup on marker tap */}
+              {selectedPlace && (
+                <InfoWindow
+                  position={{ lat: selectedPlace.lat, lng: selectedPlace.lng }}
+                  onCloseClick={() => setSelectedPlace(null)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 0' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
+                        {selectedPlace.name}
+                      </div>
+                      {selectedPlace.rating !== null && (
+                        <div style={{ fontSize: 11, color: '#666', marginTop: 1 }}>
+                          {'★'} {selectedPlace.rating}
+                          {selectedPlace.isOpen !== null && (
+                            <span style={{ marginLeft: 6, color: selectedPlace.isOpen ? '#16a34a' : '#dc2626' }}>
+                              {selectedPlace.isOpen ? 'Open' : 'Closed'}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {onToggleSave && (
+                      <button
+                        type="button"
+                        onClick={() => onToggleSave(selectedPlace)}
+                        aria-label={isSaved?.(selectedPlace.id) ? 'Remove saved place' : 'Save place'}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: 4,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"
+                            fill={isSaved?.(selectedPlace.id) ? '#f5c842' : 'none'}
+                            stroke={isSaved?.(selectedPlace.id) ? '#f5c842' : '#999'}
+                            strokeWidth="2"
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </InfoWindow>
+              )}
             </Map>
           </APIProvider>
         </div>
