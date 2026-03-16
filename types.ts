@@ -111,7 +111,7 @@ export interface AppSettings {
 
 export type ViewMode = 'translate' | 'camera' | 'convert' | 'settings' | 'phrases' | 'explore';
 
-export type PlaceCategory = 'restaurant' | 'train_station' | 'convenience_store' | 'pharmacy' | 'atm';
+export type PlaceCategory = 'restaurant' | 'train_station' | 'convenience_store' | 'pharmacy' | 'cafe';
 
 export interface NearbyPlace {
   id: string;

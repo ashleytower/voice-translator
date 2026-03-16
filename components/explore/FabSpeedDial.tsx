@@ -18,7 +18,7 @@ const CATEGORIES: Array<{
   { category: 'train_station', label: 'Stations', emoji: '\u{1F686}', color: '#4A90D9' },
   { category: 'convenience_store', label: 'Convenience', emoji: '\u{1F3EA}', color: '#48bb78' },
   { category: 'pharmacy', label: 'Pharmacy', emoji: '\u{1F48A}', color: '#9f7aea' },
-  { category: 'atm', label: 'ATMs', emoji: '\u{1F4B5}', color: '#ecc94b' },
+  { category: 'cafe', label: 'Coffee', emoji: '\u{2615}', color: '#c4a882' },
 ];
 
 export function FabSpeedDial({ onCategorySelect, visible }: FabSpeedDialProps) {

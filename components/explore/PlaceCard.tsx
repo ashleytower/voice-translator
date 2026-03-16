@@ -7,7 +7,7 @@ const TYPE_EMOJI: Record<string, string> = {
   train_station: '🚆',
   convenience_store: '🏪',
   pharmacy: '💊',
-  atm: '💵',
+  cafe: '☕',
 };
 
 interface PlaceCardProps {

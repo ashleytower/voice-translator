@@ -30,7 +30,7 @@ describe('FabSpeedDial', () => {
     expect(screen.getByText('Stations')).toBeInTheDocument();
     expect(screen.getByText('Convenience')).toBeInTheDocument();
     expect(screen.getByText('Pharmacy')).toBeInTheDocument();
-    expect(screen.getByText('ATMs')).toBeInTheDocument();
+    expect(screen.getByText('Coffee')).toBeInTheDocument();
   });
 
   it('calls onCategorySelect with correct category when item clicked', () => {
@@ -45,7 +45,7 @@ describe('FabSpeedDial', () => {
       { label: 'Stations', category: 'train_station' },
       { label: 'Convenience', category: 'convenience_store' },
       { label: 'Pharmacy', category: 'pharmacy' },
-      { label: 'ATMs', category: 'atm' },
+      { label: 'Coffee', category: 'cafe' },
     ];
 
     for (const { label, category } of expectedCategories) {

@@ -1,9 +1,11 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
 import type { NearbyPlace, PlaceCategory } from '@/types';
 import { PlaceCard } from './PlaceCard';
+
+const SEARCH_DEBOUNCE_MS = 400;
 
 /* ------------------------------------------------------------------ */
 /*  Category metadata                                                  */
@@ -14,7 +16,7 @@ const CATEGORY_META: Record<PlaceCategory, { label: string; color: string; emoji
   train_station: { label: 'Stations', color: '#4A90D9', emoji: '\u{1F686}' },
   convenience_store: { label: 'Convenience', color: '#48bb78', emoji: '\u{1F3EA}' },
   pharmacy: { label: 'Pharmacy', color: '#9f7aea', emoji: '\u{1F48A}' },
-  atm: { label: 'ATMs', color: '#ecc94b', emoji: '\u{1F4B5}' },
+  cafe: { label: 'Coffee', color: '#c4a882', emoji: '\u{2615}' },
 };
 
 /* ------------------------------------------------------------------ */
@@ -62,16 +64,62 @@ export function ExploreView({
   geoError,
   onBack,
 }: ExploreViewProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<NearbyPlace[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
+
   const handleBack = useCallback(() => {
+    setSearchQuery('');
+    setSearchResults([]);
     onBack();
   }, [onBack]);
+
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery.trim() || lat === null || lng === null) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    setSearchLoading(true);
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      if (searchAbortRef.current) searchAbortRef.current.abort();
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
+
+      try {
+        const url = `/api/places/search?query=${encodeURIComponent(searchQuery.trim())}&lat=${lat}&lng=${lng}`;
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error('Search failed');
+        const data = await res.json();
+        setSearchResults(Array.isArray(data) ? data : []);
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') {
+          setSearchResults([]);
+        }
+      } finally {
+        setSearchLoading(false);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery, lat, lng]);
 
   if (!visible) return null;
 
   const meta = category ? CATEGORY_META[category] : null;
   const hasLocation = lat !== null && lng !== null;
   const center = hasLocation ? { lat, lng } : { lat: 0, lng: 0 };
-  const safePlaces = places ?? [];
+  const isSearching = searchQuery.trim().length > 0;
+  const displayPlaces = isSearching ? searchResults : (places ?? []);
+  const displayLoading = isSearching ? searchLoading : loading;
 
   return (
     <div
@@ -103,7 +151,7 @@ export function ExploreView({
         </button>
 
         {/* Category pill */}
-        {meta && (
+        {meta && !isSearching && (
           <div
             className="px-3 py-1.5 rounded-full text-xs font-semibold text-white backdrop-blur-md"
             style={{ backgroundColor: `${meta.color}88` }}
@@ -111,6 +159,42 @@ export function ExploreView({
             {meta.emoji} {meta.label}
           </div>
         )}
+
+        {/* Search input */}
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            placeholder="Search places..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-8 pl-8 pr-8 rounded-full bg-black/50 backdrop-blur text-xs text-white placeholder-white/40 border border-white/10 outline-none focus:border-white/30"
+          />
+          <svg
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          {searchQuery && (
+            <button
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center"
+              onClick={() => setSearchQuery('')}
+            >
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 4l8 8M12 4l-8 8" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ---- Location required state ---- */}
@@ -149,7 +233,7 @@ export function ExploreView({
               <UserLocationDot lat={lat!} lng={lng!} />
 
               {/* Place markers */}
-              {safePlaces.map((place) => (
+              {displayPlaces.map((place) => (
                 <Marker
                   key={place.id}
                   position={{ lat: place.lat, lng: place.lng }}
@@ -167,19 +251,19 @@ export function ExploreView({
           style={{ height: '45%' }}
         >
           {/* Header */}
-          {meta && (
-            <div className="flex items-baseline justify-between mb-3">
-              <h2 className="text-[15px] font-bold text-white">{meta.label}</h2>
-              {!loading && safePlaces.length > 0 && (
-                <span className="text-xs text-white/50">
-                  {safePlaces.length} nearby
-                </span>
-              )}
-            </div>
-          )}
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-[15px] font-bold text-white">
+              {isSearching ? 'Search Results' : meta?.label ?? 'Nearby'}
+            </h2>
+            {!displayLoading && displayPlaces.length > 0 && (
+              <span className="text-xs text-white/50">
+                {displayPlaces.length} {isSearching ? 'found' : 'nearby'}
+              </span>
+            )}
+          </div>
 
           {/* Loading skeletons */}
-          {loading && (
+          {displayLoading && (
             <div className="flex gap-3 overflow-x-auto">
               {[0, 1, 2].map((i) => (
                 <div
@@ -192,17 +276,19 @@ export function ExploreView({
           )}
 
           {/* Empty state */}
-          {!loading && safePlaces.length === 0 && (
+          {!displayLoading && displayPlaces.length === 0 && (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-sm text-white/40">No places found nearby</p>
+              <p className="text-sm text-white/40">
+                {isSearching ? 'No results found' : 'No places found nearby'}
+              </p>
             </div>
           )}
 
           {/* Place cards */}
-          {!loading && safePlaces.length > 0 && (
+          {!displayLoading && displayPlaces.length > 0 && (
             <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
-              {safePlaces.map((place) => (
-                <PlaceCard key={place.id} place={place} categoryColor={meta?.color ?? '#666'} />
+              {displayPlaces.map((place) => (
+                <PlaceCard key={place.id} place={place} categoryColor={isSearching ? '#666' : (meta?.color ?? '#666')} />
               ))}
             </div>
           )}

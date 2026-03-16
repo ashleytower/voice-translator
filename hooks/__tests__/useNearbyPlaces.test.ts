@@ -153,7 +153,7 @@ describe('useNearbyPlaces', () => {
         initialProps: {
           lat: 35.6595 as number | null,
           lng: 139.7004 as number | null,
-          category: 'restaurant' as 'restaurant' | 'train_station' | 'convenience_store' | 'pharmacy' | 'atm' | null,
+          category: 'restaurant' as 'restaurant' | 'train_station' | 'convenience_store' | 'pharmacy' | 'cafe' | null,
         },
       }
     );
@@ -210,7 +210,7 @@ describe('useNearbyPlaces', () => {
         useNearbyPlaces(35.6595, 139.7004, category),
       {
         initialProps: {
-          category: 'restaurant' as 'restaurant' | 'train_station' | 'convenience_store' | 'pharmacy' | 'atm' | null,
+          category: 'restaurant' as 'restaurant' | 'train_station' | 'convenience_store' | 'pharmacy' | 'cafe' | null,
         },
       }
     );

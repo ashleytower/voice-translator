@@ -270,7 +270,7 @@ describe('GET /api/places/nearby', () => {
     });
 
     const { GET } = await import('../route');
-    const res = await GET(makeRequest({ lat: '35.66', lng: '139.77', type: 'atm' }));
+    const res = await GET(makeRequest({ lat: '35.66', lng: '139.77', type: 'cafe' }));
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -284,7 +284,7 @@ describe('GET /api/places/nearby', () => {
     });
 
     const { GET } = await import('../route');
-    const res = await GET(makeRequest({ lat: '35.66', lng: '139.77', type: 'atm' }));
+    const res = await GET(makeRequest({ lat: '35.66', lng: '139.77', type: 'cafe' }));
     const body = await res.json();
 
     expect(res.status).toBe(200);
