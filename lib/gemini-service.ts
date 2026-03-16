@@ -1,11 +1,4 @@
-import { GoogleGenAI, Type } from '@google/genai';
 import { TranslationResponse } from '@/types';
-
-// Initialize Gemini
-const getAI = () => {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
-  return new GoogleGenAI({ apiKey });
-};
 
 export const translateAndChat = async (
   text: string,
@@ -15,87 +8,25 @@ export const translateAndChat = async (
   travelerContext?: string
 ): Promise<TranslationResponse> => {
   try {
-    const ai = getAI();
-    const model = 'gemini-2.5-flash';
-
-    let promptText = `
-      You are a helpful AI translator and travel companion.
-      The user is speaking in ${fromLang} (or providing an image to analyze).
-
-      Task:
-      1. Translate the user's message (or describe/translate the text in the image) into ${toLang} naturally.
-      2. Provide the pronunciation (romanization) for the translation if the target language uses a non-Latin script.
-      3. Provide a short, helpful response in ${fromLang}.
-    `;
-
-    if (travelerContext) {
-      promptText += `\n${travelerContext}\n`;
-    }
-
-    promptText += `\n      User Message: "${text}"\n    `;
-
-    if (imageBase64) {
-      promptText +=
-        '\n [System: An image was attached. Analyze the image contents, text, or food items and help the user.]';
-    }
-
-    const contents: {
-      role: string;
-      parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }>;
-    } = {
-      role: 'user',
-      parts: [{ text: promptText }],
-    };
-
-    // If there is an image, strip the header (data:image/jpeg;base64,) and add to parts
-    if (imageBase64) {
-      const base64Data = imageBase64.split(',')[1];
-      const mimeType = imageBase64.substring(
-        imageBase64.indexOf(':') + 1,
-        imageBase64.indexOf(';')
-      );
-
-      contents.parts.push({
-        inlineData: {
-          mimeType: mimeType,
-          data: base64Data,
-        },
-      });
-    }
-
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: [contents],
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            translation: {
-              type: Type.STRING,
-              description: 'The translation or image description in the target language',
-            },
-            pronunciation: {
-              type: Type.STRING,
-              description: 'The romanized pronunciation',
-            },
-            response: {
-              type: Type.STRING,
-              description: 'A helpful reply in the source language',
-            },
-          },
-          required: ['translation', 'pronunciation', 'response'],
-        },
-      },
+    const response = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        fromLang,
+        toLang,
+        imageBase64,
+        travelerContext,
+      }),
     });
 
-    if (response.text) {
-      return JSON.parse(response.text) as TranslationResponse;
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
     }
 
-    throw new Error('No response from Gemini');
+    return await response.json();
   } catch (error) {
-    console.error('Gemini API Error:', error);
+    console.error('Translation error:', error);
     return {
       translation: 'Translation Unavailable',
       pronunciation: 'Error accessing service',
@@ -114,21 +45,20 @@ export const quickTranslate = async (
   toLang: string
 ): Promise<string> => {
   try {
-    const ai = getAI();
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              text: `Translate this from ${fromLang} to ${toLang}. Return ONLY the translation, nothing else.\n\n"${text}"`,
-            },
-          ],
-        },
-      ],
+    const response = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: `Translate this from ${fromLang} to ${toLang}. Return ONLY the translation, nothing else.\n\n"${text}"`,
+        fromLang,
+        toLang,
+      }),
     });
-    return response.text?.trim().replace(/^"|"$/g, '') || text;
+
+    if (!response.ok) return text;
+
+    const data = await response.json();
+    return data.translation?.trim().replace(/^"|"$/g, '') || text;
   } catch {
     return text;
   }

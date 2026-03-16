@@ -87,8 +87,8 @@ export default function TranslatorPage() {
     }
   }, [user])
 
-  const deepgramApiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || '';
-  const cartesiaApiKey = process.env.NEXT_PUBLIC_CARTESIA_API_KEY || '';
+  const deepgramApiKey = '';
+  const cartesiaApiKey = '';
 
   // Handle translation results from voice
   const handleVoiceTranslation = useCallback(

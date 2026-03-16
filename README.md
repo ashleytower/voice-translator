@@ -38,3 +38,7 @@ npm run dev
 ## Deployment
 
 Push to `main` branch for auto-deploy to Vercel.
+
+## Security Note
+
+All API calls to external services (Gemini, Deepgram, Cartesia, Google Maps, VAPI) are proxied through server-side API routes to keep sensitive API keys secure. These routes require an authenticated Supabase session.

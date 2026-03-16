@@ -1,64 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuth, standardError } from '@/lib/api-utils';
+import { FIELD_MASK, mapPlace, GooglePlace } from '@/lib/places-utils';
 import type { NearbyPlace } from '@/types';
 
-const FIELD_MASK = [
-  'places.id',
-  'places.displayName',
-  'places.formattedAddress',
-  'places.location',
-  'places.rating',
-  'places.userRatingCount',
-  'places.currentOpeningHours',
-  'places.nationalPhoneNumber',
-  'places.photos',
-  'places.primaryType',
-  'places.priceLevel',
-].join(',');
-
-interface GooglePlace {
-  id: string;
-  displayName?: { text: string; languageCode?: string };
-  formattedAddress?: string;
-  location?: { latitude: number; longitude: number };
-  rating?: number;
-  userRatingCount?: number;
-  currentOpeningHours?: { openNow?: boolean };
-  nationalPhoneNumber?: string;
-  photos?: Array<{ name: string }>;
-  primaryType?: string;
-  priceLevel?: string;
-}
-
-function buildPhotoUrl(photoName: string): string {
-  return `/api/places/photo?ref=${encodeURIComponent(photoName)}&maxWidth=400`;
-}
-
-function mapPlace(place: GooglePlace): NearbyPlace {
-  const firstPhoto = place.photos?.[0]?.name ?? null;
-
-  return {
-    id: place.id,
-    name: place.displayName?.text ?? '',
-    address: place.formattedAddress ?? '',
-    lat: place.location?.latitude ?? 0,
-    lng: place.location?.longitude ?? 0,
-    rating: place.rating ?? null,
-    ratingCount: place.userRatingCount ?? 0,
-    isOpen: place.currentOpeningHours?.openNow ?? null,
-    phone: place.nationalPhoneNumber ?? null,
-    photoUrl: firstPhoto ? buildPhotoUrl(firstPhoto) : null,
-    type: place.primaryType ?? '',
-    priceLevel: place.priceLevel ?? null,
-  };
-}
-
 export async function GET(request: NextRequest): Promise<Response> {
+  const user = await verifyAuth();
+  if (!user) {
+    return standardError('Unauthorized', 401);
+  }
+
   const serverKey = process.env.GOOGLE_MAPS_SERVER_KEY;
   if (!serverKey) {
-    return NextResponse.json(
-      { error: 'Google Maps API is not configured' },
-      { status: 500 }
-    );
+    return standardError('Google Maps API is not configured', 500);
   }
 
   const { searchParams } = request.nextUrl;
@@ -67,10 +20,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const lng = searchParams.get('lng');
 
   if (!query) {
-    return NextResponse.json(
-      { error: 'Missing required query parameter: query' },
-      { status: 400 }
-    );
+    return standardError('Missing required query parameter: query', 400);
   }
 
   const body: Record<string, unknown> = {
@@ -87,9 +37,8 @@ export async function GET(request: NextRequest): Promise<Response> {
     };
   }
 
-  let response: Response;
   try {
-    response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+    const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -98,26 +47,20 @@ export async function GET(request: NextRequest): Promise<Response> {
       },
       body: JSON.stringify(body),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Places Search] API error:', response.status, errorText);
+      return standardError('Failed to search places', 500);
+    }
+
+    const data = await response.json();
+    const places: GooglePlace[] = data.places ?? [];
+    const cleaned: NearbyPlace[] = places.map((p) => mapPlace(p));
+
+    return NextResponse.json(cleaned);
   } catch (err) {
     console.error('[Places Search] Network error:', err);
-    return NextResponse.json(
-      { error: 'Failed to search places' },
-      { status: 500 }
-    );
+    return standardError('Failed to search places', 500);
   }
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[Places Search] API error:', response.status, errorText);
-    return NextResponse.json(
-      { error: 'Failed to search places' },
-      { status: 500 }
-    );
-  }
-
-  const data = await response.json();
-  const places: GooglePlace[] = data.places ?? [];
-  const cleaned: NearbyPlace[] = places.map((p) => mapPlace(p));
-
-  return NextResponse.json(cleaned);
 }
