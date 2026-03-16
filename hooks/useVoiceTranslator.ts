@@ -12,8 +12,8 @@ import { translateAndChat } from '@/lib/gemini-service';
 export type VoiceStatus = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking' | 'error';
 
 export interface VoiceTranslatorConfig {
-  deepgramApiKey: string;
-  cartesiaApiKey: string;
+  deepgramApiKey?: string;
+  cartesiaApiKey?: string;
   fromLanguage: string;
   toLanguage: string;
   travelerContext?: string;
@@ -150,15 +150,12 @@ export function useVoiceTranslator(config: VoiceTranslatorConfig): UseVoiceTrans
     try {
       // Initialize Deepgram
       deepgramRef.current = new DeepgramClient({
-        apiKey: config.deepgramApiKey,
         language: config.fromLanguage.slice(0, 2),
         interimResults: true,
       });
 
       // Initialize Cartesia
-      cartesiaRef.current = new CartesiaClient({
-        apiKey: config.cartesiaApiKey,
-      });
+      cartesiaRef.current = new CartesiaClient({});
 
       // Set up Deepgram event handlers
       deepgramRef.current.on('transcript', handleTranscript as (...args: unknown[]) => void);
@@ -211,12 +208,12 @@ export function useVoiceTranslator(config: VoiceTranslatorConfig): UseVoiceTrans
     } catch (error) {
       console.error('[VoiceTranslator] Connection error:', error);
       setStatus('error');
-      if (config.onError) {
-        config.onError(error as Error);
+      if (configRef.current.onError) {
+        configRef.current.onError(error as Error);
       }
       disconnect();
     }
-  }, [config.deepgramApiKey, config.cartesiaApiKey, config.fromLanguage, handleTranscript, status]);
+  }, [configRef.current.fromLanguage, handleTranscript, status, disconnect]);
 
   const disconnect = useCallback(() => {
     // Clear any pending timeouts

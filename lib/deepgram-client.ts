@@ -6,7 +6,7 @@
 export type DeepgramStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 export interface DeepgramConfig {
-  apiKey: string;
+  apiKey?: string;
   language?: string;
   model?: string;
   punctuate?: boolean;
@@ -43,7 +43,7 @@ export class DeepgramClient {
     this.listeners.get(event)?.forEach((cb) => cb(...args));
   }
 
-  connect(language: string = 'en'): void {
+  async connect(language: string = 'en'): Promise<void> {
     if (this._status === 'connected' || this._status === 'connecting') {
       return;
     }
@@ -51,81 +51,95 @@ export class DeepgramClient {
     this._status = 'connecting';
     this.emit('statuschange', this._status);
 
-    const params = new URLSearchParams({
-      model: this.config.model || 'nova-2',
-      language: language,
-      punctuate: String(this.config.punctuate ?? true),
-      interim_results: String(this.config.interimResults ?? true),
-      encoding: 'linear16',
-      sample_rate: '16000',
-      channels: '1',
-      endpointing: '300',
-      smart_format: 'true',
-    });
-
-    const wsUrl = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
-
-    this.socket = new WebSocket(wsUrl, ['token', this.config.apiKey]);
-
-    this.socket.onopen = () => {
-      console.log('[Deepgram] Connected');
-      this._status = 'connected';
-      this.emit('statuschange', this._status);
-      this.emit('open');
-
-      // Keep connection alive
-      this.keepAliveInterval = setInterval(() => {
-        if (this.socket?.readyState === WebSocket.OPEN) {
-          this.socket.send(JSON.stringify({ type: 'KeepAlive' }));
-        }
-      }, 10000);
-    };
-
-    this.socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.type === 'Results') {
-          const transcript = data.channel?.alternatives?.[0]?.transcript;
-          const isFinal = data.is_final;
-          const speechFinal = data.speech_final;
-
-          if (transcript) {
-            this.emit('transcript', {
-              text: transcript,
-              isFinal,
-              speechFinal,
-              confidence: data.channel?.alternatives?.[0]?.confidence || 0,
-            });
-          }
-        }
-
-        if (data.type === 'SpeechStarted') {
-          this.emit('speechstart');
-        }
-
-        if (data.type === 'UtteranceEnd') {
-          this.emit('utteranceend');
-        }
-      } catch (error) {
-        console.error('[Deepgram] Failed to parse message:', error);
+    try {
+      // Fetch temporary key from our server
+      const response = await fetch('/api/stt/key');
+      if (!response.ok) {
+        throw new Error('Failed to fetch STT key');
       }
-    };
+      const { key } = await response.json();
 
-    this.socket.onerror = (error) => {
-      console.error('[Deepgram] WebSocket error:', error);
+      const params = new URLSearchParams({
+        model: this.config.model || 'nova-2',
+        language: language,
+        punctuate: String(this.config.punctuate ?? true),
+        interim_results: String(this.config.interimResults ?? true),
+        encoding: 'linear16',
+        sample_rate: '16000',
+        channels: '1',
+        endpointing: '300',
+        smart_format: 'true',
+      });
+
+      const wsUrl = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
+
+      this.socket = new WebSocket(wsUrl, ['token', key]);
+
+      this.socket.onopen = () => {
+        console.log('[Deepgram] Connected');
+        this._status = 'connected';
+        this.emit('statuschange', this._status);
+        this.emit('open');
+
+        // Keep connection alive
+        this.keepAliveInterval = setInterval(() => {
+          if (this.socket?.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify({ type: 'KeepAlive' }));
+          }
+        }, 10000);
+      };
+
+      this.socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.type === 'Results') {
+            const transcript = data.channel?.alternatives?.[0]?.transcript;
+            const isFinal = data.is_final;
+            const speechFinal = data.speech_final;
+
+            if (transcript) {
+              this.emit('transcript', {
+                text: transcript,
+                isFinal,
+                speechFinal,
+                confidence: data.channel?.alternatives?.[0]?.confidence || 0,
+              });
+            }
+          }
+
+          if (data.type === 'SpeechStarted') {
+            this.emit('speechstart');
+          }
+
+          if (data.type === 'UtteranceEnd') {
+            this.emit('utteranceend');
+          }
+        } catch (error) {
+          console.error('[Deepgram] Failed to parse message:', error);
+        }
+      };
+
+      this.socket.onerror = (error) => {
+        console.error('[Deepgram] WebSocket error:', error);
+        this._status = 'error';
+        this.emit('statuschange', this._status);
+        this.emit('error', error);
+      };
+
+      this.socket.onclose = (event) => {
+        console.log('[Deepgram] Disconnected:', event.code, event.reason);
+        this.cleanup();
+        this._status = 'disconnected';
+        this.emit('statuschange', this._status);
+        this.emit('close');
+      };
+    } catch (error) {
+      console.error('[Deepgram] Connection error:', error);
       this._status = 'error';
       this.emit('statuschange', this._status);
       this.emit('error', error);
-    };
-
-    this.socket.onclose = (event) => {
-      console.log('[Deepgram] Disconnected:', event.code, event.reason);
-      this.cleanup();
-      this._status = 'disconnected';
-      this.emit('statuschange', this._status);
-      this.emit('close');
-    };
+    }
   }
 
   sendAudio(audioData: ArrayBuffer | Blob): void {

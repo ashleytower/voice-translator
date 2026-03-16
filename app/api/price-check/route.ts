@@ -2,6 +2,7 @@ export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI, Type } from '@google/genai';
+import { verifyAuth, standardError } from '@/lib/api-utils';
 
 // ── Types ──
 
@@ -109,7 +110,7 @@ async function analyzeWithGemini(
   homeCurrency: string,
   searchContext: string
 ): Promise<PriceCheckResponse> {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY ?? '';
+  const apiKey = process.env.GOOGLE_API_KEY ?? '';
   const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `Based on these search results about "${productName}" pricing, determine:
@@ -130,7 +131,7 @@ For savings, give a percentage like "~25% cheaper" or "~10% more expensive".
 For explanation, write 1-2 sentences a traveler would find helpful.`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-1.5-flash',
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config: {
       responseMimeType: 'application/json',
@@ -177,23 +178,22 @@ For explanation, write 1-2 sentences a traveler would find helpful.`;
 // ── POST handler ──
 
 export async function POST(request: NextRequest): Promise<Response> {
+  const user = await verifyAuth();
+  if (!user) {
+    return standardError('Unauthorized', 401);
+  }
+
   let body: PriceCheckRequest;
   try {
     body = (await request.json()) as PriceCheckRequest;
   } catch {
-    return NextResponse.json(
-      { error: 'Invalid JSON body' },
-      { status: 400 }
-    );
+    return standardError('Invalid JSON body', 400);
   }
 
   const { productName, storeName, foreignPrice, foreignCurrency, convertedPrice, homeCurrency } = body;
 
   if (!productName || convertedPrice == null || !homeCurrency) {
-    return NextResponse.json(
-      { error: 'Missing required fields: productName, convertedPrice, homeCurrency' },
-      { status: 400 }
-    );
+    return standardError('Missing required fields: productName, convertedPrice, homeCurrency', 400);
   }
 
   // Step 1: Try Tavily search for real pricing data

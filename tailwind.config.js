@@ -56,9 +56,31 @@ module.exports = {
           from: { opacity: '0', transform: 'translateY(8px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        'orb-breathe': {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.8' },
+          '50%': { transform: 'scale(1.05)', opacity: '1' },
+        },
+        'orb-pulse': {
+          '0%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(139, 92, 246, 0.4)' },
+          '70%': { transform: 'scale(1.05)', boxShadow: '0 0 0 10px rgba(139, 92, 246, 0)' },
+          '100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(139, 92, 246, 0)' },
+        },
+        'orb-wave': {
+          '0%': { transform: 'scale(1) translateY(0)' },
+          '50%': { transform: 'scale(1.02) translateY(-2px)' },
+          '100%': { transform: 'scale(1) translateY(0)' },
+        },
+        'slide-up': {
+          from: { transform: 'translateY(100%)' },
+          to: { transform: 'translateY(0)' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.2s ease-out',
+        'orb-breathe': 'orb-breathe 3s ease-in-out infinite',
+        'orb-pulse': 'orb-pulse 2s infinite',
+        'orb-wave': 'orb-wave 1s ease-in-out infinite',
+        'slide-up': 'slide-up 0.3s ease-out',
       },
     },
   },

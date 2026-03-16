@@ -2,8 +2,9 @@ export const runtime = 'edge';
 export const preferredRegion = 'iad1';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase-server';
 
-// ── In-memory state (shared across concurrent requests in the same Edge isolate) ──
+// ── Types ──
 
 interface TranscriptEntry {
   role: string;
@@ -17,9 +18,6 @@ interface PendingDecision {
   resolved: boolean;
   answer?: string;
 }
-
-const callTranscripts = new Map<string, TranscriptEntry[]>();
-const pendingDecisions = new Map<string, PendingDecision>();
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -56,6 +54,7 @@ export async function GET(
 // ── Webhook: receives VAPI server events in real time ──
 
 async function handleWebhook(request: NextRequest): Promise<Response> {
+  const supabase = createServiceClient();
   let body: Record<string, unknown>;
   try {
     body = await request.json();
@@ -78,8 +77,15 @@ async function handleWebhook(request: NextRequest): Promise<Response> {
           text: message.transcript as string,
           timestamp: new Date().toISOString(),
         };
-        const existing = callTranscripts.get(callId) ?? [];
-        callTranscripts.set(callId, [...existing, entry]);
+
+        const { data } = await supabase.from('vapi_calls').select('transcript').eq('id', callId).single();
+        const existing = (data?.transcript as TranscriptEntry[]) ?? [];
+
+        await supabase.from('vapi_calls').upsert({
+          id: callId,
+          transcript: [...existing, entry],
+          updated_at: new Date().toISOString()
+        });
       }
       break;
     }
@@ -96,7 +102,11 @@ async function handleWebhook(request: NextRequest): Promise<Response> {
             timestamp: now,
           }));
         if (entries.length > 0) {
-          callTranscripts.set(callId, entries);
+           await supabase.from('vapi_calls').upsert({
+            id: callId,
+            transcript: entries,
+            updated_at: new Date().toISOString()
+          });
         }
       }
       break;
@@ -130,36 +140,42 @@ async function handleWebhook(request: NextRequest): Promise<Response> {
       const question = parsedArgs.question ?? 'What would you like to do?';
       const options = parsedArgs.options;
 
-      // Store pending decision — client sees this via /api/vapi/transcript
-      pendingDecisions.set(callId, { question, options, resolved: false });
+      const decision: PendingDecision = { question, options, resolved: false };
 
-      // Add to transcript so question appears in chat
-      const existing = callTranscripts.get(callId) ?? [];
-      callTranscripts.set(callId, [
-        ...existing,
-        {
-          role: 'system',
-          text: `[Decision needed] ${question}${options ? ` Options: ${options.join(', ')}` : ''}`,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      const { data } = await supabase.from('vapi_calls').select('transcript').eq('id', callId).single();
+      const existing = (data?.transcript as TranscriptEntry[]) ?? [];
+
+      await supabase.from('vapi_calls').upsert({
+        id: callId,
+        pending_decision: decision,
+        transcript: [
+          ...existing,
+          {
+            role: 'system',
+            text: `[Decision needed] ${question}${options ? ` Options: ${options.join(', ')}` : ''}`,
+            timestamp: new Date().toISOString(),
+          },
+        ],
+        updated_at: new Date().toISOString()
+      });
 
       // Hold response for up to 20s waiting for the user's decision.
-      // Edge Runtime allows 25s; we leave 5s margin for overhead.
       const TIMEOUT_MS = 20_000;
-      const POLL_MS = 300;
+      const POLL_MS = 1000;
       const deadline = Date.now() + TIMEOUT_MS;
 
       const answer = await new Promise<string>((resolve) => {
-        const poll = () => {
-          const decision = pendingDecisions.get(callId);
-          if (decision?.resolved && decision.answer) {
-            pendingDecisions.delete(callId);
-            resolve(decision.answer);
+        const poll = async () => {
+          const { data: pollData } = await supabase.from('vapi_calls').select('pending_decision').eq('id', callId).single();
+          const currentDecision = pollData?.pending_decision as PendingDecision | null;
+
+          if (currentDecision?.resolved && currentDecision.answer) {
+            await supabase.from('vapi_calls').update({ pending_decision: null }).eq('id', callId);
+            resolve(currentDecision.answer);
             return;
           }
           if (Date.now() >= deadline) {
-            pendingDecisions.delete(callId);
+            await supabase.from('vapi_calls').update({ pending_decision: null }).eq('id', callId);
             resolve('The client did not respond yet. Politely ask the person to hold a bit longer.');
             return;
           }
@@ -174,7 +190,7 @@ async function handleWebhook(request: NextRequest): Promise<Response> {
     }
 
     case 'end-of-call-report': {
-      pendingDecisions.delete(callId);
+       await supabase.from('vapi_calls').update({ pending_decision: null }).eq('id', callId);
       break;
     }
 
@@ -188,25 +204,25 @@ async function handleWebhook(request: NextRequest): Promise<Response> {
 // ── Transcript: client polls for real-time transcript + pending decisions ──
 
 async function handleTranscript(request: NextRequest): Promise<Response> {
+  const supabase = createServiceClient();
   const callId = request.nextUrl.searchParams.get('callId');
   if (!callId || !UUID_REGEX.test(callId)) {
     return NextResponse.json({ error: 'Invalid callId' }, { status: 400 });
   }
 
-  const pending = pendingDecisions.get(callId);
+  const { data } = await supabase.from('vapi_calls').select('transcript, pending_decision').eq('id', callId).single();
 
   return NextResponse.json({
     callId,
-    transcript: callTranscripts.get(callId) ?? [],
-    pendingDecision: pending
-      ? { question: pending.question, options: pending.options ?? null, resolved: pending.resolved }
-      : null,
+    transcript: data?.transcript ?? [],
+    pendingDecision: data?.pending_decision ?? null,
   });
 }
 
 // ── Decision: user sends their answer; resolves the held webhook response ──
 
 async function handleDecision(request: NextRequest): Promise<Response> {
+  const supabase = createServiceClient();
   let body: Record<string, unknown>;
   try {
     body = await request.json();
@@ -222,14 +238,17 @@ async function handleDecision(request: NextRequest): Promise<Response> {
     return NextResponse.json({ error: 'decision required' }, { status: 400 });
   }
 
-  const pending = pendingDecisions.get(callId);
+  const { data } = await supabase.from('vapi_calls').select('pending_decision').eq('id', callId).single();
+  const pending = data?.pending_decision as PendingDecision | null;
+
   if (!pending) {
     return NextResponse.json({ success: false, reason: 'No pending decision' });
   }
 
-  // Resolve — the webhook poll loop in handleWebhook picks this up
   pending.resolved = true;
   pending.answer = decision.trim();
+
+  await supabase.from('vapi_calls').update({ pending_decision: pending }).eq('id', callId);
 
   return NextResponse.json({ success: true });
 }

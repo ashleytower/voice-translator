@@ -1,6 +1,8 @@
 export const maxDuration = 30;
 
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuth, standardError } from '@/lib/api-utils';
+import { createServiceClient } from '@/lib/supabase-server';
 
 const VAPI_API_KEY = process.env.VAPI_API_KEY;
 const VAPI_PHONE_NUMBER_ID = process.env.VAPI_PHONE_NUMBER_ID;
@@ -12,18 +14,20 @@ function validateCallId(callId: string | null): callId is string {
 }
 
 export async function POST(request: NextRequest) {
+  const user = await verifyAuth();
+  if (!user) {
+    return standardError('Unauthorized', 401);
+  }
+
   if (!VAPI_API_KEY || !VAPI_PHONE_NUMBER_ID) {
-    return NextResponse.json(
-      { error: 'VAPI not configured' },
-      { status: 500 }
-    );
+    return standardError('VAPI not configured', 500);
   }
 
   let body: Record<string, unknown>;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    return standardError('Invalid request body', 400);
   }
 
   const { phoneNumber, taskDescription, targetLanguage, userName } = body as {
@@ -34,10 +38,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (!phoneNumber || !taskDescription || !targetLanguage) {
-    return NextResponse.json(
-      { error: 'phoneNumber, taskDescription, and targetLanguage are required' },
-      { status: 400 }
-    );
+    return standardError('phoneNumber, taskDescription, and targetLanguage are required', 400);
   }
 
   // Only include name context if provided (for reservations etc.)
@@ -58,7 +59,7 @@ RULES:
 
   // Transient assistant — full config inline, no assistantId + overrides
   const assistant = {
-    serverUrl: 'https://foundintranslation.app/api/vapi/webhook',
+    serverUrl: `${request.nextUrl.origin}/api/vapi/webhook`,
     model: {
       provider: 'openai',
       model: 'gpt-4o',
@@ -79,9 +80,8 @@ RULES:
     backgroundDenoisingEnabled: true,
   };
 
-  let response: Response;
   try {
-    response = await fetch('https://api.vapi.ai/call', {
+    const response = await fetch('https://api.vapi.ai/call', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${VAPI_API_KEY}`,
@@ -95,80 +95,93 @@ RULES:
         },
       }),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[VAPI] Call creation failed:', response.status, errorText);
+      return standardError(`VAPI error (${response.status}): ${errorText}`, response.status);
+    }
+
+    const call = await response.json();
+
+    const supabase = createServiceClient();
+    await supabase.from('vapi_calls').insert({
+      id: call.id,
+      user_id: user.id,
+      transcript: [],
+      updated_at: new Date().toISOString()
+    });
+
+    return NextResponse.json({
+      callId: call.id,
+      status: call.status,
+      monitorUrl: call.monitor?.listenUrl || null,
+      controlUrl: call.monitor?.controlUrl || null,
+    });
   } catch (err) {
     console.error('[VAPI] Network error initiating call:', err);
-    return NextResponse.json({ error: 'Failed to reach VAPI' }, { status: 502 });
+    return standardError('Failed to reach VAPI', 502);
   }
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[VAPI] Call creation failed:', response.status, errorText);
-    return NextResponse.json(
-      { error: `VAPI error (${response.status}): ${errorText}` },
-      { status: response.status }
-    );
-  }
-
-  const call = await response.json();
-
-  return NextResponse.json({
-    callId: call.id,
-    status: call.status,
-    monitorUrl: call.monitor?.listenUrl || null,
-    controlUrl: call.monitor?.controlUrl || null,
-  });
 }
 
 export async function GET(request: NextRequest) {
+  const user = await verifyAuth();
+  if (!user) {
+    return standardError('Unauthorized', 401);
+  }
+
   if (!VAPI_API_KEY) {
-    return NextResponse.json({ error: 'VAPI not configured' }, { status: 500 });
+    return standardError('VAPI not configured', 500);
   }
 
   const callId = request.nextUrl.searchParams.get('callId');
   if (!validateCallId(callId)) {
-    return NextResponse.json({ error: 'Invalid or missing callId' }, { status: 400 });
+    return standardError('Invalid or missing callId', 400);
   }
 
-  let response: Response;
   try {
-    response = await fetch(`https://api.vapi.ai/call/${callId}`, {
+    const response = await fetch(`https://api.vapi.ai/call/${callId}`, {
       headers: { 'Authorization': `Bearer ${VAPI_API_KEY}` },
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[VAPI] Get call failed:', errorText);
+      return standardError('Failed to get call', response.status);
+    }
+
+    return NextResponse.json(await response.json());
   } catch (err) {
     console.error('[VAPI] Network error fetching call:', err);
-    return NextResponse.json({ error: 'Failed to reach VAPI' }, { status: 502 });
+    return standardError('Failed to reach VAPI', 502);
   }
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[VAPI] Get call failed:', errorText);
-    return NextResponse.json({ error: 'Failed to get call' }, { status: response.status });
-  }
-
-  return NextResponse.json(await response.json());
 }
 
 export async function PATCH(request: NextRequest) {
+  const user = await verifyAuth();
+  if (!user) {
+    return standardError('Unauthorized', 401);
+  }
+
   if (!VAPI_API_KEY) {
-    return NextResponse.json({ error: 'VAPI not configured' }, { status: 500 });
+    return standardError('VAPI not configured', 500);
   }
 
   let body: Record<string, unknown>;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    return standardError('Invalid request body', 400);
   }
 
   const { callId, message } = body as { callId?: string; message?: string };
   if (!validateCallId(callId ?? null) || !message?.trim()) {
-    return NextResponse.json({ error: 'Valid callId and message are required' }, { status: 400 });
+    return standardError('Valid callId and message are required', 400);
   }
 
-  let response: Response;
   try {
     // Inject a system message into the active call to redirect the AI
-    response = await fetch(`https://api.vapi.ai/call/${callId}/say`, {
+    const response = await fetch(`https://api.vapi.ai/call/${callId}/say`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${VAPI_API_KEY}`,
@@ -179,44 +192,44 @@ export async function PATCH(request: NextRequest) {
         endCallAfterSpoken: false,
       }),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[VAPI] Say message failed:', response.status, errorText);
+      return standardError(`VAPI error (${response.status}): ${errorText}`, response.status);
+    }
+
+    return NextResponse.json({ success: true });
   } catch (err) {
     console.error('[VAPI] Network error sending message:', err);
-    return NextResponse.json({ error: 'Failed to reach VAPI' }, { status: 502 });
+    return standardError('Failed to reach VAPI', 502);
   }
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[VAPI] Say message failed:', response.status, errorText);
-    return NextResponse.json(
-      { error: `VAPI error (${response.status}): ${errorText}` },
-      { status: response.status }
-    );
-  }
-
-  return NextResponse.json({ success: true });
 }
 
 export async function DELETE(request: NextRequest) {
+  const user = await verifyAuth();
+  if (!user) {
+    return standardError('Unauthorized', 401);
+  }
+
   if (!VAPI_API_KEY) {
-    return NextResponse.json({ error: 'VAPI not configured' }, { status: 500 });
+    return standardError('VAPI not configured', 500);
   }
 
   const callId = request.nextUrl.searchParams.get('callId');
   if (!validateCallId(callId)) {
-    return NextResponse.json({ error: 'Invalid or missing callId' }, { status: 400 });
+    return standardError('Invalid or missing callId', 400);
   }
 
-  let response: Response;
   try {
     // VAPI ends calls via POST to /call/{id}/hang, not DELETE
-    response = await fetch(`https://api.vapi.ai/call/${callId}/hang`, {
+    const response = await fetch(`https://api.vapi.ai/call/${callId}/hang`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${VAPI_API_KEY}` },
     });
+    return NextResponse.json({ success: response.ok });
   } catch (err) {
     console.error('[VAPI] Network error ending call:', err);
     return NextResponse.json({ success: false }, { status: 502 });
   }
-
-  return NextResponse.json({ success: response.ok });
 }

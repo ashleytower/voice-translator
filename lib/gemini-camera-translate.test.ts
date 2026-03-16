@@ -1,32 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-// Mock the @google/genai module
-vi.mock('@google/genai', () => ({
-  GoogleGenAI: vi.fn().mockImplementation(() => ({
-    models: {
-      generateContent: vi.fn(),
-    },
-  })),
-  Type: {
-    OBJECT: 'object',
-    STRING: 'string',
-    NUMBER: 'number',
-    ARRAY: 'array',
-  },
-}));
-
-import { GoogleGenAI } from '@google/genai';
 import { translateCameraImage } from '@/lib/gemini-camera-translate';
 
 describe('translateCameraImage', () => {
-  let mockGenerateContent: ReturnType<typeof vi.fn>;
+  const originalFetch = global.fetch;
+  let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGenerateContent = vi.fn();
-    (GoogleGenAI as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-      models: { generateContent: mockGenerateContent },
-    }));
+    fetchMock = vi.fn();
+    global.fetch = fetchMock as unknown as typeof global.fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
   });
 
   it('returns a CameraTranslationResult on success', async () => {
@@ -35,44 +21,38 @@ describe('translateCameraImage', () => {
       translatedText: 'Ramen ¥800',
       detectedLanguage: 'Japanese',
       confidence: 0.95,
-      segments: [{ region: 'center', original: 'ラーメン', translated: 'Ramen' }],
+      segments: [],
     };
 
-    mockGenerateContent.mockResolvedValueOnce({
-      text: JSON.stringify(fakeResult),
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => fakeResult,
     });
 
     const result = await translateCameraImage('base64encodedimage==', 'English');
 
     expect(result.translatedText).toBe('Ramen ¥800');
     expect(result.detectedLanguage).toBe('Japanese');
-    expect(result.segments).toHaveLength(1);
   });
 
-  it('passes the image as inlineData with jpeg mimeType', async () => {
-    mockGenerateContent.mockResolvedValueOnce({
-      text: JSON.stringify({
-        extractedText: 'test',
-        translatedText: 'test',
-        detectedLanguage: 'English',
-        confidence: 1,
-        segments: [],
-      }),
+  it('passes the image and mode to the API', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ translatedText: 'test' }),
     });
 
     await translateCameraImage('mybase64data', 'Spanish');
 
-    const callArgs = mockGenerateContent.mock.calls[0][0];
-    const imagePart = callArgs.contents[0].parts.find(
-      (p: { inlineData?: { mimeType: string; data: string } }) => p.inlineData
-    );
-    expect(imagePart).toBeDefined();
-    expect(imagePart.inlineData.mimeType).toBe('image/jpeg');
-    expect(imagePart.inlineData.data).toBe('mybase64data');
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/vision');
+    const body = JSON.parse(options.body);
+    expect(body.imageBase64).toBe('mybase64data');
+    expect(body.targetLanguage).toBe('Spanish');
+    expect(body.mode).toBe('translate');
   });
 
-  it('returns a fallback result when Gemini throws', async () => {
-    mockGenerateContent.mockRejectedValueOnce(new Error('API error'));
+  it('returns a fallback result when API fails', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('API error'));
 
     const result = await translateCameraImage('base64data', 'English');
 
@@ -81,31 +61,11 @@ describe('translateCameraImage', () => {
     expect(result.segments).toEqual([]);
   });
 
-  it('returns a fallback result when Gemini returns no text', async () => {
-    mockGenerateContent.mockResolvedValueOnce({ text: null });
+  it('returns a fallback result when API returns non-ok', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 500 });
 
     const result = await translateCameraImage('base64data', 'English');
 
     expect(result.translatedText).toBe('Translation unavailable');
-  });
-
-  it('includes target language in prompt content', async () => {
-    mockGenerateContent.mockResolvedValueOnce({
-      text: JSON.stringify({
-        extractedText: '',
-        translatedText: '',
-        detectedLanguage: 'French',
-        confidence: 0.9,
-        segments: [],
-      }),
-    });
-
-    await translateCameraImage('imagedata', 'Japanese');
-
-    const callArgs = mockGenerateContent.mock.calls[0][0];
-    const textPart = callArgs.contents[0].parts.find(
-      (p: { text?: string }) => p.text
-    );
-    expect(textPart.text).toContain('Japanese');
   });
 });
