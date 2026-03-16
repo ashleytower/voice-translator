@@ -37,7 +37,7 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
 /*  Props                                                              */
 /* ------------------------------------------------------------------ */
 
-const SAVED_MARKER_ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" fill="%23f5c842" stroke="%23b8941f" stroke-width="1"/></svg>')}`;
+const SAVED_MARKER_ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40"><path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.27 21.73 0 14 0z" fill="%23f5c842" stroke="%23c9a000" stroke-width="1.5"/><circle cx="14" cy="14" r="5" fill="white"/></svg>')}`;
 
 interface ExploreViewProps {
   visible: boolean;
