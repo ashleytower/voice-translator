@@ -266,6 +266,7 @@ export function ExploreView({
                 <Marker
                   key={place.id}
                   position={{ lat: place.lat, lng: place.lng }}
+                  icon={isSaved?.(place.id) ? SAVED_MARKER_ICON : undefined}
                   title={place.name}
                   onClick={() => setSelectedPlace(place)}
                 />
