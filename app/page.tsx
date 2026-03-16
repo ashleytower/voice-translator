@@ -162,7 +162,7 @@ export default function TranslatorPage() {
 
   const { latitude, longitude, error: geoError, loading: geoLoading } = useGeolocation();
   const { places: nearbyPlaces, loading: placesLoading } = useNearbyPlaces(latitude, longitude, exploreCategory);
-  const { savedPlaces, toggleSave, isSaved } = useSavedPlaces();
+  const { savedPlaces, toggleSave, isSaved } = useSavedPlaces(user?.id);
 
   const {
     status: callStatus,

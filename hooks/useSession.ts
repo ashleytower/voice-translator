@@ -1,15 +1,64 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { Session, User } from '@supabase/supabase-js'
 import type { TravelerProfile } from '@/types/database'
+import { saveMemory } from '@/lib/memory'
+import type { NearbyPlace, Message } from '@/types'
+
+const SAVED_PLACES_KEY = 'fit-saved-places'
+const MESSAGES_KEY = 'fluent-messages'
+
+/**
+ * One-time migration: push existing localStorage saved places and favorited
+ * messages to Supabase memory_nodes so they persist across devices.
+ * Runs in background -- does not block the UI.
+ */
+async function migrateLocalStorage(): Promise<void> {
+  // Migrate saved places
+  try {
+    const raw = localStorage.getItem(SAVED_PLACES_KEY)
+    if (raw) {
+      const places: NearbyPlace[] = JSON.parse(raw)
+      for (const place of places) {
+        await saveMemory('place', `Saved ${place.name} at ${place.address}`, {
+          place_id: place.id,
+          name: place.name,
+          address: place.address,
+          lat: place.lat,
+          lng: place.lng,
+        })
+      }
+    }
+  } catch {
+    // Non-critical -- localStorage may be empty or corrupt
+  }
+
+  // Migrate favorited messages
+  try {
+    const raw = localStorage.getItem(MESSAGES_KEY)
+    if (raw) {
+      const messages: Message[] = JSON.parse(raw)
+      const favorites = messages.filter((m) => m.isFavorite)
+      for (const fav of favorites) {
+        await saveMemory('phrase', fav.translation || fav.text, {
+          source: 'migration',
+          originalText: fav.text,
+        })
+      }
+    }
+  } catch {
+    // Non-critical
+  }
+}
 
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<TravelerProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const migrationFiredRef = useRef(false)
 
   const isOnboarded = profile !== null && profile.onboarded_at !== null
 
@@ -22,6 +71,7 @@ export function useSession() {
       .single()
 
     setProfile(data ?? null)
+    return data ?? null
   }, [])
 
   useEffect(() => {
@@ -33,7 +83,13 @@ export function useSession() {
         const { data: { session } } = await supabase.auth.getSession()
         setSession(session)
         setUser(user)
-        await fetchProfile(user.id)
+        const profileData = await fetchProfile(user.id)
+
+        // First sign-in: authenticated but no profile yet -- migrate localStorage
+        if (!profileData && !migrationFiredRef.current) {
+          migrationFiredRef.current = true
+          migrateLocalStorage() // fire-and-forget
+        }
       }
       setLoading(false)
     })
@@ -45,7 +101,13 @@ export function useSession() {
       setUser(session?.user ?? null)
 
       if (session?.user) {
-        await fetchProfile(session.user.id)
+        const profileData = await fetchProfile(session.user.id)
+
+        // First sign-in: authenticated but no profile yet -- migrate localStorage
+        if (!profileData && !migrationFiredRef.current) {
+          migrationFiredRef.current = true
+          migrateLocalStorage() // fire-and-forget
+        }
       } else {
         setProfile(null)
       }
