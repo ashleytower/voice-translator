@@ -262,15 +262,18 @@ export function ExploreView({
               ))}
 
               {/* Place markers */}
-              {displayPlaces.map((place) => (
-                <Marker
-                  key={place.id}
-                  position={{ lat: place.lat, lng: place.lng }}
-                  icon={isSaved?.(place.id) ? SAVED_MARKER_ICON : undefined}
-                  title={place.name}
-                  onClick={() => setSelectedPlace(place)}
-                />
-              ))}
+              {displayPlaces.map((place) => {
+                const saved = isSaved?.(place.id) ?? false;
+                return (
+                  <Marker
+                    key={`${place.id}-${saved ? 's' : 'u'}`}
+                    position={{ lat: place.lat, lng: place.lng }}
+                    icon={saved ? SAVED_MARKER_ICON : undefined}
+                    title={place.name}
+                    onClick={() => setSelectedPlace(place)}
+                  />
+                );
+              })}
 
               {/* Info popup on marker tap */}
               {selectedPlace && (
