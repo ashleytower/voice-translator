@@ -51,6 +51,7 @@ export function CameraTranslateView({
   const [priceResult, setPriceResult] = useState<PriceAnalysis | null>(null);
   const [dealResult, setDealResult] = useState<DealResult | null>(null);
   const [isCheckingDeal, setIsCheckingDeal] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   const { convert } = useExchangeRates();
   const homeInfo = HOME_CURRENCIES.find(c => c.code === homeCurrency) || HOME_CURRENCIES[0];
@@ -111,6 +112,7 @@ export function CameraTranslateView({
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
     const base64 = dataUrl.split(',')[1];
+    setCapturedImage(dataUrl);
 
     setCameraState('translating');
 
@@ -137,6 +139,7 @@ export function CameraTranslateView({
     setDishResult(null);
     setPriceResult(null);
     setDealResult(null);
+    setCapturedImage(null);
     setCameraState('ready');
   }, []);
 
@@ -196,6 +199,15 @@ export function CameraTranslateView({
         />
         {/* Hidden canvas for frame capture */}
         <canvas ref={canvasRef} className="hidden" />
+
+        {/* Frozen captured image overlay */}
+        {capturedImage && cameraState !== 'ready' && (
+          <img
+            src={capturedImage}
+            alt="Captured"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
 
         {/* Dim overlay while translating */}
         {(cameraState === 'capturing' || cameraState === 'translating') && (
@@ -329,6 +341,7 @@ export function CameraTranslateView({
             setDishResult(null);
             setPriceResult(null);
             setDealResult(null);
+            setCapturedImage(null);
             setCameraState('ready');
           }}
           className="mx-4 mb-3"
