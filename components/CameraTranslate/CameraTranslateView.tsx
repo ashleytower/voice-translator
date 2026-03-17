@@ -12,6 +12,10 @@ import { DishCard } from '@/components/chat/DishCard';
 import { PriceCard } from '@/components/chat/PriceCard';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { HOME_CURRENCIES } from '@/lib/currency-constants';
+import { saveMemory } from '@/lib/memory';
+import { uploadMemoryPhoto } from '@/lib/photo-upload';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useSession } from '@/hooks/useSession';
 
 interface DealResult {
   verdict: 'great_deal' | 'good_deal' | 'fair' | 'skip';
@@ -55,6 +59,8 @@ export function CameraTranslateView({
 
   const { convert } = useExchangeRates();
   const homeInfo = HOME_CURRENCIES.find(c => c.code === homeCurrency) || HOME_CURRENCIES[0];
+  const { user } = useSession();
+  const { isPaid } = useSubscription();
 
   // Start camera on mount
   useEffect(() => {
@@ -117,22 +123,44 @@ export function CameraTranslateView({
     setCameraState('translating');
 
     try {
+      let memoryContent: string | null = null
+      let memoryType: 'dish' | 'expense' | 'phrase' = 'phrase'
+
       if (cameraMode === 'price') {
         const priceRes = await analyzePrice(base64);
         setPriceResult(priceRes);
+        memoryContent = `Price: ${priceRes.productName} at ${priceRes.storeName}`
+        memoryType = 'expense'
       } else if (cameraMode === 'dish') {
         const dishRes = await analyzeDish(base64, fromLang?.name ?? 'English');
         setDishResult(dishRes);
+        memoryContent = `Dish: ${dishRes.dishName}`
+        memoryType = 'dish'
       } else {
         const translationResult = await translateCameraImage(base64, toLang.name);
         setResult(translationResult);
+        memoryContent = `Translation: ${translationResult.extractedText}`
+        memoryType = 'phrase'
       }
       setCameraState('result');
+
+      // Fire-and-forget: save memory + upload photo for authenticated paid users
+      if (user && isPaid && memoryContent) {
+        saveMemory(memoryType, memoryContent, { source: 'camera', mode: cameraMode }).then(
+          (nodeId) => {
+            if (nodeId) {
+              uploadMemoryPhoto(user.id, nodeId, dataUrl).catch(() => {
+                // Non-critical: photo upload failure is silently ignored
+              })
+            }
+          }
+        )
+      }
     } catch {
       setErrorMessage('Analysis failed. Tap the shutter to try again.');
       setCameraState('error');
     }
-  }, [cameraState, cameraMode, toLang.name, fromLang]);
+  }, [cameraState, cameraMode, toLang.name, fromLang, user, isPaid]);
 
   const handleRetry = useCallback(() => {
     setResult(null);

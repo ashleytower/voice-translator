@@ -25,6 +25,22 @@ vi.mock('@/lib/currency-constants', () => ({
   LANG_TO_CURRENCY: {},
 }));
 
+vi.mock('@/hooks/useSession', () => ({
+  useSession: () => ({ user: null }),
+}));
+
+vi.mock('@/hooks/useSubscription', () => ({
+  useSubscription: () => ({ tier: 'free', isPaid: false, isLoading: false }),
+}));
+
+vi.mock('@/lib/memory', () => ({
+  saveMemory: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock('@/lib/photo-upload', () => ({
+  uploadMemoryPhoto: vi.fn().mockResolvedValue(null),
+}));
+
 import { translateCameraImage } from '@/lib/gemini-camera-translate';
 import { analyzeDish } from '@/lib/gemini-dish-analyze';
 
