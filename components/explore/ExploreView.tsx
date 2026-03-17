@@ -4,6 +4,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { APIProvider, Map, Marker, InfoWindow } from '@vis.gl/react-google-maps';
 import type { NearbyPlace, PlaceCategory } from '@/types';
 import { PlaceCard } from './PlaceCard';
+import { ForYouSection } from './ForYouSection';
+import { FamiliarSpotsBanner } from './FamiliarSpotsBanner';
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -52,6 +54,9 @@ interface ExploreViewProps {
   isSaved?: (placeId: string) => boolean;
   onToggleSave?: (place: NearbyPlace) => void;
   onBack: () => void;
+  recommendations?: Array<{ place: NearbyPlace; explanation: string }>;
+  chainMatches?: Array<{ savedPlaceName: string; savedCity: string; nearbyPlace: NearbyPlace }>;
+  recommendationsLoading?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -71,6 +76,9 @@ export function ExploreView({
   isSaved,
   onToggleSave,
   onBack,
+  recommendations = [],
+  chainMatches = [],
+  recommendationsLoading = false,
 }: ExploreViewProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedPlace, setSelectedPlace] = useState<NearbyPlace | null>(null);
@@ -333,9 +341,26 @@ export function ExploreView({
       {/* ---- Card carousel (bottom 45%) ---- */}
       {hasLocation && (
         <div
-          className="flex-1 flex flex-col px-4 pt-4 pb-6"
+          className="flex-1 flex flex-col px-4 pt-4 pb-6 overflow-y-auto"
           style={{ height: '45%' }}
         >
+          {/* Familiar spots banner */}
+          {chainMatches.length > 0 && (
+            <FamiliarSpotsBanner
+              matches={chainMatches}
+              onTap={(place) => setSelectedPlace(place)}
+            />
+          )}
+
+          {/* For You section */}
+          {(recommendations.length > 0 || recommendationsLoading) && (
+            <ForYouSection
+              recommendations={recommendations}
+              loading={recommendationsLoading}
+              onPlaceClick={(place) => setSelectedPlace(place)}
+            />
+          )}
+
           {/* Header */}
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="text-[15px] font-bold text-white">
