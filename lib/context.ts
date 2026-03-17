@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase'
-import type { TravelerProfile, MemoryNode } from '@/types/database'
+import type { TravelerProfile, MemoryNode, UserPreference } from '@/types/database'
+import { getUserTier } from '@/lib/subscription'
 
 export async function assembleContext(userId: string): Promise<string | null> {
   const supabase = createClient()
@@ -34,6 +35,26 @@ export async function assembleContext(userId: string): Promise<string | null> {
     context += `\nRECENT MEMORIES:\n`
     for (const m of memories) {
       context += `- [${m.type}] ${m.content}\n`
+    }
+  }
+
+  // Append taste preferences for paid users
+  const tier = await getUserTier(userId)
+  if (tier === 'paid') {
+    const { data: preferences } = await supabase
+      .from('user_preferences')
+      .select('category, score, sample_count')
+      .eq('user_id', userId)
+      .order('score', { ascending: false })
+      .limit(10)
+
+    if (preferences && preferences.length > 0) {
+      context += `\nTASTE PREFERENCES:\n`
+      for (const pref of preferences) {
+        const score = typeof pref.score === 'number' ? pref.score.toFixed(2) : '0.00'
+        const samples = typeof pref.sample_count === 'number' ? pref.sample_count : 0
+        context += `- ${pref.category} (score: ${score}, ${samples} samples)\n`
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase'
 import type { MemoryNodeType } from '@/types/database'
+import { extractSignals, updatePreferences } from '@/lib/preference-engine'
 
 export interface SaveMemoryOptions {
   city?: string | null
@@ -36,6 +37,17 @@ export async function saveMemory(
   if (error) {
     console.error('saveMemory error:', error.message)
     return null
+  }
+
+  // Fire-and-forget preference extraction — do not block the return
+  if (data?.id) {
+    const signals = extractSignals(type, content, metadata ?? {})
+    if (signals.length > 0) {
+      updatePreferences(user.id, signals).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        console.error('updatePreferences error:', message)
+      })
+    }
   }
 
   return data?.id ?? null

@@ -153,4 +153,61 @@ describe('PlaceCard', () => {
     );
     expect(screen.getByLabelText('Remove saved place')).toBeInTheDocument();
   });
+
+  it('does not render PlaceRating when place is not saved', () => {
+    render(
+      <PlaceCard
+        place={basePlace}
+        categoryColor="#FF6B35"
+        isSaved={false}
+        onToggleSave={() => {}}
+        onRate={() => {}}
+      />
+    );
+    expect(screen.queryByTestId('user-rating')).not.toBeInTheDocument();
+  });
+
+  it('renders PlaceRating when isSaved=true and onRate is provided', () => {
+    render(
+      <PlaceCard
+        place={basePlace}
+        categoryColor="#FF6B35"
+        isSaved={true}
+        onToggleSave={() => {}}
+        onRate={() => {}}
+      />
+    );
+    expect(screen.getByTestId('user-rating')).toBeInTheDocument();
+    // Should have 5 star buttons inside the rating
+    const ratingContainer = screen.getByTestId('user-rating');
+    const starButtons = ratingContainer.querySelectorAll('button');
+    expect(starButtons).toHaveLength(5);
+  });
+
+  it('does not render PlaceRating when onRate is not provided even if saved', () => {
+    render(
+      <PlaceCard
+        place={basePlace}
+        categoryColor="#FF6B35"
+        isSaved={true}
+        onToggleSave={() => {}}
+      />
+    );
+    expect(screen.queryByTestId('user-rating')).not.toBeInTheDocument();
+  });
+
+  it('calls onRate when a star is clicked in the rating', () => {
+    const handleRate = vi.fn();
+    render(
+      <PlaceCard
+        place={basePlace}
+        categoryColor="#FF6B35"
+        isSaved={true}
+        onToggleSave={() => {}}
+        onRate={handleRate}
+      />
+    );
+    fireEvent.click(screen.getByLabelText('Rate 4 out of 5 stars'));
+    expect(handleRate).toHaveBeenCalledWith(4);
+  });
 });

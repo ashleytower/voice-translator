@@ -1,6 +1,7 @@
 'use client';
 
 import type { NearbyPlace } from '@/types';
+import { PlaceRating } from './PlaceRating';
 
 const TYPE_EMOJI: Record<string, string> = {
   restaurant: '🍴',
@@ -15,9 +16,11 @@ interface PlaceCardProps {
   categoryColor: string;
   isSaved?: boolean;
   onToggleSave?: () => void;
+  userRating?: number | null;
+  onRate?: (rating: number | null) => void;
 }
 
-export function PlaceCard({ place, categoryColor, isSaved, onToggleSave }: PlaceCardProps) {
+export function PlaceCard({ place, categoryColor, isSaved, onToggleSave, userRating, onRate }: PlaceCardProps) {
   const emoji = TYPE_EMOJI[place.type] ?? '📍';
 
   return (
@@ -115,6 +118,12 @@ export function PlaceCard({ place, categoryColor, isSaved, onToggleSave }: Place
             <span>{place.rating}</span>{' '}
             <span className="text-[rgba(235,235,245,0.4)]">({place.ratingCount})</span>
           </p>
+        )}
+
+        {isSaved && onRate && (
+          <div className="mt-1" data-testid="user-rating">
+            <PlaceRating rating={userRating ?? null} onRate={onRate} size="sm" />
+          </div>
         )}
 
         {place.phone && (
