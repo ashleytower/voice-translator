@@ -265,8 +265,8 @@ export function CameraTranslateView({
       <div className="bg-black/60 backdrop-blur-xl safe-area-bottom">
         {/* Translation result sheet */}
         {cameraState === 'result' && result && (
-          <div className="px-5 pt-4 pb-2 space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="px-5 pt-4 pb-2 space-y-3 max-h-[60vh] overflow-y-auto">
+            <div className="flex items-center justify-between sticky top-0 bg-black/60 backdrop-blur-sm pb-2 -mx-5 px-5 z-10">
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
                 {result.detectedLanguage}
               </span>
@@ -295,9 +295,38 @@ export function CameraTranslateView({
                 </button>
               </div>
             </div>
-            <p className="text-base font-medium leading-relaxed">{result.translatedText}</p>
-            {result.extractedText && result.extractedText !== result.translatedText && (
-              <p className="text-xs text-muted-foreground leading-relaxed">{result.extractedText}</p>
+            {/* Structured segments display */}
+            {result.segments && result.segments.length > 1 ? (
+              <div className="space-y-1">
+                {result.segments.reduce<{ currentRegion: string; elements: React.ReactNode[] }>(
+                  (acc, seg, i) => {
+                    if (seg.region && seg.region !== acc.currentRegion) {
+                      acc.elements.push(
+                        <p key={`region-${i}`} className="text-xs font-bold uppercase tracking-wider text-primary pt-3 pb-1 border-b border-white/10">
+                          {seg.region}
+                        </p>
+                      );
+                      acc.currentRegion = seg.region;
+                    }
+                    acc.elements.push(
+                      <div key={`seg-${i}`} className="py-1.5">
+                        <p className="text-sm font-medium leading-snug">{seg.translated}</p>
+                        {seg.original && seg.original !== seg.translated && (
+                          <p className="text-xs text-muted-foreground leading-snug mt-0.5">{seg.original}</p>
+                        )}
+                      </div>
+                    );
+                    return acc;
+                  },
+                  { currentRegion: '', elements: [] }
+                ).elements}
+              </div>
+            ) : (
+              /* Fallback: plain text with preserved line breaks */
+              <p className="text-base font-medium leading-relaxed whitespace-pre-line">{result.translatedText}</p>
+            )}
+            {result.segments && result.segments.length <= 1 && result.extractedText && result.extractedText !== result.translatedText && (
+              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{result.extractedText}</p>
             )}
           </div>
         )}

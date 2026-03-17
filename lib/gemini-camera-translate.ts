@@ -32,6 +32,13 @@ export async function translateCameraImage(
               text: `You are a travel assistant helping someone read a menu, sign, or notice.
 Analyze this image and extract ALL visible text.
 Translate everything into ${targetLanguage}.
+
+FORMATTING RULES:
+- Use newlines (\\n) to preserve the original layout — one line per menu item, sign line, etc.
+- For menus: put each dish on its own line as "Dish Name — $Price" followed by a newline and its description.
+- For section headers (like APPETIZERS, SALADS, SOUPS), put them on their own line in CAPS.
+- For the segments array: create one segment per menu item or distinct text block. Use the "region" field for the section it belongs to (e.g. "Appetizers", "Salads").
+
 Return ONLY valid JSON matching this exact structure — no markdown, no extra text.`,
             },
             {
