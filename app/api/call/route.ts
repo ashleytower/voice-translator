@@ -43,17 +43,28 @@ export async function POST(request: NextRequest) {
   // Only include name context if provided (for reservations etc.)
   const nameContext = userName ? `\nIf they need a name, use: ${userName}.` : '';
 
-  const systemPrompt = `You are making a phone call to a business RIGHT NOW. Speak only in ${targetLanguage}.
+  const systemPrompt = `You are making a phone call to a business RIGHT NOW on behalf of a client. Speak only in ${targetLanguage}.
 
 Your task: ${taskDescription}${nameContext}
 
-RULES:
-- Your FIRST message must greet AND ask your question in one sentence.
+LISTENING RULES:
+- WAIT for the person to finish speaking before you respond. Do not interrupt.
+- After you ask a question, STAY SILENT and wait for their full answer.
+- If you hear background noise, wait at least 3 seconds of silence before assuming they are done.
+- Repeat back key details you hear to confirm understanding (times, dates, prices).
+
+DECISION RULES:
+- When the business offers alternatives, options, or asks you to choose — you MUST call the check_with_user tool BEFORE accepting or declining anything.
+- When calling check_with_user, politely tell the business "One moment please, let me check" in ${targetLanguage}, then call the tool.
+- After getting the user's answer from check_with_user, relay it to the business naturally.
+- NEVER accept, decline, or commit to anything without checking with the user first via check_with_user.
+- NEVER hang up or end the call when alternatives are offered. Always check with the user.
+
+CONVERSATION RULES:
+- Your FIRST message must greet AND ask your question in one sentence in ${targetLanguage}.
 - Keep every reply to 1-2 sentences in ${targetLanguage}.
-- LISTEN to what they say and respond naturally.
-- ONLY do what the task says. If the task is to "check" or "ask about" something, gather the info (price, times, availability) then thank them and say goodbye. Do NOT buy, book, or commit to anything unless the task explicitly says to.
-- If they offer to sell or book something, say you need to check with someone first and you'll call back, then end the call politely.
 - If you reach voicemail, leave a short message after the beep.
+- Once the task is complete (reservation confirmed, info gathered, etc.), thank them and say goodbye.
 - Never narrate your actions. Never speak in English. Never break character.`;
 
   // Transient assistant — full config inline, no assistantId + overrides
@@ -63,6 +74,33 @@ RULES:
       provider: 'openai',
       model: 'gpt-4o',
       messages: [{ role: 'system', content: systemPrompt }],
+      tools: [
+        {
+          type: 'function' as const,
+          function: {
+            name: 'check_with_user',
+            description: 'Ask the client (user) a question and wait for their decision. Use this EVERY TIME the business offers alternatives, asks a question that requires the client decision, or when you need confirmation before committing to anything.',
+            parameters: {
+              type: 'object',
+              properties: {
+                question: {
+                  type: 'string',
+                  description: 'The question to ask the user, in English. Summarize what the business said and what options are available.',
+                },
+                options: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Available options to present to the user, if applicable.',
+                },
+              },
+              required: ['question'],
+            },
+          },
+          server: {
+            url: 'https://foundintranslation.app/api/vapi/webhook',
+          },
+        },
+      ],
     },
     voice: {
       provider: '11labs',
@@ -73,10 +111,13 @@ RULES:
       provider: 'deepgram',
       model: 'nova-3',
       language: 'multi',
+      endpointing: 500,
     },
     firstMessageMode: 'assistant-speaks-first-with-model-generated-message',
     backgroundSound: 'off',
     backgroundDenoisingEnabled: true,
+    silenceTimeoutSeconds: 30,
+    responseDelaySeconds: 1,
   };
 
   let response: Response;
