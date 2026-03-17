@@ -1,25 +1,32 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import Stripe from 'stripe'
 
 /**
  * POST /api/subscription/checkout
  *
- * Creates a Stripe Checkout session for subscription upgrade.
- *
- * Currently returns a 501 stub because the `stripe` npm package is not
- * installed. Once installed, this route will create a real Stripe Checkout
- * session and return the redirect URL.
+ * Creates a Stripe Checkout session for a one-time Travel Memory Pass purchase.
+ * Returns the Stripe-hosted checkout URL for redirect.
  *
  * Auth: Reads Supabase session from cookies.
- * Response (stub): { error, message } with status 501
- * Response (live): { url } with the Stripe Checkout URL
+ * Response: { url } with the Stripe Checkout URL
  */
 export async function POST(): Promise<Response> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+  const stripePriceId = process.env.STRIPE_PRICE_ID
+
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
+  }
+
+  if (!stripeSecretKey || !stripePriceId) {
+    return NextResponse.json(
+      { error: 'Stripe not configured. Set STRIPE_SECRET_KEY and STRIPE_PRICE_ID.' },
+      { status: 501 },
+    )
   }
 
   const cookieStore = await cookies()
@@ -46,29 +53,23 @@ export async function POST(): Promise<Response> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // ── Stripe package not installed -- return stub ──
-  // TODO: Once `stripe` is installed, replace this block with real Checkout logic:
-  //
-  // 1. Validate STRIPE_SECRET_KEY and STRIPE_PRICE_ID env vars
-  // 2. Create Stripe instance: new Stripe(STRIPE_SECRET_KEY)
-  // 3. Create checkout session:
-  //    const session = await stripe.checkout.sessions.create({
-  //      mode: 'subscription',
-  //      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
-  //      customer_email: user.email,
-  //      success_url: `${origin}/explore?upgraded=true`,
-  //      cancel_url: `${origin}/explore`,
-  //      client_reference_id: user.id,
-  //      metadata: { userId: user.id },
-  //    })
-  // 4. Return { url: session.url }
+  const stripe = new Stripe(stripeSecretKey)
 
-  return NextResponse.json(
-    {
-      error: 'Stripe not configured',
-      message:
-        'Install stripe package and set STRIPE_SECRET_KEY to enable payments',
-    },
-    { status: 501 },
-  )
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://foundintranslation.app'
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    line_items: [{ price: stripePriceId, quantity: 1 }],
+    customer_email: user.email,
+    success_url: `${origin}/explore?upgraded=true`,
+    cancel_url: `${origin}/explore`,
+    client_reference_id: user.id,
+    metadata: { userId: user.id },
+  })
+
+  if (!session.url) {
+    return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 })
+  }
+
+  return NextResponse.json({ url: session.url })
 }
