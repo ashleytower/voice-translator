@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { X, Check } from 'lucide-react'
 
 interface PaywallSheetProps {
@@ -27,6 +27,34 @@ const PAID_FEATURES = [
 
 export function PaywallSheet({ isOpen, onClose, feature }: PaywallSheetProps) {
   const backdropRef = useRef<HTMLDivElement>(null)
+  const [upgradeLoading, setUpgradeLoading] = useState(false)
+  const [upgradeError, setUpgradeError] = useState<string | null>(null)
+
+  const handleUpgrade = useCallback(async () => {
+    setUpgradeLoading(true)
+    setUpgradeError(null)
+
+    try {
+      const res = await fetch('/api/subscription/checkout', { method: 'POST' })
+      const body = await res.json()
+
+      if (!res.ok) {
+        setUpgradeError(body.message ?? body.error ?? 'Something went wrong')
+        return
+      }
+
+      if (body.url) {
+        window.location.href = body.url
+        return
+      }
+
+      setUpgradeError('No checkout URL returned')
+    } catch {
+      setUpgradeError('Network error. Please try again.')
+    } finally {
+      setUpgradeLoading(false)
+    }
+  }, [])
 
   // Close on Escape key
   useEffect(() => {
@@ -124,14 +152,17 @@ export function PaywallSheet({ isOpen, onClose, feature }: PaywallSheetProps) {
 
           {/* CTA buttons */}
           <button
-            onClick={() => {
-              // TODO: Wire to Stripe Checkout in Phase 4
-              onClose()
-            }}
-            className="mt-6 w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
+            onClick={handleUpgrade}
+            disabled={upgradeLoading}
+            className="mt-6 w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Upgrade to Pro
+            {upgradeLoading ? 'Loading...' : 'Upgrade to Pro'}
           </button>
+          {upgradeError && (
+            <p className="mt-2 text-xs text-destructive text-center" role="alert">
+              {upgradeError}
+            </p>
+          )}
           <button
             onClick={onClose}
             className="mt-2 w-full h-10 rounded-xl text-muted-foreground text-sm hover:text-foreground transition-colors"

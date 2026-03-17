@@ -6,6 +6,10 @@ import type { NearbyPlace, PlaceCategory } from '@/types';
 import { PlaceCard } from './PlaceCard';
 import { ForYouSection } from './ForYouSection';
 import { FamiliarSpotsBanner } from './FamiliarSpotsBanner';
+import { MemoryTimeline } from '../memory/MemoryTimeline';
+import { PaywallSheet } from '../subscription/PaywallSheet';
+
+type ExploreSubView = 'nearby' | 'foryou' | 'memory';
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -57,6 +61,7 @@ interface ExploreViewProps {
   recommendations?: Array<{ place: NearbyPlace; explanation: string }>;
   chainMatches?: Array<{ savedPlaceName: string; savedCity: string; nearbyPlace: NearbyPlace }>;
   recommendationsLoading?: boolean;
+  isPaid?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -79,6 +84,7 @@ export function ExploreView({
   recommendations = [],
   chainMatches = [],
   recommendationsLoading = false,
+  isPaid = false,
 }: ExploreViewProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedPlace, setSelectedPlace] = useState<NearbyPlace | null>(null);
@@ -87,6 +93,8 @@ export function ExploreView({
   const [searchLoading, setSearchLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
+  const [subView, setSubView] = useState<ExploreSubView>('nearby');
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const handleBack = useCallback(() => {
     setSearchQuery('');
@@ -223,136 +231,68 @@ export function ExploreView({
         </div>
       </div>
 
-      {/* ---- Location required state ---- */}
-      {!hasLocation && !geoLoading && (
-        <div className="flex-1 flex flex-col items-center justify-center px-8 gap-4">
-          <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-3xl">
-            {'\u{1F4CD}'}
-          </div>
-          <p className="text-base font-semibold text-white text-center">Location access needed</p>
-          <p className="text-sm text-white/50 text-center leading-relaxed">
-            {geoError || 'Enable location services to discover places near you.'}
-          </p>
-        </div>
-      )}
-
-      {/* ---- Geolocation loading state ---- */}
-      {!hasLocation && geoLoading && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white/70 animate-spin" />
-          <p className="text-sm text-white/50">Finding your location...</p>
-        </div>
-      )}
-
-      {/* ---- Map (top 55%) ---- */}
-      {hasLocation && (
-        <div className="relative" style={{ height: '55%' }}>
-          <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY!}>
-            <Map
-              defaultCenter={center}
-              defaultZoom={15}
-              gestureHandling="greedy"
-              disableDefaultUI
-              styles={DARK_MAP_STYLES}
-            >
-              {/* User location blue dot */}
-              <UserLocationDot lat={lat!} lng={lng!} />
-
-              {/* Saved place star markers */}
-              {savedPlaces.map((place) => (
-                <Marker
-                  key={`saved-${place.id}`}
-                  position={{ lat: place.lat, lng: place.lng }}
-                  icon={SAVED_MARKER_ICON}
-                  title={place.name}
-                  onClick={() => setSelectedPlace(place)}
-                />
-              ))}
-
-              {/* Place markers */}
-              {displayPlaces.map((place) => {
-                const saved = isSaved?.(place.id) ?? false;
-                return (
-                  <Marker
-                    key={`${place.id}-${saved ? 's' : 'u'}`}
-                    position={{ lat: place.lat, lng: place.lng }}
-                    icon={saved ? SAVED_MARKER_ICON : undefined}
-                    title={place.name}
-                    onClick={() => setSelectedPlace(place)}
-                  />
-                );
-              })}
-
-              {/* Info popup on marker tap */}
-              {selectedPlace && (
-                <InfoWindow
-                  position={{ lat: selectedPlace.lat, lng: selectedPlace.lng }}
-                  onCloseClick={() => setSelectedPlace(null)}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 0' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
-                        {selectedPlace.name}
-                      </div>
-                      {selectedPlace.rating !== null && (
-                        <div style={{ fontSize: 11, color: '#666', marginTop: 1 }}>
-                          {'★'} {selectedPlace.rating}
-                          {selectedPlace.isOpen !== null && (
-                            <span style={{ marginLeft: 6, color: selectedPlace.isOpen ? '#16a34a' : '#dc2626' }}>
-                              {selectedPlace.isOpen ? 'Open' : 'Closed'}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    {onToggleSave && (
-                      <button
-                        type="button"
-                        onClick={() => onToggleSave(selectedPlace)}
-                        aria-label={isSaved?.(selectedPlace.id) ? 'Remove saved place' : 'Save place'}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: 4,
-                          flexShrink: 0,
-                        }}
-                      >
-                        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path
-                            d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"
-                            fill={isSaved?.(selectedPlace.id) ? '#f5c842' : 'none'}
-                            stroke={isSaved?.(selectedPlace.id) ? '#f5c842' : '#999'}
-                            strokeWidth="2"
-                            strokeLinejoin="round"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </InfoWindow>
-              )}
-            </Map>
-          </APIProvider>
-        </div>
-      )}
-
-      {/* ---- Card carousel (bottom 45%) ---- */}
-      {hasLocation && (
-        <div
-          className="flex-1 flex flex-col px-4 pt-4 pb-6 overflow-y-auto"
-          style={{ height: '45%' }}
+      {/* ---- Sub-navigation tabs ---- */}
+      <div className="flex gap-2 px-4 pt-14 pb-2" data-testid="explore-sub-nav">
+        <button
+          data-testid="tab-nearby"
+          className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+            subView === 'nearby'
+              ? 'bg-[#4A90D9] text-white'
+              : 'bg-white/10 text-white/60 hover:bg-white/20'
+          }`}
+          onClick={() => setSubView('nearby')}
         >
-          {/* Familiar spots banner */}
-          {chainMatches.length > 0 && (
-            <FamiliarSpotsBanner
-              matches={chainMatches}
-              onTap={(place) => setSelectedPlace(place)}
-            />
-          )}
+          Nearby
+        </button>
+        {isPaid && (
+          <button
+            data-testid="tab-foryou"
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              subView === 'foryou'
+                ? 'bg-[#4A90D9] text-white'
+                : 'bg-white/10 text-white/60 hover:bg-white/20'
+            }`}
+            onClick={() => setSubView('foryou')}
+          >
+            For You
+          </button>
+        )}
+        {isPaid && (
+          <button
+            data-testid="tab-memory"
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              subView === 'memory'
+                ? 'bg-[#4A90D9] text-white'
+                : 'bg-white/10 text-white/60 hover:bg-white/20'
+            }`}
+            onClick={() => {
+              setSubView('memory');
+            }}
+          >
+            Memory
+          </button>
+        )}
+        {!isPaid && (
+          <button
+            data-testid="tab-memory-locked"
+            className="px-4 py-1.5 rounded-full text-xs font-semibold bg-white/10 text-white/40 hover:bg-white/20 transition-colors"
+            onClick={() => setShowPaywall(true)}
+          >
+            Memory {'\u{1F512}'}
+          </button>
+        )}
+      </div>
 
-          {/* For You section */}
+      {/* ---- Memory sub-view (paid users) ---- */}
+      {subView === 'memory' && isPaid && (
+        <div className="flex-1 overflow-y-auto">
+          <MemoryTimeline onBack={() => setSubView('nearby')} />
+        </div>
+      )}
+
+      {/* ---- For You sub-view (paid users) ---- */}
+      {subView === 'foryou' && isPaid && hasLocation && (
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6">
           {(recommendations.length > 0 || recommendationsLoading) && (
             <ForYouSection
               recommendations={recommendations}
@@ -360,56 +300,225 @@ export function ExploreView({
               onPlaceClick={(place) => setSelectedPlace(place)}
             />
           )}
-
-          {/* Header */}
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-[15px] font-bold text-white">
-              {isSearching ? 'Search Results' : meta?.label ?? 'Nearby'}
-            </h2>
-            {!displayLoading && displayPlaces.length > 0 && (
-              <span className="text-xs text-white/50">
-                {displayPlaces.length} {isSearching ? 'found' : 'nearby'}
-              </span>
-            )}
-          </div>
-
-          {/* Loading skeletons */}
-          {displayLoading && (
-            <div className="flex gap-3 overflow-x-auto">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  data-testid="skeleton-card"
-                  className="min-w-[260px] h-36 rounded-2xl bg-white/10 animate-pulse shrink-0"
-                />
-              ))}
+          {chainMatches.length > 0 && (
+            <FamiliarSpotsBanner
+              matches={chainMatches}
+              onTap={(place) => setSelectedPlace(place)}
+            />
+          )}
+          {!recommendationsLoading && recommendations.length === 0 && chainMatches.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center px-8 gap-4 mt-16">
+              <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-3xl">
+                {'\u{2728}'}
+              </div>
+              <p className="text-base font-semibold text-white text-center">No recommendations yet</p>
+              <p className="text-sm text-white/50 text-center leading-relaxed">
+                Save more places and memories to get personalized suggestions.
+              </p>
             </div>
           )}
+        </div>
+      )}
 
-          {/* Empty state */}
-          {!displayLoading && displayPlaces.length === 0 && (
-            <div className="flex-1 flex items-center justify-center">
-              <p className="text-sm text-white/40">
-                {isSearching ? 'No results found' : 'No places found nearby'}
+      {/* ---- Paywall Sheet ---- */}
+      <PaywallSheet
+        isOpen={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        feature="Travel Memories"
+      />
+
+      {/* ---- Nearby sub-view (default) ---- */}
+      {subView === 'nearby' && (
+        <>
+          {/* ---- Location required state ---- */}
+          {!hasLocation && !geoLoading && (
+            <div className="flex-1 flex flex-col items-center justify-center px-8 gap-4">
+              <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-3xl">
+                {'\u{1F4CD}'}
+              </div>
+              <p className="text-base font-semibold text-white text-center">Location access needed</p>
+              <p className="text-sm text-white/50 text-center leading-relaxed">
+                {geoError || 'Enable location services to discover places near you.'}
               </p>
             </div>
           )}
 
-          {/* Place cards */}
-          {!displayLoading && displayPlaces.length > 0 && (
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
-              {displayPlaces.map((place) => (
-                <PlaceCard
-                  key={place.id}
-                  place={place}
-                  categoryColor={isSearching ? '#666' : (meta?.color ?? '#666')}
-                  isSaved={isSaved?.(place.id)}
-                  onToggleSave={onToggleSave ? () => onToggleSave(place) : undefined}
-                />
-              ))}
+          {/* ---- Geolocation loading state ---- */}
+          {!hasLocation && geoLoading && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+              <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white/70 animate-spin" />
+              <p className="text-sm text-white/50">Finding your location...</p>
             </div>
           )}
-        </div>
+
+          {/* ---- Map (top 55%) ---- */}
+          {hasLocation && (
+            <div className="relative" style={{ height: '55%' }}>
+              <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY!}>
+                <Map
+                  defaultCenter={center}
+                  defaultZoom={15}
+                  gestureHandling="greedy"
+                  disableDefaultUI
+                  styles={DARK_MAP_STYLES}
+                >
+                  {/* User location blue dot */}
+                  <UserLocationDot lat={lat!} lng={lng!} />
+
+                  {/* Saved place star markers */}
+                  {savedPlaces.map((place) => (
+                    <Marker
+                      key={`saved-${place.id}`}
+                      position={{ lat: place.lat, lng: place.lng }}
+                      icon={SAVED_MARKER_ICON}
+                      title={place.name}
+                      onClick={() => setSelectedPlace(place)}
+                    />
+                  ))}
+
+                  {/* Place markers */}
+                  {displayPlaces.map((place) => {
+                    const saved = isSaved?.(place.id) ?? false;
+                    return (
+                      <Marker
+                        key={`${place.id}-${saved ? 's' : 'u'}`}
+                        position={{ lat: place.lat, lng: place.lng }}
+                        icon={saved ? SAVED_MARKER_ICON : undefined}
+                        title={place.name}
+                        onClick={() => setSelectedPlace(place)}
+                      />
+                    );
+                  })}
+
+                  {/* Info popup on marker tap */}
+                  {selectedPlace && (
+                    <InfoWindow
+                      position={{ lat: selectedPlace.lat, lng: selectedPlace.lng }}
+                      onCloseClick={() => setSelectedPlace(null)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 0' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
+                            {selectedPlace.name}
+                          </div>
+                          {selectedPlace.rating !== null && (
+                            <div style={{ fontSize: 11, color: '#666', marginTop: 1 }}>
+                              {'★'} {selectedPlace.rating}
+                              {selectedPlace.isOpen !== null && (
+                                <span style={{ marginLeft: 6, color: selectedPlace.isOpen ? '#16a34a' : '#dc2626' }}>
+                                  {selectedPlace.isOpen ? 'Open' : 'Closed'}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {onToggleSave && (
+                          <button
+                            type="button"
+                            onClick={() => onToggleSave(selectedPlace)}
+                            aria-label={isSaved?.(selectedPlace.id) ? 'Remove saved place' : 'Save place'}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: 4,
+                              flexShrink: 0,
+                            }}
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path
+                                d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"
+                                fill={isSaved?.(selectedPlace.id) ? '#f5c842' : 'none'}
+                                stroke={isSaved?.(selectedPlace.id) ? '#f5c842' : '#999'}
+                                strokeWidth="2"
+                                strokeLinejoin="round"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </InfoWindow>
+                  )}
+                </Map>
+              </APIProvider>
+            </div>
+          )}
+
+          {/* ---- Card carousel (bottom 45%) ---- */}
+          {hasLocation && (
+            <div
+              className="flex-1 flex flex-col px-4 pt-4 pb-6 overflow-y-auto"
+              style={{ height: '45%' }}
+            >
+              {/* Familiar spots banner */}
+              {chainMatches.length > 0 && (
+                <FamiliarSpotsBanner
+                  matches={chainMatches}
+                  onTap={(place) => setSelectedPlace(place)}
+                />
+              )}
+
+              {/* For You section */}
+              {(recommendations.length > 0 || recommendationsLoading) && (
+                <ForYouSection
+                  recommendations={recommendations}
+                  loading={recommendationsLoading}
+                  onPlaceClick={(place) => setSelectedPlace(place)}
+                />
+              )}
+
+              {/* Header */}
+              <div className="flex items-baseline justify-between mb-3">
+                <h2 className="text-[15px] font-bold text-white">
+                  {isSearching ? 'Search Results' : meta?.label ?? 'Nearby'}
+                </h2>
+                {!displayLoading && displayPlaces.length > 0 && (
+                  <span className="text-xs text-white/50">
+                    {displayPlaces.length} {isSearching ? 'found' : 'nearby'}
+                  </span>
+                )}
+              </div>
+
+              {/* Loading skeletons */}
+              {displayLoading && (
+                <div className="flex gap-3 overflow-x-auto">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      data-testid="skeleton-card"
+                      className="min-w-[260px] h-36 rounded-2xl bg-white/10 animate-pulse shrink-0"
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!displayLoading && displayPlaces.length === 0 && (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-sm text-white/40">
+                    {isSearching ? 'No results found' : 'No places found nearby'}
+                  </p>
+                </div>
+              )}
+
+              {/* Place cards */}
+              {!displayLoading && displayPlaces.length > 0 && (
+                <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
+                  {displayPlaces.map((place) => (
+                    <PlaceCard
+                      key={place.id}
+                      place={place}
+                      categoryColor={isSearching ? '#666' : (meta?.color ?? '#666')}
+                      isSaved={isSaved?.(place.id)}
+                      onToggleSave={onToggleSave ? () => onToggleSave(place) : undefined}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {/* Slide-up keyframe */}
