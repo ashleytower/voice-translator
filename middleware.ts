@@ -1,6 +1,28 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * Routes that unauthenticated users may access.
+ * Everything else redirects to /login.
+ */
+const PUBLIC_ROUTES = [
+  '/login',
+  '/auth/callback',
+  '/api/webhooks/stripe',
+]
+
+function isPublicRoute(pathname: string): boolean {
+  // Exact or prefix match for listed routes
+  if (PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'))) {
+    return true
+  }
+  // VAPI webhook routes need unauthenticated access
+  if (pathname.startsWith('/api/vapi/') || pathname === '/api/vapi') {
+    return true
+  }
+  return false
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -24,7 +46,21 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session - use getUser() not getSession() for security
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { pathname } = request.nextUrl
+
+  // Allow public routes through without auth check
+  if (isPublicRoute(pathname)) {
+    return supabaseResponse
+  }
+
+  // Redirect unauthenticated users to login
+  if (!user) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    return NextResponse.redirect(loginUrl)
+  }
 
   return supabaseResponse
 }
