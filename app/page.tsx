@@ -685,7 +685,7 @@ export default function TranslatorPage() {
   return (
     <main className="h-dvh flex flex-col overflow-hidden bg-background text-foreground dark">
       {user && !authLoading && !isOnboarded && (
-        <ProfileOnboarding userId={user.id} onComplete={refreshProfile} />
+        <ProfileOnboarding userId={user.id} userEmail={user.email ?? ''} onComplete={refreshProfile} />
       )}
       {renderCurrentView()}
       <ExploreView
