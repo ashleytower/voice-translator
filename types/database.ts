@@ -4,6 +4,9 @@ export interface TravelerProfile {
   travel_style: 'budget' | 'balanced' | 'luxury'
   dietary: string[]
   home_currency: string
+  home_city: string | null
+  phone_number: string | null
+  email: string | null
   onboarded_at: string | null
   updated_at: string
 }
