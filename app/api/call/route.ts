@@ -26,11 +26,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { phoneNumber, taskDescription, targetLanguage, userName } = body as {
+  const { phoneNumber, taskDescription, targetLanguage, userName, userPhone, userCity } = body as {
     phoneNumber?: string;
     taskDescription?: string;
     targetLanguage?: string;
     userName?: string;
+    userPhone?: string;
+    userCity?: string;
   };
 
   if (!phoneNumber || !taskDescription || !targetLanguage) {
@@ -42,10 +44,12 @@ export async function POST(request: NextRequest) {
 
   // Only include name context if provided (for reservations etc.)
   const nameContext = userName ? `\nIf they need a name, use: ${userName}.` : '';
+  const phoneContext = userPhone ? `\nThe client's callback number is ${userPhone}.` : '';
+  const cityContext = userCity ? `\nThe client is based in ${userCity}.` : '';
 
   const systemPrompt = `You are making a phone call to a business RIGHT NOW on behalf of a client. Speak only in ${targetLanguage}.
 
-Your task: ${taskDescription}${nameContext}
+Your task: ${taskDescription}${nameContext}${phoneContext}${cityContext}
 
 LISTENING RULES:
 - WAIT for the person to finish speaking before you respond. Do not interrupt.
