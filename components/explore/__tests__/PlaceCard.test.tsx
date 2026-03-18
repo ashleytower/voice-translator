@@ -210,4 +210,23 @@ describe('PlaceCard', () => {
     fireEvent.click(screen.getByLabelText('Rate 4 out of 5 stars'));
     expect(handleRate).toHaveBeenCalledWith(4);
   });
+
+  it('renders a directions link with correct Google Maps URL', () => {
+    render(<PlaceCard place={basePlace} categoryColor="#FF6B35" />);
+    const link = screen.getByLabelText('Get directions');
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute(
+      'href',
+      `https://www.google.com/maps/dir/?api=1&destination=${basePlace.lat},${basePlace.lng}&destination_place_id=${basePlace.id}`
+    );
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('always renders directions link even when phone is null', () => {
+    const noPhone: NearbyPlace = { ...basePlace, phone: null };
+    render(<PlaceCard place={noPhone} categoryColor="#FF6B35" />);
+    expect(screen.queryByRole('link', { name: /call/i })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Get directions')).toBeInTheDocument();
+  });
 });

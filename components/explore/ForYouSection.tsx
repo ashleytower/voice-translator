@@ -154,6 +154,21 @@ export function ForYouSection({
                       </span>
                     </p>
                   )}
+
+                  {/* Directions */}
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}&destination_place_id=${place.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Get directions to ${place.name}`}
+                    className="inline-flex items-center gap-1 mt-1 text-[10px] text-[rgba(235,235,245,0.5)] hover:text-white transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                    </svg>
+                    Directions
+                  </a>
                 </div>
               </button>
             );

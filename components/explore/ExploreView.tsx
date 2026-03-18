@@ -437,6 +437,28 @@ export function ExploreView({
                             </svg>
                           </button>
                         )}
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${selectedPlace.lat},${selectedPlace.lng}&destination_place_id=${selectedPlace.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Get directions"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: 11,
+                            color: '#4A90D9',
+                            textDecoration: 'none',
+                            marginTop: 4,
+                            flexShrink: 0,
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                          </svg>
+                          Directions
+                        </a>
                       </div>
                     </InfoWindow>
                   )}

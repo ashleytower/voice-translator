@@ -34,6 +34,8 @@ import { ExploreView } from '@/components/explore/ExploreView';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useRecommendations } from '@/hooks/useRecommendations';
 import type { PlaceCategory } from '@/types';
 
 const STORAGE_KEY = 'fluent-messages';
@@ -163,6 +165,8 @@ export default function TranslatorPage() {
   const { latitude, longitude, error: geoError, loading: geoLoading } = useGeolocation();
   const { places: nearbyPlaces, loading: placesLoading } = useNearbyPlaces(latitude, longitude, exploreCategory);
   const { savedPlaces, toggleSave, isSaved } = useSavedPlaces(user?.id);
+  const { isPaid } = useSubscription();
+  const { recommendations, chainMatches, loading: recommendationsLoading } = useRecommendations(latitude, longitude, isPaid);
 
   const {
     status: callStatus,
@@ -705,6 +709,10 @@ export default function TranslatorPage() {
         isSaved={isSaved}
         onToggleSave={toggleSave}
         onBack={handleExploreBack}
+        recommendations={recommendations}
+        chainMatches={chainMatches}
+        recommendationsLoading={recommendationsLoading}
+        isPaid={isPaid}
       />
       <BottomNav
         activeTab={viewMode}

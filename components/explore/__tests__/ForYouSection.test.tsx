@@ -97,4 +97,22 @@ describe('ForYouSection', () => {
     render(<ForYouSection recommendations={recs} loading={false} />);
     expect(screen.getByTestId('foryou-photo-fallback-no-photo')).toBeInTheDocument();
   });
+
+  it('renders a directions link for each recommendation', () => {
+    const recs = [
+      {
+        place: makePlace({ id: 'rec-1', name: 'Ichiran Ramen', lat: 35.6612, lng: 139.6988 }),
+        explanation: 'Because you loved ramen in Kyoto',
+      },
+    ];
+    render(
+      <ForYouSection recommendations={recs} loading={false} />
+    );
+    const link = screen.getByLabelText('Get directions to Ichiran Ramen');
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute(
+      'href',
+      'https://www.google.com/maps/dir/?api=1&destination=35.6612,139.6988&destination_place_id=rec-1'
+    );
+  });
 });
