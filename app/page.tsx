@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Message, Language, ViewMode } from '@/types';
+import { Message, Language, ViewMode, CallRequest } from '@/types';
 import { LANGUAGES, INITIAL_MESSAGES } from '@/lib/constants';
 import { translateAndChat, quickTranslate } from '@/lib/gemini-service';
 import { assembleContext } from '@/lib/context';
@@ -72,7 +72,7 @@ export default function TranslatorPage() {
   const [showExplore, setShowExplore] = useState(false);
   const [listenMode, setListenMode] = useState(false);
 
-  const { user, loading: authLoading, isOnboarded, refreshProfile } = useSession();
+  const { user, profile, loading: authLoading, isOnboarded, refreshProfile } = useSession();
 
   const travelerContextRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -617,7 +617,11 @@ export default function TranslatorPage() {
         result={callResult}
         error={callError}
         pendingDecision={callPendingDecision}
-        onStartCall={startCall}
+        onStartCall={(request: CallRequest) => startCall({
+          ...request,
+          userPhone: profile?.phone_number ?? undefined,
+          userCity: profile?.home_city ?? undefined,
+        })}
         onEndCall={endCall}
         onSendMessage={sendCallMessage}
         onSendDecision={sendDecision}

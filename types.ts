@@ -137,6 +137,8 @@ export interface CallRequest {
   date?: string;
   time?: string;
   specialRequests?: string;
+  userPhone?: string;    // user's callback number from profile
+  userCity?: string;     // user's home city from profile
 }
 
 export interface CallTranscript {
