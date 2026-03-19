@@ -57,6 +57,22 @@ LISTENING RULES:
 - If you hear background noise, wait at least 3 seconds of silence before assuming they are done.
 - Repeat back key details you hear to confirm understanding (times, dates, prices).
 
+FLOW:
+1. Greet the business and state your request in ${targetLanguage}.
+2. LISTEN. Let the business respond fully. Do NOT interrupt.
+3. When the business provides information, options, times, prices, or asks a question:
+   -> Call check_with_user with EXACTLY what the business said. Do NOT invent or assume anything.
+4. Wait for the check_with_user result. The business hears "One moment please" automatically.
+5. Relay the client's decision to the business naturally in ${targetLanguage}.
+6. Repeat steps 2-5 until the task is complete.
+7. Thank them and say goodbye ONLY after the task is fully resolved.
+
+CRITICAL:
+- NEVER call check_with_user before the business has spoken at least once with real information.
+- NEVER invent, assume, or hallucinate options. Only relay EXACTLY what the business says.
+- NEVER end the call when alternatives are offered. ALWAYS check with user first.
+- If unsure whether to check with user, CHECK. Err on the side of checking too much.
+
 DECISION RULES:
 - When the business offers alternatives, options, or asks you to choose — you MUST call the check_with_user tool BEFORE accepting or declining anything.
 - When calling check_with_user, politely tell the business "One moment please, let me check" in ${targetLanguage}, then call the tool.
@@ -76,14 +92,14 @@ CONVERSATION RULES:
     serverUrl: 'https://foundintranslation.app/api/vapi/webhook',
     model: {
       provider: 'openai',
-      model: 'gpt-4o',
+      model: 'gpt-4.1-mini',
       messages: [{ role: 'system', content: systemPrompt }],
       tools: [
         {
           type: 'function' as const,
           function: {
             name: 'check_with_user',
-            description: 'Ask the client (user) a question and wait for their decision. Use this EVERY TIME the business offers alternatives, asks a question that requires the client decision, or when you need confirmation before committing to anything.',
+            description: 'Ask the client (user) a question and wait for their decision. ONLY call this AFTER the business has spoken at least once and provided real information (times, prices, options, questions). NEVER call before hearing from the business. Use this EVERY TIME the business offers alternatives, asks a question requiring client decision, or provides options to choose from.',
             parameters: {
               type: 'object',
               properties: {
@@ -100,8 +116,24 @@ CONVERSATION RULES:
               required: ['question'],
             },
           },
+          messages: [
+            {
+              type: 'request-start',
+              content: 'One moment please, let me check with my client.',
+            },
+            {
+              type: 'request-response-delayed',
+              content: 'Still checking, thank you for your patience.',
+              timingMilliseconds: 10000,
+            },
+            {
+              type: 'request-failed',
+              content: 'I apologize, I was unable to reach my client. Could you repeat that?',
+            },
+          ],
           server: {
             url: 'https://foundintranslation.app/api/vapi/webhook',
+            timeoutSeconds: 25,
           },
         },
       ],
@@ -115,13 +147,27 @@ CONVERSATION RULES:
       provider: 'deepgram',
       model: 'nova-3',
       language: 'multi',
-      endpointing: 500,
+      endpointing: 800,
     },
     firstMessageMode: 'assistant-speaks-first-with-model-generated-message',
     backgroundSound: 'off',
     backgroundDenoisingEnabled: true,
     silenceTimeoutSeconds: 30,
-    responseDelaySeconds: 1,
+    backchannelingEnabled: false,
+    startSpeakingPlan: {
+      waitSeconds: 1.2,
+      smartEndpointingEnabled: true,
+      transcriptionEndpointingPlan: {
+        onPunctuationSeconds: 1.5,
+        onNoPunctuationSeconds: 3.0,
+        onNumberSeconds: 2.0,
+      },
+    },
+    stopSpeakingPlan: {
+      numWords: 2,
+      voiceSeconds: 0.2,
+      backoffSeconds: 2.0,
+    },
   };
 
   let response: Response;

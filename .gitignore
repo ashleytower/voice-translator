@@ -35,3 +35,7 @@ next-env.d.ts
 
 # supabase
 .supabase
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
