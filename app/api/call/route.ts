@@ -94,50 +94,51 @@ CONVERSATION RULES:
       provider: 'openai',
       model: 'gpt-4.1-mini',
       messages: [{ role: 'system', content: systemPrompt }],
-      tools: [
-        {
-          type: 'function' as const,
-          function: {
-            name: 'check_with_user',
-            description: 'Ask the client (user) a question and wait for their decision. ONLY call this AFTER the business has spoken at least once and provided real information (times, prices, options, questions). NEVER call before hearing from the business. Use this EVERY TIME the business offers alternatives, asks a question requiring client decision, or provides options to choose from.',
-            parameters: {
-              type: 'object',
-              properties: {
-                question: {
-                  type: 'string',
-                  description: 'The question to ask the user, in English. Summarize what the business said and what options are available.',
-                },
-                options: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Available options to present to the user, if applicable.',
-                },
+    },
+    tools: [
+      {
+        type: 'function' as const,
+        async: false,
+        function: {
+          name: 'check_with_user',
+          description: 'Ask the client (user) a question and wait for their decision. ONLY call this AFTER the business has spoken at least once and provided real information (times, prices, options, questions). NEVER call before hearing from the business. Use this EVERY TIME the business offers alternatives, asks a question requiring client decision, or provides options to choose from.',
+          parameters: {
+            type: 'object',
+            properties: {
+              question: {
+                type: 'string',
+                description: 'The question to ask the user, in English. Summarize what the business said and what options are available.',
               },
-              required: ['question'],
+              options: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Available options to present to the user, if applicable.',
+              },
             },
-          },
-          messages: [
-            {
-              type: 'request-start',
-              content: 'One moment please, let me check with my client.',
-            },
-            {
-              type: 'request-response-delayed',
-              content: 'Still checking, thank you for your patience.',
-              timingMilliseconds: 10000,
-            },
-            {
-              type: 'request-failed',
-              content: 'I apologize, I was unable to reach my client. Could you repeat that?',
-            },
-          ],
-          server: {
-            url: 'https://foundintranslation.app/api/vapi/webhook',
-            timeoutSeconds: 25,
+            required: ['question'],
           },
         },
-      ],
-    },
+        messages: [
+          {
+            type: 'request-start',
+            content: 'One moment please, let me check with my client.',
+          },
+          {
+            type: 'request-response-delayed',
+            content: 'Still checking, thank you for your patience.',
+            timingMilliseconds: 10000,
+          },
+          {
+            type: 'request-failed',
+            content: 'I apologize, I was unable to reach my client. Could you repeat that?',
+          },
+        ],
+        server: {
+          url: 'https://foundintranslation.app/api/vapi/webhook',
+          timeoutSeconds: 25,
+        },
+      },
+    ],
     voice: {
       provider: '11labs',
       voiceId: 'EXAVITQu4vr4xnSDxMaL',

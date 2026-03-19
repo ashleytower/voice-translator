@@ -108,7 +108,7 @@ describe('POST /api/call', () => {
 
   it('includes tool messages for request-start and request-response-delayed', async () => {
     const body = await makeCallAndGetBody()
-    const tool = body.assistant.model.tools[0]
+    const tool = body.assistant.tools[0]
     expect(tool.messages).toBeDefined()
     const types = tool.messages.map((m: { type: string }) => m.type)
     expect(types).toContain('request-start')
@@ -118,7 +118,7 @@ describe('POST /api/call', () => {
 
   it('tool description requires business to have spoken first', async () => {
     const body = await makeCallAndGetBody()
-    const desc = body.assistant.model.tools[0].function.description
+    const desc = body.assistant.tools[0].function.description
     expect(desc).toContain('AFTER the business has spoken')
   })
 
@@ -139,7 +139,7 @@ describe('POST /api/call', () => {
 
   it('sets tool timeoutSeconds to 25', async () => {
     const body = await makeCallAndGetBody()
-    expect(body.assistant.model.tools[0].server.timeoutSeconds).toBe(25)
+    expect(body.assistant.tools[0].server.timeoutSeconds).toBe(25)
   })
 
   it('system prompt includes FLOW steps', async () => {
