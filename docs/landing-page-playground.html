@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Found in Translation -- Landing Page Design Playground</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ctrl-bg: #0d0d12;
+  --ctrl-surface: #16161e;
+  --ctrl-border: rgba(255,255,255,0.08);
+  --ctrl-text: #e0e0e0;
+  --ctrl-dim: #888;
+  --ctrl-accent: #f59e0b;
+  --ctrl-accent-dim: rgba(245,158,11,0.25);
+}
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--ctrl-bg);
+  color: var(--ctrl-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== LAYOUT ===== */
+.app {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  grid-template-rows: 1fr auto;
+  height: 100vh;
+}
+
+/* ===== CONTROLS PANEL ===== */
+.controls {
+  grid-row: 1 / 3;
+  background: var(--ctrl-surface);
+  border-right: 1px solid var(--ctrl-border);
+  overflow-y: auto;
+  padding: 20px 16px;
+}
+
+.controls::-webkit-scrollbar { width: 4px; }
+.controls::-webkit-scrollbar-track { background: transparent; }
+.controls::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+.controls h1 {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ctrl-accent);
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ctrl-dim);
+  margin: 20px 0 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ctrl-border);
+}
+
+.section-title:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+
+.control-group { margin-bottom: 12px; }
+
+.control-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ctrl-dim);
+  margin-bottom: 5px;
+}
+
+.control-group input[type="range"] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  outline: none;
+}
+
+.control-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--ctrl-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--ctrl-bg);
+}
+
+.control-group input[type="text"],
+.control-group input[type="number"] {
+  width: 100%;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--ctrl-border);
+  border-radius: 6px;
+  color: var(--ctrl-text);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+
+.control-group input[type="text"]:focus,
+.control-group input[type="number"]:focus {
+  border-color: var(--ctrl-accent);
+  box-shadow: 0 0 0 2px rgba(245,158,11,0.15);
+}
+
+.range-value {
+  font-size: 10px;
+  color: var(--ctrl-accent);
+  float: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Toggle buttons */
+.toggle-group {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.toggle-btn {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--ctrl-border);
+  border-radius: 6px;
+  color: var(--ctrl-dim);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toggle-btn:hover { background: rgba(255,255,255,0.08); color: var(--ctrl-text); }
+.toggle-btn.active {
+  background: var(--ctrl-accent-dim);
+  border-color: var(--ctrl-accent);
+  color: var(--ctrl-accent);
+}
+
+/* Checkbox toggle */
+.check-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--ctrl-dim);
+  user-select: none;
+}
+
+.check-toggle input { display: none; }
+
+.check-toggle .track {
+  width: 32px;
+  height: 18px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 9px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.check-toggle .track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #666;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.check-toggle input:checked + .track {
+  background: var(--ctrl-accent-dim);
+}
+
+.check-toggle input:checked + .track::after {
+  left: 16px;
+  background: var(--ctrl-accent);
+}
+
+/* Presets */
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.preset-btn {
+  padding: 7px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--ctrl-border);
+  border-radius: 6px;
+  color: var(--ctrl-dim);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.preset-btn:hover { background: rgba(255,255,255,0.08); color: var(--ctrl-text); }
+.preset-btn.active {
+  background: var(--ctrl-accent-dim);
+  border-color: var(--ctrl-accent);
+  color: var(--ctrl-accent);
+}
+
+/* Color swatch preview */
+.color-preview {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid rgba(255,255,255,0.1);
+}
+
+.color-hex {
+  font-size: 10px;
+  color: var(--ctrl-dim);
+  font-family: 'SF Mono', Menlo, monospace;
+}
+
+/* ===== PREVIEW PANEL ===== */
+.preview-wrapper {
+  overflow-y: auto;
+  background: #111;
+  position: relative;
+}
+
+.preview-wrapper::-webkit-scrollbar { width: 6px; }
+.preview-wrapper::-webkit-scrollbar-track { background: transparent; }
+.preview-wrapper::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+/* ===== PROMPT OUTPUT ===== */
+.prompt-panel {
+  background: var(--ctrl-surface);
+  border-top: 1px solid var(--ctrl-border);
+  padding: 14px 20px;
+  min-height: 80px;
+  max-height: 140px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.prompt-text {
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ctrl-dim);
+  overflow-y: auto;
+  max-height: 112px;
+}
+
+.prompt-text::-webkit-scrollbar { width: 3px; }
+.prompt-text::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.copy-btn {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  background: var(--ctrl-accent);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.copy-btn:hover { opacity: 0.85; }
+.copy-btn.copied { background: #22c55e; }
+
+/* ===== LANDING PAGE PREVIEW STYLES ===== */
+.lp {
+  font-family: 'Inter', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Hero */
+.lp-hero {
+  position: relative;
+  overflow: hidden;
+  margin: 12px;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.lp-hero-bg {
+  position: absolute;
+  inset: 0;
+  background: url('https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200&q=75') center/cover;
+  opacity: 0.35;
+}
+
+.lp-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+}
+
+/* Airplane animation */
+.airplane-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.airplane-svg {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  width: 48px;
+  height: 48px;
+  transition: opacity 0.3s;
+}
+
+.lp-hero > * { position: relative; z-index: 5; }
+
+.lp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.8);
+  letter-spacing: 0.04em;
+}
+
+.lp-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.lp-hero h1 {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.lp-hero h1 .accent {
+  font-style: italic;
+}
+
+.lp-subtitle-foreign {
+  color: rgba(255,255,255,0.45);
+  font-size: 16px;
+  margin-top: 12px;
+}
+
+.lp-subtitle {
+  color: rgba(255,255,255,0.7);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  max-width: 440px;
+  margin: 16px auto 0;
+  line-height: 1.6;
+}
+
+/* CTA Variants */
+.lp-cta-email {
+  margin-top: 28px;
+  position: relative;
+  display: inline-block;
+}
+
+.lp-cta-email input {
+  height: 48px;
+  width: 380px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(8px);
+  padding: 0 150px 0 20px;
+  font-size: 13px;
+  color: #fff;
+  font-family: inherit;
+  outline: none;
+}
+
+.lp-cta-email input::placeholder { color: rgba(255,255,255,0.4); }
+.lp-cta-email input:focus { border-color: rgba(245,158,11,0.5); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+
+.lp-cta-email button,
+.lp-cta-btn {
+  font-family: inherit;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lp-cta-email button {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #fff;
+}
+
+.lp-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: #fff;
+}
+
+/* Quiz CTA */
+.lp-cta-quiz {
+  margin-top: 28px;
+}
+
+.lp-quiz-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+
+.lp-quiz-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-width: 380px;
+}
+
+.lp-quiz-pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.75);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.lp-quiz-pill:hover {
+  background: rgba(245,158,11,0.15);
+  border-color: rgba(245,158,11,0.4);
+  color: #fff;
+}
+
+/* Micro CTA */
+.lp-cta-micro {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-width: 500px;
+}
+
+.lp-micro-pill {
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.lp-micro-pill:hover {
+  background: rgba(245,158,11,0.15);
+  border-color: rgba(245,158,11,0.4);
+  color: #fff;
+}
+
+.lp-trust-line {
+  margin-top: 14px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.02em;
+}
+
+.lp-trust-details {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  font-weight: 500;
+}
+
+.lp-trust-details .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+}
+
+/* Marquee Section */
+.lp-marquee-section {
+  padding: 48px 0;
+  overflow: hidden;
+}
+
+.lp-marquee-label {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a3a3a3;
+  margin-bottom: 20px;
+}
+
+.lp-marquee-track {
+  display: flex;
+  gap: 12px;
+  animation: marquee-scroll var(--marquee-speed, 30s) linear infinite;
+  width: max-content;
+}
+
+.lp-marquee-track.reverse { animation-direction: reverse; }
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.lp-marquee-card {
+  flex-shrink: 0;
+  width: 260px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.06);
+  background: #fff;
+}
+
+.lp-marquee-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.lp-marquee-card-head .flag { font-size: 16px; }
+.lp-marquee-card-head .lang {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a3a3a3;
+}
+
+.lp-marquee-card .en { font-size: 13px; color: #737373; line-height: 1.4; }
+.lp-marquee-card .tr { font-size: 13px; font-weight: 600; color: #171717; margin-top: 4px; line-height: 1.4; }
+
+/* Moment Section */
+.lp-moment {
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.lp-section-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(0,0,0,0.06);
+  color: #525252;
+  background: #fff;
+}
+
+.lp-moment h2 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #171717;
+}
+
+.lp-moment p {
+  color: #737373;
+  max-width: 500px;
+  margin: 12px auto 0;
+  line-height: 1.7;
+}
+
+.lp-replacements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.lp-replacement {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.06);
+  background: #fafafa;
+  font-size: 13px;
+}
+
+.lp-replacement .old {
+  text-decoration: line-through;
+  color: #a3a3a3;
+}
+
+.lp-replacement .arrow { color: #d4d4d4; }
+
+.lp-replacement .new { font-weight: 600; }
+
+/* Features / Pain Belt */
+.lp-features {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 64px 24px;
+}
+
+.lp-features .header { text-align: center; margin-bottom: 48px; }
+
+.lp-features h2 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #171717;
+}
+
+.lp-features h2 span { color: #a3a3a3; }
+
+.lp-features > .header p {
+  color: #737373;
+  margin-top: 12px;
+  max-width: 460px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.lp-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.lp-feature-card {
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.06);
+  background: #fff;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.lp-feature-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.lp-feature-card.featured {
+  border-color: rgba(245,158,11,0.2);
+  background: linear-gradient(180deg, rgba(245,158,11,0.04) 0%, #fff 100%);
+  position: relative;
+}
+
+.lp-feature-card .icon { font-size: 28px; margin-bottom: 12px; }
+
+.lp-feature-card .quote {
+  font-style: italic;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.lp-feature-card .solution {
+  font-size: 13px;
+  color: #525252;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.lp-feature-card .tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.lp-feature-card .only-us {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+/* Bridge text */
+.lp-bridge {
+  text-align: center;
+  padding: 24px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #a3a3a3;
+  letter-spacing: 0.04em;
+}
+
+/* Concierge Section */
+.lp-concierge {
+  color: #fff;
+  overflow: hidden;
+}
+
+.lp-concierge-fade-in {
+  height: 80px;
+  background: linear-gradient(180deg, #fafafa 0%, #0a0a0f 100%);
+}
+
+.lp-concierge-body {
+  background: #0a0a0f;
+  padding: 80px 24px;
+  position: relative;
+}
+
+.lp-concierge-body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(139,92,246,0.06), transparent 60%);
+}
+
+.lp-concierge-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  max-width: 1080px;
+  margin: 0 auto;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.lp-concierge-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #a78bfa;
+  margin-bottom: 20px;
+}
+
+.lp-concierge h2 {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.lp-concierge h2 .hl { color: #a78bfa; }
+
+.lp-concierge .desc {
+  margin-top: 20px;
+  font-size: 15px;
+  color: #a3a3a3;
+  line-height: 1.7;
+  max-width: 440px;
+}
+
+.lp-concierge-features {
+  margin-top: 28px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lp-concierge-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #d4d4d4;
+}
+
+.lp-concierge-features .check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: rgba(34,197,94,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #4ade80;
+  margin-top: 1px;
+}
+
+/* Phone mockup */
+.lp-phone {
+  width: 280px;
+  margin: 0 auto;
+  border-radius: 32px;
+  border: 3px solid rgba(255,255,255,0.1);
+  background: #111;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.lp-phone-notch {
+  width: 80px;
+  height: 22px;
+  background: #111;
+  border-radius: 0 0 14px 14px;
+  margin: 0 auto;
+}
+
+.lp-phone-header {
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  font-weight: 600;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin: 0 14px 10px;
+}
+
+.lp-phone-screen {
+  padding: 0 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 360px;
+}
+
+.lp-chat-bubble {
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.lp-chat-user {
+  background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+  color: #fff;
+  margin-left: auto;
+  max-width: 85%;
+  text-align: right;
+}
+
+.lp-chat-system {
+  background: rgba(34,197,94,0.1);
+  color: #4ade80;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 500;
+  align-self: center;
+}
+
+.lp-chat-transcript {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.35);
+  font-style: italic;
+  max-width: 88%;
+}
+
+.lp-chat-result {
+  background: rgba(34,197,94,0.04);
+  border: 1px solid rgba(34,197,94,0.1);
+  color: rgba(255,255,255,0.65);
+  white-space: pre-line;
+}
+
+.lp-concierge-fade-out {
+  height: 80px;
+  background: linear-gradient(180deg, #0a0a0f 0%, #fafafa 100%);
+}
+
+/* Screenshots Section */
+.lp-screenshots {
+  overflow: hidden;
+}
+
+.lp-screenshots-fade-in {
+  height: 80px;
+  background: linear-gradient(180deg, #fafafa 0%, #0a0a0a 100%);
+}
+
+.lp-screenshots-body {
+  background: #0a0a0a;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.lp-screenshots h2 {
+  font-size: 36px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.lp-screenshots .sub {
+  font-size: 14px;
+  color: #737373;
+  margin-top: 12px;
+}
+
+.lp-screenshot-cards {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 48px;
+  align-items: flex-end;
+  perspective: 1200px;
+}
+
+.lp-screenshot-card {
+  width: 260px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #1a1a1a;
+  padding: 18px;
+}
+
+.lp-screenshot-card.center-card {
+  width: 290px;
+  border: 2px solid rgba(245,158,11,0.3);
+  background: linear-gradient(160deg, #1a1a1a, #111);
+  transform: translateY(-32px);
+  position: relative;
+}
+
+.lp-screenshot-card .card-quote {
+  font-size: 13px;
+  font-style: italic;
+  color: #a3a3a3;
+  margin-bottom: 12px;
+}
+
+.lp-screenshot-card .card-img {
+  height: 180px;
+  border-radius: 12px;
+  background: #262626;
+  border: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #525252;
+  margin-bottom: 14px;
+}
+
+.lp-screenshot-card .card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 12px;
+}
+
+.lp-screenshot-card .card-meta .pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.lp-screenshot-card .card-meta .note {
+  font-size: 10px;
+  color: #737373;
+}
+
+.lp-screenshot-card .most-used {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lp-screenshots-fade-out {
+  height: 80px;
+  background: linear-gradient(180deg, #0a0a0a 0%, #fafafa 100%);
+}
+
+/* Mid-page CTA */
+.lp-midcta {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 64px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.lp-midcta h2 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #171717;
+  letter-spacing: -0.02em;
+}
+
+.lp-midcta p {
+  margin-top: 12px;
+  font-size: 15px;
+  color: #737373;
+  line-height: 1.7;
+  max-width: 420px;
+}
+
+.lp-avatar-row {
+  display: flex;
+  margin-top: 24px;
+  align-items: center;
+}
+
+.lp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid #e5e5e5;
+  background: #d4d4d4;
+  margin-right: -12px;
+  object-fit: cover;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.lp-stars {
+  display: flex;
+  gap: 2px;
+  margin-left: 28px;
+}
+
+.lp-star {
+  color: #f59e0b;
+  font-size: 16px;
+}
+
+.lp-social-proof-text {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #a3a3a3;
+}
+
+/* Testimonials */
+.lp-testimonials {
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.lp-testimonials .overline {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a3a3a3;
+}
+
+.lp-testimonials h2 {
+  font-size: 36px;
+  font-weight: 700;
+  color: #171717;
+  letter-spacing: -0.02em;
+  margin-top: 10px;
+}
+
+.lp-testimonials .sub {
+  font-size: 15px;
+  color: #737373;
+  margin-top: 12px;
+  max-width: 460px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.lp-testimonial-card {
+  max-width: 580px;
+  margin: 36px auto 0;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 16px;
+  padding: 28px;
+  text-align: left;
+}
+
+.lp-testimonial-card blockquote {
+  font-size: 14px;
+  color: #525252;
+  line-height: 1.7;
+  font-style: italic;
+}
+
+.lp-testimonial-card .author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.lp-testimonial-card .author-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #d4d4d4;
+  overflow: hidden;
+}
+
+.lp-testimonial-card .author-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lp-testimonial-card .author-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #171717;
+}
+
+.lp-testimonial-card .author-role {
+  font-size: 11px;
+  color: #a3a3a3;
+}
+
+/* Memory Section */
+.lp-memory {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 64px 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.lp-memory-cards {
+  background: #fafafa;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lp-memory-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.04);
+  transition: border-color 0.2s;
+}
+
+.lp-memory-card:hover { border-color: rgba(0,0,0,0.1); }
+
+.lp-memory-card .emoji { font-size: 24px; flex-shrink: 0; }
+.lp-memory-card .title { font-size: 13px; font-weight: 600; color: #171717; }
+.lp-memory-card .body { font-size: 11px; color: #737373; margin-top: 4px; line-height: 1.5; }
+
+.lp-memory-card .mem-tag {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.lp-memory-copy .overline {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lp-memory-copy h2 {
+  font-size: 36px;
+  font-weight: 700;
+  color: #171717;
+  letter-spacing: -0.02em;
+  margin-top: 10px;
+}
+
+.lp-memory-copy p {
+  margin-top: 14px;
+  font-size: 15px;
+  color: #737373;
+  line-height: 1.7;
+}
+
+.lp-memory-copy ul {
+  margin-top: 24px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lp-memory-copy ul li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #525252;
+}
+
+.lp-memory-copy .check-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: #ecfdf5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #22c55e;
+  margin-top: 1px;
+}
+
+/* Waitlist CTA */
+.lp-waitlist {
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.lp-waitlist-avatars {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.lp-waitlist-avatars .av {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #d4d4d4;
+  border: 3px solid #fafafa;
+  margin: 0 -6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.lp-waitlist h2 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #171717;
+  letter-spacing: -0.02em;
+}
+
+.lp-waitlist .sub {
+  font-size: 15px;
+  color: #a3a3a3;
+  margin-top: 10px;
+}
+
+.lp-waitlist-form {
+  margin-top: 28px;
+  display: inline-block;
+  position: relative;
+}
+
+.lp-waitlist-form input {
+  height: 48px;
+  width: 360px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.1);
+  padding: 0 140px 0 18px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #171717;
+  outline: none;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.lp-waitlist-form input::placeholder { color: #a3a3a3; }
+.lp-waitlist-form input:focus { border-color: rgba(245,158,11,0.4); box-shadow: 0 0 0 3px rgba(245,158,11,0.08); }
+
+.lp-waitlist-form button {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+
+.lp-waitlist-hint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #a3a3a3;
+}
+
+/* Footer */
+.lp-footer {
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding: 28px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.lp-footer .copy {
+  font-size: 13px;
+  color: #a3a3a3;
+}
+
+.lp-footer .links {
+  display: flex;
+  gap: 24px;
+}
+
+.lp-footer .links a {
+  font-size: 13px;
+  color: #a3a3a3;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.lp-footer .links a:hover { color: #525252; }
+
+/* ===== Airplane animation ===== */
+@keyframes fly-across {
+  0% { transform: translate(-60px, 30px) rotate(-15deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translate(calc(100vw + 60px), -80px) rotate(-5deg); opacity: 0; }
+}
+
+.airplane-anim {
+  position: absolute;
+  top: 30%;
+  left: 0;
+  width: 48px;
+  height: 48px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.airplane-anim.active {
+  animation: fly-across var(--airplane-duration, 6s) ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.airplane-trail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ===== CONTROLS ===== -->
+  <div class="controls">
+    <h1>Design Playground</h1>
+
+    <div class="section-title">Presets</div>
+    <div class="preset-grid">
+      <button class="preset-btn active" data-preset="bold">Bold Launch</button>
+      <button class="preset-btn" data-preset="minimal">Minimal Clean</button>
+      <button class="preset-btn" data-preset="warm">Warm Inviting</button>
+      <button class="preset-btn" data-preset="dark">Dark Premium</button>
+      <button class="preset-btn" data-preset="playful">Playful</button>
+    </div>
+
+    <div class="section-title">Hero Variant</div>
+    <div class="toggle-group">
+      <button class="toggle-btn" data-variant="email">Email Capture</button>
+      <button class="toggle-btn active" data-variant="quiz">Quiz Flow</button>
+      <button class="toggle-btn" data-variant="micro">Micro-Commit</button>
+    </div>
+
+    <div class="section-title">Color Theme</div>
+    <div class="control-group">
+      <label>Accent Hue <span class="range-value" id="hue-val">38</span></label>
+      <input type="range" id="hue-slider" min="0" max="360" value="38">
+      <div class="color-preview">
+        <div class="color-swatch" id="accent-swatch"></div>
+        <span class="color-hex" id="accent-hex">#f59e0b</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Background Darkness <span class="range-value" id="bg-val">96</span></label>
+      <input type="range" id="bg-slider" min="85" max="100" value="96">
+    </div>
+
+    <div class="section-title">Typography</div>
+    <div class="control-group">
+      <label>Heading Size <span class="range-value" id="heading-val">48px</span></label>
+      <input type="range" id="heading-slider" min="32" max="72" value="48">
+    </div>
+    <div class="control-group">
+      <label>Body Size <span class="range-value" id="body-val">14px</span></label>
+      <input type="range" id="body-slider" min="12" max="18" value="14">
+    </div>
+
+    <div class="section-title">CTA Text</div>
+    <div class="control-group">
+      <label>Button Text</label>
+      <input type="text" id="cta-text" value="Get Early Access">
+    </div>
+
+    <div class="section-title">Layout</div>
+    <div class="control-group">
+      <label>Section Spacing <span class="range-value" id="spacing-val">64px</span></label>
+      <input type="range" id="spacing-slider" min="32" max="100" value="64">
+    </div>
+    <div class="control-group">
+      <label>Max Width <span class="range-value" id="width-val">1080px</span></label>
+      <input type="range" id="width-slider" min="800" max="1400" value="1080" step="20">
+    </div>
+
+    <div class="section-title">Animation</div>
+    <div class="control-group">
+      <label class="check-toggle">
+        <input type="checkbox" id="airplane-toggle" checked>
+        <span class="track"></span>
+        Paper Airplane
+      </label>
+    </div>
+    <div class="control-group">
+      <label>Airplane Speed <span class="range-value" id="speed-val">6s</span></label>
+      <input type="range" id="speed-slider" min="3" max="12" value="6">
+    </div>
+    <div class="control-group">
+      <label>Marquee Speed <span class="range-value" id="marquee-val">30s</span></label>
+      <input type="range" id="marquee-slider" min="15" max="60" value="30">
+    </div>
+  </div>
+
+  <!-- ===== PREVIEW ===== -->
+  <div class="preview-wrapper" id="preview-wrapper">
+    <div class="lp" id="lp-root">
+
+      <!-- HERO -->
+      <div class="lp-hero" id="lp-hero">
+        <div class="lp-hero-bg" id="hero-bg"></div>
+        <div class="lp-hero-overlay" id="hero-overlay"></div>
+
+        <!-- Airplane -->
+        <div class="airplane-anim active" id="airplane-el">
+          <svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(28,28) rotate(0) translate(-28,-28)">
+              <polygon points="6,28 50,16 36,44 30,30" fill="white" stroke="rgba(200,215,235,0.6)" stroke-width="0.5" stroke-linejoin="round"/>
+              <polygon points="6,28 50,16 30,30" fill="white"/>
+              <polygon points="30,30 50,16 36,44" fill="#EDF2F7"/>
+              <line x1="50" y1="16" x2="30" y2="30" stroke="rgba(180,200,225,0.5)" stroke-width="0.7"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="lp-badge">
+          <span class="lp-badge-dot" id="badge-dot"></span>
+          Private Beta -- Only 47 spots remaining
+        </div>
+
+        <h1 id="hero-h1" style="margin-top: 28px;">
+          You don't plan<br>
+          vacations.<br>
+          <span class="accent" id="hero-accent">You live them.</span>
+        </h1>
+
+        <div class="lp-subtitle-foreign" id="subtitle-foreign">&#x7FFB;&#x8A33;&#x306E;&#x4E2D;&#x3067;&#x3001;&#x898B;&#x3064;&#x3051;&#x305F;&#x3002;</div>
+
+        <p class="lp-subtitle" id="hero-subtitle">
+          Voice translation. AI phone calls. Camera that reads anything.<br>All in one app.
+        </p>
+
+        <!-- CTA: Email -->
+        <div class="lp-cta-email" id="cta-email" style="display:none;">
+          <input type="email" placeholder="Where should we send your invite?">
+          <button id="cta-btn-email">Get Early Access</button>
+        </div>
+
+        <!-- CTA: Quiz -->
+        <div class="lp-cta-quiz" id="cta-quiz">
+          <div class="lp-quiz-label">Where are you going next?</div>
+          <div class="lp-quiz-grid">
+            <button class="lp-quiz-pill">Japan</button>
+            <button class="lp-quiz-pill">France</button>
+            <button class="lp-quiz-pill">Italy</button>
+            <button class="lp-quiz-pill">Thailand</button>
+            <button class="lp-quiz-pill">Mexico</button>
+            <button class="lp-quiz-pill">Korea</button>
+            <button class="lp-quiz-pill">Spain</button>
+            <button class="lp-quiz-pill">Greece</button>
+            <button class="lp-quiz-pill" style="opacity:0.6;">Somewhere else...</button>
+          </div>
+        </div>
+
+        <!-- CTA: Micro -->
+        <div class="lp-cta-micro" id="cta-micro" style="display:none;">
+          <span style="font-size:13px; font-weight:500; color:rgba(255,255,255,0.7); width:100%; text-align:center; margin-bottom:4px;">Where are you going next?</span>
+          <button class="lp-micro-pill">Japan</button>
+          <button class="lp-micro-pill">France</button>
+          <button class="lp-micro-pill">Italy</button>
+          <button class="lp-micro-pill">Thailand</button>
+          <button class="lp-micro-pill">Mexico</button>
+          <button class="lp-micro-pill">Korea</button>
+          <button class="lp-micro-pill">Spain</button>
+          <button class="lp-micro-pill">Greece</button>
+          <button class="lp-micro-pill" style="opacity:0.6;">Somewhere else...</button>
+        </div>
+
+        <div class="lp-trust-line">Join 2,400+ travelers on the early access list</div>
+
+        <div class="lp-trust-details">
+          <span>No credit card</span>
+          <span class="dot"></span>
+          <span>Cancel anytime</span>
+          <span class="dot"></span>
+          <span>200 spots only</span>
+        </div>
+      </div>
+
+      <!-- MARQUEE -->
+      <div class="lp-marquee-section" id="marquee-section">
+        <div class="lp-marquee-label">142 languages. Zero awkward hand gestures.</div>
+        <div style="overflow: hidden;">
+          <div class="lp-marquee-track" id="marquee-row-1"></div>
+        </div>
+        <div style="overflow: hidden; margin-top: 12px;">
+          <div class="lp-marquee-track reverse" id="marquee-row-2"></div>
+        </div>
+      </div>
+
+      <!-- MOMENT -->
+      <div class="lp-moment" id="moment-section">
+        <div class="lp-section-badge">Built for how you actually travel</div>
+        <h2 id="moment-h2" style="margin-top: 16px;">Six apps, replaced.</h2>
+        <p id="moment-p">Nobody plans every meal, every purchase, every conversation before they land. One app handles all of it -- the moment you touch down.</p>
+        <div class="lp-replacements" id="replacements-container"></div>
+      </div>
+
+      <!-- FEATURES -->
+      <div class="lp-features" id="features-section">
+        <div class="header">
+          <div class="lp-section-badge">The Only App You Need</div>
+          <h2 id="features-h2" style="margin-top: 16px;">
+            Six things you do every day abroad.<br>
+            <span>One app for all of them.</span>
+          </h2>
+          <p>Every traveler hits the same walls. We built a solution for each one.</p>
+        </div>
+        <div class="lp-feature-grid" id="feature-grid"></div>
+      </div>
+
+      <!-- BRIDGE -->
+      <div class="lp-bridge">But there's one feature no other travel app has.</div>
+
+      <!-- CONCIERGE -->
+      <div class="lp-concierge" id="concierge-section">
+        <div class="lp-concierge-fade-in" id="concierge-fade-in"></div>
+        <div class="lp-concierge-body" id="concierge-body">
+          <div class="lp-concierge-grid">
+            <div>
+              <div class="lp-concierge-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                No other app does this
+              </div>
+              <h2>Your AI calls restaurants, pharmacies, and hotels -- <span class="hl">in their language.</span></h2>
+              <p class="desc">No online booking? No English-speaking staff? Tell the AI what you need in English. It makes the call, speaks the local language, and comes back with a confirmation.</p>
+              <ul class="lp-concierge-features">
+                <li><span class="check">&#10003;</span> Restaurant reservations in any language</li>
+                <li><span class="check">&#10003;</span> Ask a pharmacy if they carry your medication</li>
+                <li><span class="check">&#10003;</span> Confirm hotel check-in or request late checkout</li>
+                <li><span class="check">&#10003;</span> Hear the full conversation translated in real time</li>
+              </ul>
+            </div>
+            <div>
+              <div class="lp-phone" id="phone-mockup">
+                <div class="lp-phone-notch"></div>
+                <div class="lp-phone-header">AI Concierge</div>
+                <div class="lp-phone-screen">
+                  <div class="lp-chat-bubble lp-chat-user">Book a table for 2 at 8pm tonight at Sushi Dai</div>
+                  <div class="lp-chat-bubble lp-chat-system">&#x1F4DE; Calling Sushi Dai in Japanese...</div>
+                  <div class="lp-chat-bubble lp-chat-transcript">"&#x3082;&#x3057;&#x3082;&#x3057;&#x3001;&#x4ECA;&#x665A;8&#x6642;&#x306B;2&#x540D;&#x3067;&#x4E88;&#x7D04;&#x3092;&#x304A;&#x9858;&#x3044;&#x3057;&#x305F;&#x3044;&#x306E;&#x3067;&#x3059;&#x304C;..."</div>
+                  <div class="lp-chat-bubble lp-chat-transcript">"&#x306F;&#x3044;&#x3001;8&#x6642;&#x306B;2&#x540D;&#x69D8;&#x3067;&#x3059;&#x306D;&#x3002;&#x304A;&#x540D;&#x524D;&#x3092;&#x304A;&#x9858;&#x3044;&#x3057;&#x307E;&#x3059;&#x3002;"</div>
+                  <div class="lp-chat-bubble lp-chat-system">&#10003; Reservation confirmed</div>
+                  <div class="lp-chat-bubble lp-chat-result">Sushi Dai -- Tsukiji
+Tonight at 8:00 PM - Table for 2
+Confirmation #4821</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="lp-concierge-fade-out" id="concierge-fade-out"></div>
+      </div>
+
+      <!-- SCREENSHOTS -->
+      <div class="lp-screenshots" id="screenshots-section">
+        <div class="lp-screenshots-fade-in"></div>
+        <div class="lp-screenshots-body">
+          <h2>Three moments. Every trip.</h2>
+          <p class="sub">The walls every traveler hits -- and what it looks like when they don't anymore.</p>
+          <div class="lp-screenshot-cards">
+            <div class="lp-screenshot-card">
+              <p class="card-quote">"Is this expensive?"</p>
+              <div class="card-img">Price Scanner Preview</div>
+              <div class="card-meta">
+                <span class="pill" style="background: rgba(34,197,94,0.15); color: #22c55e;">Great Deal</span>
+                <span class="note">Cheaper here than back home</span>
+              </div>
+            </div>
+            <div class="lp-screenshot-card center-card">
+              <span class="most-used" id="most-used-label">Most used</span>
+              <p class="card-quote">"I'd like it without eggs."</p>
+              <div class="card-img">Voice Translation Preview</div>
+              <div class="card-meta">
+                <span class="pill" id="screenshot-pill">Said in French</span>
+                <span class="note">With phonetics so you can say it yourself</span>
+              </div>
+            </div>
+            <div class="lp-screenshot-card">
+              <p class="card-quote">"Can I actually eat this?"</p>
+              <div class="card-img">Dish Analyzer Preview</div>
+              <div class="card-meta">
+                <span class="pill" style="background: rgba(34,197,94,0.15); color: #22c55e;">Nut-free</span>
+                <span class="note">Ingredients, allergens, spice level</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="lp-screenshots-fade-out"></div>
+      </div>
+
+      <!-- MID-PAGE CTA -->
+      <div class="lp-midcta" id="midcta-section">
+        <div>
+          <h2>No other travel app does this.</h2>
+          <p>Voice translation, AI phone calls, camera that reads anything, and a concierge that remembers your preferences. All in one app.</p>
+          <div class="lp-avatar-row">
+            <div class="lp-avatar">&#x1F9D1;</div>
+            <div class="lp-avatar">&#x1F469;</div>
+            <div class="lp-avatar">&#x1F468;</div>
+            <div class="lp-avatar">&#x1F9D2;</div>
+            <div class="lp-avatar">&#x1F471;</div>
+            <div class="lp-avatar">&#x1F473;</div>
+            <div class="lp-stars">
+              <span class="lp-star">&#9733;</span>
+              <span class="lp-star">&#9733;</span>
+              <span class="lp-star">&#9733;</span>
+              <span class="lp-star">&#9733;</span>
+              <span class="lp-star">&#9733;</span>
+            </div>
+          </div>
+          <p class="lp-social-proof-text">Loved by 2,400+ early access travelers</p>
+        </div>
+        <a href="#" id="midcta-btn" class="lp-cta-btn" style="text-decoration:none;">
+          <span id="midcta-text">Get Early Access</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+
+      <!-- TESTIMONIALS -->
+      <div class="lp-testimonials" id="testimonials-section">
+        <p class="overline">Early access feedback</p>
+        <h2>What beta testers are saying</h2>
+        <p class="sub">We gave 200 travelers early access. Here's what happened.</p>
+        <div class="lp-testimonial-card">
+          <blockquote>"I was solo in Tokyo for three weeks and this app saved me daily. I pointed my camera at a ramen shop's hand-written menu and got an instant, accurate translation -- no more ordering mystery bowls. The voice mode helped me ask for directions in Shibuya and actually understand the answer."</blockquote>
+          <div class="author">
+            <div class="author-img"><img src="https://i.pravatar.cc/80?img=1" alt=""></div>
+            <div>
+              <div class="author-name">Megan Alvarez</div>
+              <div class="author-role">Solo traveler, 23 countries</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEMORY -->
+      <div class="lp-memory" id="memory-section">
+        <div class="lp-memory-cards" id="memory-cards"></div>
+        <div class="lp-memory-copy">
+          <span class="overline" id="memory-overline">Travel Memory</span>
+          <h2>It remembers what you loved.</h2>
+          <p>Most travel apps forget you the moment you leave a city. Found in Translation learns your taste. Land somewhere new, and it already knows what to recommend.</p>
+          <ul>
+            <li><span class="check-icon">&#10003;</span> Spots you starred in one city surface in the next</li>
+            <li><span class="check-icon">&#10003;</span> Cuisine preferences, price range, vibe -- all remembered</li>
+            <li><span class="check-icon">&#10003;</span> Your phrases and translations saved for replay</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- WAITLIST -->
+      <div class="lp-waitlist" id="waitlist-section">
+        <div class="lp-waitlist-avatars">
+          <div class="av">&#x1F9D1;</div>
+          <div class="av">&#x1F469;</div>
+          <div class="av">&#x1F468;</div>
+          <div class="av">&#x1F9D2;</div>
+          <div class="av">&#x1F471;</div>
+          <div class="av">&#x1F473;</div>
+        </div>
+        <h2>Travel fearlessly in any language</h2>
+        <p class="sub">Join 2,400+ travelers getting early access. Beta launches Q2 2026.</p>
+        <div class="lp-waitlist-form">
+          <input type="email" placeholder="Your best email">
+          <button id="waitlist-btn">Get Early Access</button>
+        </div>
+        <p class="lp-waitlist-hint">Free to join. Unsubscribe anytime.</p>
+      </div>
+
+      <!-- FOOTER -->
+      <footer class="lp-footer" id="lp-footer">
+        <span class="copy">&copy; 2026 Found in Translation</span>
+        <div class="links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Contact</a>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- ===== PROMPT OUTPUT ===== -->
+  <div class="prompt-panel" id="prompt-panel">
+    <div class="prompt-text" id="prompt-text">Adjust the controls to generate a design direction prompt.</div>
+    <button class="copy-btn" id="copy-btn" onclick="copyPrompt()">Copy</button>
+  </div>
+</div>
+
+<script>
+// =========================================================================
+// DATA
+// =========================================================================
+
+const translations = [
+  { en: "Table for two, please", tr: "\u4E8C\u540D\u69D8\u3067\u304A\u9858\u3044\u3057\u307E\u3059", lang: "Japanese", flag: "\u{1F1EF}\u{1F1F5}" },
+  { en: "Where is the pharmacy?", tr: "O\u00F9 est la pharmacie?", lang: "French", flag: "\u{1F1EB}\u{1F1F7}" },
+  { en: "Does this have peanuts?", tr: "\u00BFTiene cacahuetes?", lang: "Spanish", flag: "\u{1F1EA}\u{1F1F8}" },
+  { en: "How much does this cost?", tr: "\uC774\uAC70 \uC5BC\uB9C8\uC608\uC694?", lang: "Korean", flag: "\u{1F1F0}\u{1F1F7}" },
+  { en: "Take me to this address", tr: "\u0E1E\u0E32\u0E44\u0E1B\u0E17\u0E35\u0E48\u0E2D\u0E22\u0E39\u0E48\u0E19\u0E35\u0E49\u0E14\u0E49\u0E27\u0E22\u0E04\u0E23\u0E31\u0E1A", lang: "Thai", flag: "\u{1F1F9}\u{1F1ED}" },
+  { en: "I need a doctor", tr: "Ich brauche einen Arzt", lang: "German", flag: "\u{1F1E9}\u{1F1EA}" },
+  { en: "Can I get the check?", tr: "\u304A\u4F1A\u8A08\u3092\u304A\u9858\u3044\u3057\u307E\u3059", lang: "Japanese", flag: "\u{1F1EF}\u{1F1F5}" },
+  { en: "Is this dish spicy?", tr: "Questo piatto \u00E8 piccante?", lang: "Italian", flag: "\u{1F1EE}\u{1F1F9}" },
+  { en: "Where is the train station?", tr: "\u706B\u8F66\u7AD9\u5728\u54EA\u91CC\uFF1F", lang: "Chinese", flag: "\u{1F1E8}\u{1F1F3}" },
+  { en: "I'm allergic to shellfish", tr: "Eu sou al\u00E9rgico a mariscos", lang: "Portuguese", flag: "\u{1F1E7}\u{1F1F7}" },
+  { en: "One coffee please", tr: "Bir kahve l\u00FCtfen", lang: "Turkish", flag: "\u{1F1F9}\u{1F1F7}" },
+  { en: "Can you call a taxi?", tr: "\u041C\u043E\u0436\u0435\u0442\u0435 \u0432\u044B\u0437\u0432\u0430\u0442\u044C \u0442\u0430\u043A\u0441\u0438?", lang: "Russian", flag: "\u{1F1F7}\u{1F1FA}" },
+];
+
+const replacements = [
+  { old: "Google Translate", newText: "Voice + Camera" },
+  { old: "Currency app", newText: "Price Scan" },
+  { old: "Yelp / TripAdvisor", newText: "Explore" },
+  { old: "Phrasebook", newText: "AI Voice" },
+  { old: "Asking the hotel", newText: "AI Concierge" },
+  { old: "Google Lens", newText: "Dish Scan" },
+];
+
+const features = [
+  { icon: "\u{1F4F8}", quote: "How much is this again?", solution: "Point your camera at any price tag. See it in your currency instantly -- and whether it's cheaper than back home.", tag: "Camera Price Scan", tagColor: "#ec4899", tagBg: "rgba(236,72,153,0.1)" },
+  { icon: "\u{1F4AC}", quote: "What does this say?", solution: "Camera translate for signs, menus, labels. Voice translate for real conversations. Stop asking your friend to interpret.", tag: "Camera + Voice Translate", tagColor: "#3b82f6", tagBg: "rgba(59,130,246,0.1)" },
+  { icon: "\u{1F35C}", quote: "What food is this?", solution: "Snap a photo of any dish. Get the name, ingredients, allergen warnings, and calories. Eat with confidence, not anxiety.", tag: "Dish Analysis", tagColor: "#f97316", tagBg: "rgba(249,115,22,0.1)" },
+  { icon: "\u2615", quote: "I feel like a good coffee.", solution: "Find nearby cafes, restaurants, pharmacies, and transit on the map. Star your favorites and get back to them later.", tag: "Explore + Saved Places", tagColor: "#10b981", tagBg: "rgba(16,185,129,0.1)" },
+  { icon: "\u{1F4DE}", quote: "There's no online reservations. Let's just call.", solution: "Tell the AI what you need. It calls the restaurant, speaks their language, makes the reservation, and reports back. No competitor does this.", tag: "AI Concierge", tagColor: "#8b5cf6", tagBg: "rgba(139,92,246,0.1)", featured: true },
+  { icon: "\u{1F9E0}", quote: "Remember that place in Osaka?", solution: "The app remembers what you loved. Land in a new city and it suggests similar spots. Your travel taste, carried forward.", tag: "Travel Memory", tagColor: "#f59e0b", tagBg: "rgba(245,158,11,0.1)" },
+];
+
+const memoryItems = [
+  { emoji: "\u{1F363}", title: "You loved Sushi Dai in Osaka", body: "Here are 3 similar omakase spots near you in Tokyo\u2019s Tsukiji area.", tag: "Based on your taste", tagColor: "#b45309", tagBg: "rgba(245,158,11,0.1)" },
+  { emoji: "\u2615", title: "You saved % Arabica in Kyoto", body: "There\u2019s a % Arabica location 4 minutes from your hotel in Shinjuku.", tag: "Saved place nearby", tagColor: "#b45309", tagBg: "rgba(245,158,11,0.1)" },
+  { emoji: "\u{1F3EE}", title: "Hidden izakaya district nearby", body: "You rated izakayas 5 stars in Osaka. Golden Gai is a 6 min walk -- 200+ tiny bars.", tag: "You might like this", tagColor: "#b45309", tagBg: "rgba(245,158,11,0.1)" },
+];
+
+// =========================================================================
+// STATE
+// =========================================================================
+
+let state = {
+  preset: 'bold',
+  variant: 'quiz',
+  hue: 38,
+  bgDarkness: 96,
+  headingSize: 48,
+  bodySize: 14,
+  ctaText: 'Get Early Access',
+  spacing: 64,
+  maxWidth: 1080,
+  airplaneOn: true,
+  airplaneSpeed: 6,
+  marqueeSpeed: 30,
+};
+
+const presets = {
+  bold: { hue: 38, bgDarkness: 96, headingSize: 52, bodySize: 14, spacing: 64, maxWidth: 1080 },
+  minimal: { hue: 220, bgDarkness: 99, headingSize: 42, bodySize: 13, spacing: 72, maxWidth: 900 },
+  warm: { hue: 25, bgDarkness: 97, headingSize: 48, bodySize: 15, spacing: 60, maxWidth: 1000 },
+  dark: { hue: 270, bgDarkness: 88, headingSize: 50, bodySize: 14, spacing: 56, maxWidth: 1100 },
+  playful: { hue: 340, bgDarkness: 97, headingSize: 56, bodySize: 15, spacing: 68, maxWidth: 1080 },
+};
+
+// =========================================================================
+// HELPERS
+// =========================================================================
+
+function hslToHex(h, s, l) {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function getAccentColor() {
+  return hslToHex(state.hue, 90, 50);
+}
+
+function getAccentLight() {
+  return hslToHex(state.hue, 90, 60);
+}
+
+function getAccentDim() {
+  return hslToHex(state.hue, 85, 38);
+}
+
+function getBgColor() {
+  const l = state.bgDarkness;
+  const v = Math.round(l * 2.55);
+  return `rgb(${v}, ${v}, ${v})`;
+}
+
+function getBgHex() {
+  const l = state.bgDarkness;
+  const v = Math.round(l * 2.55).toString(16).padStart(2, '0');
+  return `#${v}${v}${v}`;
+}
+
+// =========================================================================
+// POPULATE STATIC CONTENT
+// =========================================================================
+
+function populateMarquee() {
+  const row1 = document.getElementById('marquee-row-1');
+  const row2 = document.getElementById('marquee-row-2');
+  const first6 = translations.slice(0, 6);
+  const last6 = translations.slice(6);
+
+  const cardHtml = (items) => items.map(t =>
+    `<div class="lp-marquee-card">
+      <div class="lp-marquee-card-head"><span class="flag">${t.flag}</span><span class="lang">${t.lang}</span></div>
+      <p class="en">${t.en}</p>
+      <p class="tr">${t.tr}</p>
+    </div>`
+  ).join('');
+
+  // Duplicate for seamless loop
+  row1.innerHTML = cardHtml(first6) + cardHtml(first6);
+  row2.innerHTML = cardHtml(last6) + cardHtml(last6);
+}
+
+function populateReplacements() {
+  const container = document.getElementById('replacements-container');
+  container.innerHTML = replacements.map(r =>
+    `<div class="lp-replacement">
+      <span class="old">${r.old}</span>
+      <span class="arrow">\u2192</span>
+      <span class="new" data-replacement-new>${r.newText}</span>
+    </div>`
+  ).join('');
+}
+
+function populateFeatures() {
+  const grid = document.getElementById('feature-grid');
+  grid.innerHTML = features.map(f =>
+    `<div class="lp-feature-card${f.featured ? ' featured' : ''}">
+      <div class="icon">${f.icon}</div>
+      <p class="quote" data-feature-quote>${f.quote}</p>
+      <p class="solution">${f.solution}</p>
+      <span class="tag" style="background: ${f.tagBg}; color: ${f.tagColor};">${f.tag}</span>
+      ${f.featured ? '<span class="only-us" data-only-us>Only us</span>' : ''}
+    </div>`
+  ).join('');
+}
+
+function populateMemory() {
+  const container = document.getElementById('memory-cards');
+  container.innerHTML = memoryItems.map(m =>
+    `<div class="lp-memory-card">
+      <span class="emoji">${m.emoji}</span>
+      <div>
+        <div class="title">${m.title}</div>
+        <div class="body">${m.body}</div>
+        <span class="mem-tag" style="background: ${m.tagBg}; color: ${m.tagColor};">${m.tag}</span>
+      </div>
+    </div>`
+  ).join('');
+}
+
+// =========================================================================
+// RENDER
+// =========================================================================
+
+function render() {
+  const accent = getAccentColor();
+  const accentLight = getAccentLight();
+  const accentDim = getAccentDim();
+  const bg = getBgColor();
+  const bgHex = getBgHex();
+  const isDark = state.bgDarkness < 92;
+
+  const textPrimary = isDark ? '#f5f5f5' : '#171717';
+  const textSecondary = isDark ? '#a3a3a3' : '#525252';
+  const textDim = isDark ? '#737373' : '#737373';
+  const textFaint = isDark ? '#525252' : '#a3a3a3';
+  const surface = isDark ? '#1a1a1a' : '#ffffff';
+  const surfaceDim = isDark ? '#111' : '#fafafa';
+  const borderCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+
+  const root = document.getElementById('lp-root');
+  root.style.background = bg;
+  root.style.color = textPrimary;
+
+  // Hero
+  const hero = document.getElementById('lp-hero');
+  hero.style.fontSize = state.bodySize + 'px';
+  const h1 = document.getElementById('hero-h1');
+  h1.style.fontSize = state.headingSize + 'px';
+  const heroAccent = document.getElementById('hero-accent');
+  heroAccent.style.color = accent;
+
+  // Badge dot
+  document.getElementById('badge-dot').style.background = accent;
+
+  // Subtitle
+  document.getElementById('hero-subtitle').style.fontSize = state.bodySize + 'px';
+  document.getElementById('subtitle-foreign').style.fontSize = (state.bodySize + 2) + 'px';
+
+  // CTA variants
+  document.getElementById('cta-email').style.display = state.variant === 'email' ? '' : 'none';
+  document.getElementById('cta-quiz').style.display = state.variant === 'quiz' ? '' : 'none';
+  document.getElementById('cta-micro').style.display = state.variant === 'micro' ? '' : 'none';
+
+  // CTA buttons
+  const btnGrad = `linear-gradient(135deg, ${accent}, ${accentDim})`;
+  const btnShadow = `0 4px 14px ${accent}33`;
+
+  document.querySelectorAll('#cta-btn-email, #waitlist-btn').forEach(btn => {
+    btn.style.background = btnGrad;
+    btn.style.boxShadow = btnShadow;
+    btn.textContent = state.ctaText;
+  });
+
+  const midctaBtn = document.getElementById('midcta-btn');
+  midctaBtn.style.background = btnGrad;
+  midctaBtn.style.border = `1px solid ${accentDim}`;
+  midctaBtn.style.boxShadow = btnShadow;
+  document.getElementById('midcta-text').textContent = state.ctaText;
+
+  // Quiz pills accent on hover
+  document.querySelectorAll('.lp-quiz-pill, .lp-micro-pill').forEach(pill => {
+    pill.onmouseenter = () => {
+      pill.style.background = accent + '25';
+      pill.style.borderColor = accent + '66';
+    };
+    pill.onmouseleave = () => {
+      pill.style.background = 'rgba(255,255,255,0.08)';
+      pill.style.borderColor = 'rgba(255,255,255,0.2)';
+    };
+  });
+
+  // Airplane
+  const airplaneEl = document.getElementById('airplane-el');
+  if (state.airplaneOn) {
+    airplaneEl.classList.add('active');
+    airplaneEl.style.setProperty('--airplane-duration', state.airplaneSpeed + 's');
+    airplaneEl.style.display = '';
+  } else {
+    airplaneEl.classList.remove('active');
+    airplaneEl.style.display = 'none';
+  }
+
+  // Marquee speed
+  document.querySelectorAll('.lp-marquee-track').forEach(track => {
+    track.style.setProperty('--marquee-speed', state.marqueeSpeed + 's');
+  });
+
+  // Section spacing
+  const sp = state.spacing + 'px';
+  document.querySelectorAll('.lp-moment, .lp-features, .lp-testimonials, .lp-waitlist').forEach(sec => {
+    sec.style.paddingTop = sp;
+    sec.style.paddingBottom = sp;
+  });
+
+  // Max width
+  const mw = state.maxWidth + 'px';
+  document.querySelectorAll('.lp-features, .lp-midcta, .lp-footer').forEach(el => {
+    el.style.maxWidth = mw;
+  });
+  document.querySelector('.lp-concierge-grid').style.maxWidth = mw;
+
+  // Sections with backgrounds
+  const momentSec = document.getElementById('moment-section');
+  momentSec.style.background = bg;
+
+  // Moment section heading
+  const momentH2 = document.getElementById('moment-h2');
+  momentH2.style.fontSize = (state.headingSize * 0.8) + 'px';
+  momentH2.style.color = textPrimary;
+
+  document.getElementById('moment-p').style.color = textDim;
+
+  // Replacement pills
+  document.querySelectorAll('.lp-replacement').forEach(pill => {
+    pill.style.background = surfaceDim;
+    pill.style.borderColor = borderCol;
+  });
+  document.querySelectorAll('.lp-replacement .old').forEach(el => el.style.color = textFaint);
+  document.querySelectorAll('[data-replacement-new]').forEach(el => el.style.color = accent);
+
+  // Section badges
+  document.querySelectorAll('.lp-section-badge').forEach(badge => {
+    badge.style.background = surface;
+    badge.style.borderColor = borderCol;
+    badge.style.color = textSecondary;
+  });
+
+  // Features
+  const featuresH2 = document.getElementById('features-h2');
+  featuresH2.style.fontSize = (state.headingSize * 0.8) + 'px';
+  featuresH2.style.color = textPrimary;
+
+  document.querySelectorAll('.lp-feature-card').forEach(card => {
+    card.style.background = surface;
+    card.style.borderColor = borderCol;
+  });
+  document.querySelectorAll('.lp-feature-card.featured').forEach(card => {
+    card.style.borderColor = accent + '33';
+    card.style.background = `linear-gradient(180deg, ${accent}0A, ${surface})`;
+  });
+  document.querySelectorAll('[data-feature-quote]').forEach(el => el.style.color = accentLight);
+  document.querySelectorAll('.lp-feature-card .solution').forEach(el => el.style.color = textSecondary);
+  document.querySelectorAll('[data-only-us]').forEach(el => {
+    el.style.color = accentDim;
+    el.style.background = accent + '1A';
+  });
+
+  // Concierge
+  const concIn = document.getElementById('concierge-fade-in');
+  concIn.style.background = `linear-gradient(180deg, ${bg} 0%, #0a0a0f 100%)`;
+  const concOut = document.getElementById('concierge-fade-out');
+  concOut.style.background = `linear-gradient(180deg, #0a0a0f 0%, ${bg} 100%)`;
+
+  // Screenshots fades
+  document.querySelector('.lp-screenshots-fade-in').style.background = `linear-gradient(180deg, ${bg} 0%, #0a0a0a 100%)`;
+  document.querySelector('.lp-screenshots-fade-out').style.background = `linear-gradient(180deg, #0a0a0a 0%, ${bg} 100%)`;
+
+  // Screenshot center card accent
+  document.getElementById('most-used-label').style.color = accent;
+  const screenshotPill = document.getElementById('screenshot-pill');
+  screenshotPill.style.background = accent + '25';
+  screenshotPill.style.color = accentLight;
+
+  // Mid CTA
+  const midctaSec = document.getElementById('midcta-section');
+  midctaSec.querySelector('h2').style.color = textPrimary;
+  midctaSec.querySelector('p').style.color = textDim;
+
+  document.querySelectorAll('.lp-star').forEach(s => s.style.color = accent);
+
+  // Testimonials
+  const testSec = document.getElementById('testimonials-section');
+  testSec.style.background = surface;
+  testSec.querySelector('h2').style.color = textPrimary;
+
+  // Memory
+  document.getElementById('memory-overline').style.color = accent;
+  document.querySelector('.lp-memory-copy h2').style.color = textPrimary;
+  document.querySelector('.lp-memory-copy p').style.color = textDim;
+  document.querySelector('.lp-memory-cards').style.background = surfaceDim;
+  document.querySelector('.lp-memory-cards').style.borderColor = borderCol;
+  document.querySelectorAll('.lp-memory-card').forEach(c => {
+    c.style.background = surface;
+    c.style.borderColor = borderCol;
+  });
+
+  // Waitlist
+  const waitSec = document.getElementById('waitlist-section');
+  waitSec.querySelector('h2').style.color = textPrimary;
+
+  const waitInput = document.querySelector('.lp-waitlist-form input');
+  waitInput.style.background = surface;
+  waitInput.style.borderColor = borderCol;
+  waitInput.style.color = textPrimary;
+
+  // Footer
+  const footer = document.getElementById('lp-footer');
+  footer.style.borderTopColor = borderCol;
+
+  // Color swatch
+  document.getElementById('accent-swatch').style.background = accent;
+  document.getElementById('accent-hex').textContent = accent;
+
+  // Generate prompt
+  updatePrompt();
+}
+
+// =========================================================================
+// PROMPT GENERATION
+// =========================================================================
+
+function updatePrompt() {
+  const accent = getAccentColor();
+  const presetName = {
+    bold: 'Bold Launch',
+    minimal: 'Minimal Clean',
+    warm: 'Warm Inviting',
+    dark: 'Dark Premium',
+    playful: 'Playful',
+  }[state.preset] || 'Custom';
+
+  const variantDesc = {
+    email: 'a direct email capture input with an inline "' + state.ctaText + '" button',
+    quiz: 'an interactive destination quiz (country pills leading to preferences then email capture)',
+    micro: 'a micro-commitment flow starting with destination selection pills',
+  }[state.variant];
+
+  const bgDesc = state.bgDarkness < 92
+    ? 'dark background (' + getBgHex() + ')'
+    : state.bgDarkness < 96
+      ? 'muted light background (' + getBgHex() + ')'
+      : 'clean near-white background (' + getBgHex() + ')';
+
+  const prompt = `Implement the Found in Translation landing page with the "${presetName}" design direction.
+
+Use accent color ${accent} (HSL hue ${state.hue}) throughout -- on CTA buttons (gradient from light to dark), the hero tagline "You live them." in italics, feature quote text, memory section overline labels, star ratings, and active state indicators. The badge dot pulses in this accent color.
+
+The hero section uses ${variantDesc} as the primary CTA. Hero heading is ${state.headingSize}px extrabold with -0.03em tracking. Body text is ${state.bodySize}px. The hero has a Tokyo cityscape background image at 35% opacity with a 55% black overlay, rounded corners (28px border-radius), and a 1px white/8% border.
+
+Background: ${bgDesc}. Section spacing is ${state.spacing}px vertical padding. Content max-width is ${state.maxWidth}px.
+
+${state.airplaneOn ? `The paper airplane animation flies across the hero on a bezier path over ${state.airplaneSpeed} seconds with a dashed trail in sky-blue (#0ea5e9).` : 'The paper airplane animation is disabled.'}
+
+Translation marquee scrolls at ${state.marqueeSpeed}s per cycle with white card styling on the light sections.
+
+The concierge section and screenshot showcase use dark backgrounds (#0a0a0f and #0a0a0a) with smooth gradient transitions from the page background color. The phone mockup has a violet-to-cyan gradient on user bubbles and emerald system messages.
+
+Key design tokens: Inter font family, 999px pill border-radius, white/10-20% glassmorphism on hero elements, amber/violet/emerald semantic colors for features, and subtle hover lifts (-3px translateY with 24px blur shadow) on feature cards.`;
+
+  document.getElementById('prompt-text').textContent = prompt;
+}
+
+function copyPrompt() {
+  const text = document.getElementById('prompt-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// =========================================================================
+// EVENT LISTENERS
+// =========================================================================
+
+// Presets
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const preset = btn.dataset.preset;
+    state.preset = preset;
+    const p = presets[preset];
+    state.hue = p.hue;
+    state.bgDarkness = p.bgDarkness;
+    state.headingSize = p.headingSize;
+    state.bodySize = p.bodySize;
+    state.spacing = p.spacing;
+    state.maxWidth = p.maxWidth;
+
+    // Sync sliders
+    document.getElementById('hue-slider').value = p.hue;
+    document.getElementById('bg-slider').value = p.bgDarkness;
+    document.getElementById('heading-slider').value = p.headingSize;
+    document.getElementById('body-slider').value = p.bodySize;
+    document.getElementById('spacing-slider').value = p.spacing;
+    document.getElementById('width-slider').value = p.maxWidth;
+
+    // Update value displays
+    document.getElementById('hue-val').textContent = p.hue;
+    document.getElementById('bg-val').textContent = p.bgDarkness;
+    document.getElementById('heading-val').textContent = p.headingSize + 'px';
+    document.getElementById('body-val').textContent = p.bodySize + 'px';
+    document.getElementById('spacing-val').textContent = p.spacing + 'px';
+    document.getElementById('width-val').textContent = p.maxWidth + 'px';
+
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    render();
+  });
+});
+
+// Variant toggle
+document.querySelectorAll('[data-variant]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.variant = btn.dataset.variant;
+    document.querySelectorAll('[data-variant]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+
+// Sliders
+function bindSlider(id, key, suffix, display) {
+  const slider = document.getElementById(id);
+  const val = document.getElementById(display);
+  slider.addEventListener('input', () => {
+    state[key] = parseInt(slider.value);
+    val.textContent = slider.value + (suffix || '');
+    // Clear preset when manually adjusting
+    state.preset = 'custom';
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    render();
+  });
+}
+
+bindSlider('hue-slider', 'hue', '', 'hue-val');
+bindSlider('bg-slider', 'bgDarkness', '', 'bg-val');
+bindSlider('heading-slider', 'headingSize', 'px', 'heading-val');
+bindSlider('body-slider', 'bodySize', 'px', 'body-val');
+bindSlider('spacing-slider', 'spacing', 'px', 'spacing-val');
+bindSlider('width-slider', 'maxWidth', 'px', 'width-val');
+
+// Speed sliders
+document.getElementById('speed-slider').addEventListener('input', function() {
+  state.airplaneSpeed = parseInt(this.value);
+  document.getElementById('speed-val').textContent = this.value + 's';
+  render();
+});
+
+document.getElementById('marquee-slider').addEventListener('input', function() {
+  state.marqueeSpeed = parseInt(this.value);
+  document.getElementById('marquee-val').textContent = this.value + 's';
+  render();
+});
+
+// Airplane toggle
+document.getElementById('airplane-toggle').addEventListener('change', function() {
+  state.airplaneOn = this.checked;
+  render();
+});
+
+// CTA text
+document.getElementById('cta-text').addEventListener('input', function() {
+  state.ctaText = this.value;
+  render();
+});
+
+// =========================================================================
+// INIT
+// =========================================================================
+
+populateMarquee();
+populateReplacements();
+populateFeatures();
+populateMemory();
+render();
+</script>
+</body>
+</html>
